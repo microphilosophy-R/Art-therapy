@@ -22,7 +22,12 @@
       "Bash(npx tsc:*)",
       "Bash(python:*)",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(node -e:*)",
+      "Bash(docker exec:*)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm run db:seed:*)"
     ]
   }
 }

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /s \"c:\\\\art therapy app\")",
+      "Bash(powershell -Command:*)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"c:\\\\art therapy app\\\\client\\\\src\")",
+      "Bash(Out-Null)",
+      "Bash(Write-Host \"Directories created\")",
+      "Bash(powershell.exe -Command \"New-Item -ItemType Directory -Force -Path ''c:\\\\art therapy app\\\\client\\\\src'' | Out-Null; Write-Host ''Directories created''\")",
+      "Bash(powershell -NonInteractive -Command \"Get-Content ''c:\\\\art therapy app\\\\client\\\\src\\\\api\\\\axios.ts''\")",
+      "Bash(__NEW_LINE_75e9d7c4a01bb7b6__ powershell.exe -Command \":*)",
+      "Bash(__NEW_LINE_3d64f09536b5f814__ powershell.exe -Command \":*)",
+      "Bash(python3:*)",
+      "Bash(TMPDIR=\"C:/Users/96997/AppData/Local/Temp\":*)",
+      "Bash(__NEW_LINE_f2caaaf167b1e67f__ python3 -c \":*)",
+      "Bash(pwsh -Version)",
+      "Bash(pwsh -Command \"Write-Host ''pwsh ok''\")",
+      "Bash(powershell -NonInteractive:*)",
+      "Bash(cmd //c \"echo import os > C:\\\\Users\\\\96997\\\\AppData\\\\Local\\\\Temp\\\\mk.py && python3 C:\\\\Users\\\\96997\\\\AppData\\\\Local\\\\Temp\\\\mk.py\")",
+      "Bash(cmd //c \":*)",
+      "Bash(npm install)",
+      "Bash(npx tsc:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+f=open(r"c:\art therapy app\wf.py",encoding="utf-8"); c=f.read(); f.close(); c=c.replace(chr(92)+chr(33)+"error",chr(33)+"error"); c=c.replace("/"+chr(92)+"s+/g","/"+chr(92)+chr(92)+"s+/g"); f=open(r"c:\art therapy app\wf.py","w",encoding="utf-8",newline="\n"); f.write(c); f.close(); print("fixed")

@@ -145,3 +145,6 @@ ESLint + Prettier	Low	Config files only — no code changes needed
 Vitest tests	Low	Frontend unit/component tests
 Jest + Supertest tests	Low	Backend API integration tests
 GitHub Actions CI	Low	.github/workflows/ci.yml — lint, type-check, test, build
+
+
+1. Calender tab shall has different visual effects(highlights) on avaiable time.

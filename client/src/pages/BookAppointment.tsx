@@ -5,6 +5,7 @@ import { ChevronLeft, Calendar, Clock, Video, MapPin, Info } from 'lucide-react'
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { useTranslation } from 'react-i18next';
 import { getTherapist, getAvailableSlots } from '../api/therapists';
 import { createAppointment } from '../api/appointments';
 import { createPaymentIntent } from '../api/payments';
@@ -18,14 +19,8 @@ import type { TimeSlot } from '../types';
 
 type Step = 1 | 2 | 3 | 4;
 
-const STEPS = [
-  { n: 1, label: 'Date & Time' },
-  { n: 2, label: 'Format' },
-  { n: 3, label: 'Review' },
-  { n: 4, label: 'Pay' },
-];
-
 export const BookAppointment = () => {
+  const { t } = useTranslation();
   const { therapistId } = useParams<{ therapistId: string }>();
   const navigate = useNavigate();
 
@@ -84,6 +79,13 @@ export const BookAppointment = () => {
     console.error('Payment error:', msg);
   };
 
+  const STEPS = [
+    { n: 1, label: t('booking.steps.dateTime') },
+    { n: 2, label: t('booking.steps.format') },
+    { n: 3, label: t('booking.steps.review') },
+    { n: 4, label: t('booking.steps.pay') },
+  ];
+
   return (
     <div className="bg-stone-50 min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -92,12 +94,12 @@ export const BookAppointment = () => {
           className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6"
         >
           <ChevronLeft className="h-4 w-4" />
-          {step === 1 ? 'Back to profile' : 'Back'}
+          {step === 1 ? t('booking.backToProfile') : t('common.back')}
         </button>
 
-        <h1 className="text-2xl font-bold text-stone-900 mb-1">Book a Session</h1>
+        <h1 className="text-2xl font-bold text-stone-900 mb-1">{t('booking.title')}</h1>
         <p className="text-stone-500 text-sm mb-6">
-          with {therapist.user.firstName} {therapist.user.lastName}
+          {t('booking.with', { name: therapist.user.firstName })} {therapist.user.lastName}
         </p>
 
         {/* Step indicator */}
@@ -134,7 +136,7 @@ export const BookAppointment = () => {
           <Card>
             <CardContent className="p-6">
               <h2 className="font-semibold text-stone-900 mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-teal-600" /> Choose a date & time
+                <Calendar className="h-5 w-5 text-teal-600" /> {t('booking.step1.title')}
               </h2>
 
               <div className="mb-5">
@@ -167,10 +169,10 @@ export const BookAppointment = () => {
                   })}
                 </p>
                 {loadingSlots ? (
-                  <div className="py-6 text-center text-stone-400 text-sm">Loading slots…</div>
+                  <div className="py-6 text-center text-stone-400 text-sm">{t('booking.step1.loadingSlots')}</div>
                 ) : slots.length === 0 ? (
                   <div className="py-6 text-center text-stone-400 text-sm">
-                    No available slots on this day. Try another date.
+                    {t('booking.step1.noSlots')}
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -193,7 +195,7 @@ export const BookAppointment = () => {
 
               <div className="mt-6 flex justify-end">
                 <Button disabled={!selectedSlot} onClick={() => setStep(2)}>
-                  Continue
+                  {t('common.continue')}
                 </Button>
               </div>
             </CardContent>
@@ -204,11 +206,11 @@ export const BookAppointment = () => {
         {step === 2 && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-stone-900 mb-4">Session format</h2>
+              <h2 className="font-semibold text-stone-900 mb-4">{t('booking.step2.title')}</h2>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 {[
-                  { value: 'VIDEO' as const, icon: Video, label: 'Video call', desc: 'Join via secure video link' },
-                  { value: 'IN_PERSON' as const, icon: MapPin, label: 'In person', desc: `At ${therapist.locationCity}` },
+                  { value: 'VIDEO' as const, icon: Video, label: t('booking.step2.videoCall'), desc: t('booking.step2.videoDesc') },
+                  { value: 'IN_PERSON' as const, icon: MapPin, label: t('booking.step2.inPerson'), desc: t('booking.step2.inPersonAt', { city: therapist.locationCity }) },
                 ].map(({ value, icon: Icon, label, desc }) => (
                   <button
                     key={value}
@@ -228,19 +230,19 @@ export const BookAppointment = () => {
 
               <div>
                 <label className="block text-sm font-medium text-stone-700 mb-1">
-                  Notes for therapist <span className="text-stone-400">(optional)</span>
+                  {t('booking.step2.notesLabel')} <span className="text-stone-400">({t('booking.step2.notesOptional')})</span>
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Anything you'd like to share before the session..."
+                  placeholder={t('booking.step2.notesPlaceholder')}
                   rows={3}
                   className="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
 
               <div className="mt-6 flex justify-end">
-                <Button onClick={() => setStep(3)}>Continue</Button>
+                <Button onClick={() => setStep(3)}>{t('common.continue')}</Button>
               </div>
             </CardContent>
           </Card>
@@ -250,7 +252,7 @@ export const BookAppointment = () => {
         {step === 3 && selectedSlot && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-stone-900 mb-5">Review your booking</h2>
+              <h2 className="font-semibold text-stone-900 mb-5">{t('booking.step3.title')}</h2>
 
               <div className="flex items-center gap-4 p-4 bg-stone-50 rounded-xl mb-5">
                 <Avatar
@@ -270,30 +272,30 @@ export const BookAppointment = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between py-2 border-b border-stone-100">
                   <span className="flex items-center gap-2 text-stone-600">
-                    <Calendar className="h-4 w-4" /> Date
+                    <Calendar className="h-4 w-4" /> {t('booking.step3.date')}
                   </span>
                   <span className="font-medium text-stone-900">{formatDate(selectedSlot.startTime)}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-stone-100">
                   <span className="flex items-center gap-2 text-stone-600">
-                    <Clock className="h-4 w-4" /> Time
+                    <Clock className="h-4 w-4" /> {t('booking.step3.time')}
                   </span>
                   <span className="font-medium text-stone-900">
                     {formatTime(selectedSlot.startTime)} – {formatTime(selectedSlot.endTime)}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-stone-100">
-                  <span className="text-stone-600">Format</span>
+                  <span className="text-stone-600">{t('booking.step3.format')}</span>
                   <span className="font-medium text-stone-900">
-                    {medium === 'VIDEO' ? 'Video call' : 'In person'}
+                    {medium === 'VIDEO' ? t('booking.step3.videoCall') : t('booking.step3.inPerson')}
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-stone-100">
-                  <span className="text-stone-600">Duration</span>
+                  <span className="text-stone-600">{t('booking.step3.duration')}</span>
                   <span className="font-medium text-stone-900">{therapist.sessionLength} min</span>
                 </div>
                 <div className="flex justify-between py-2 text-base">
-                  <span className="font-semibold text-stone-900">Total</span>
+                  <span className="font-semibold text-stone-900">{t('booking.step3.total')}</span>
                   <span className="font-bold text-teal-700">{formatPrice(therapist.sessionPrice)}</span>
                 </div>
               </div>
@@ -310,7 +312,7 @@ export const BookAppointment = () => {
                   onClick={() => createMutation.mutate()}
                   loading={createMutation.isPending}
                 >
-                  Proceed to Payment
+                  {t('booking.step3.proceedToPayment')}
                 </Button>
               </div>
               {createMutation.isError && (
@@ -326,9 +328,9 @@ export const BookAppointment = () => {
         {step === 4 && clientSecret && appointmentId && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="font-semibold text-stone-900 mb-5">Payment</h2>
+              <h2 className="font-semibold text-stone-900 mb-5">{t('booking.step4.title')}</h2>
               <div className="flex justify-between text-sm mb-5 p-3 bg-stone-50 rounded-lg">
-                <span className="text-stone-600">Amount due</span>
+                <span className="text-stone-600">{t('booking.step4.amountDue')}</span>
                 <span className="font-semibold text-stone-900">{formatPrice(therapist.sessionPrice)}</span>
               </div>
               <PaymentElementWrapper

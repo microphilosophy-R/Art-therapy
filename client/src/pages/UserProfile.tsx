@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { getProfile, updateProfile, updatePassword, acceptPrivacy } from '../api/profile';
 import { useAuthStore } from '../store/authStore';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'Required'),
@@ -32,16 +33,6 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 type Tab = 'info' | 'security' | 'payment' | 'privacy';
 
-const GENDER_OPTIONS = [
-  'Prefer not to say',
-  'Female',
-  'Male',
-  'Non-binary',
-  'Genderqueer',
-  'Transgender',
-  'Other',
-];
-
 function Toast({ message, type }: { message: string; type: 'success' | 'error' }) {
   return (
     <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium ${
@@ -54,6 +45,7 @@ function Toast({ message, type }: { message: string; type: 'success' | 'error' }
 }
 
 export function UserProfile() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showCurrent, setShowCurrent] = useState(false);
@@ -90,25 +82,25 @@ export function UserProfile() {
     onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: ['profile'] });
       updateUser({ firstName: updated.firstName, lastName: updated.lastName, phone: updated.phone ?? undefined, avatarUrl: updated.avatarUrl ?? undefined });
-      showToast('Profile updated successfully.', 'success');
+      showToast(t('profile.personal.saveSuccess'), 'success');
     },
-    onError: () => showToast('Failed to update profile.', 'error'),
+    onError: () => showToast(t('profile.personal.saveError'), 'error'),
   });
 
   const passwordMutation = useMutation({
     mutationFn: updatePassword,
     onSuccess: () => {
       passwordForm.reset();
-      showToast('Password changed successfully.', 'success');
+      showToast(t('profile.security.success'), 'success');
     },
-    onError: (e: any) => showToast(e?.response?.data?.message ?? 'Failed to change password.', 'error'),
+    onError: (e: any) => showToast(e?.response?.data?.message ?? t('profile.security.error'), 'error'),
   });
 
   const privacyMutation = useMutation({
     mutationFn: acceptPrivacy,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['profile'] });
-      showToast('Privacy terms accepted.', 'success');
+      showToast(t('profile.privacyTab.success'), 'success');
     },
   });
 
@@ -128,10 +120,10 @@ export function UserProfile() {
   };
 
   const tabs: { id: Tab; label: string; icon: typeof User }[] = [
-    { id: 'info', label: 'Personal Info', icon: User },
-    { id: 'security', label: 'Security', icon: Lock },
-    { id: 'payment', label: 'Payment', icon: CreditCard },
-    { id: 'privacy', label: 'Privacy', icon: Shield },
+    { id: 'info', label: t('profile.tabs.personal'), icon: User },
+    { id: 'security', label: t('profile.tabs.security'), icon: Lock },
+    { id: 'payment', label: t('profile.tabs.payment'), icon: CreditCard },
+    { id: 'privacy', label: t('profile.tabs.privacy'), icon: Shield },
   ];
 
   if (isLoading) {
@@ -147,8 +139,8 @@ export function UserProfile() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-stone-900">Account Settings</h1>
-          <p className="text-stone-500 mt-1">Manage your personal information and account preferences</p>
+          <h1 className="text-2xl font-bold text-stone-900">{t('profile.title')}</h1>
+          <p className="text-stone-500 mt-1">{t('profile.subtitle')}</p>
         </div>
 
         {toast && (
@@ -185,11 +177,11 @@ export function UserProfile() {
             {/* ── Personal Info ── */}
             {activeTab === 'info' && (
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-5">
-                <h2 className="text-base font-semibold text-stone-900">Personal Information</h2>
+                <h2 className="text-base font-semibold text-stone-900">{t('profile.personal.title')}</h2>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">First Name</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.firstName')}</label>
                     <input
                       {...profileForm.register('firstName')}
                       className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -199,7 +191,7 @@ export function UserProfile() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Last Name</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.lastName')}</label>
                     <input
                       {...profileForm.register('lastName')}
                       className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -211,17 +203,17 @@ export function UserProfile() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Nickname <span className="text-stone-400 font-normal">(optional)</span></label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.nickname')}</label>
                   <input
                     {...profileForm.register('nickname')}
-                    placeholder="How would you like to be called?"
+                    placeholder={t('profile.personal.nicknamePlaceholder')}
                     className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Age <span className="text-stone-400 font-normal">(optional)</span></label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.age')}</label>
                     <input
                       type="number"
                       {...profileForm.register('age')}
@@ -234,42 +226,45 @@ export function UserProfile() {
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-stone-700 mb-1">Gender <span className="text-stone-400 font-normal">(optional)</span></label>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.gender')}</label>
                     <select
                       {...profileForm.register('gender')}
                       className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
                     >
-                      <option value="">Prefer not to say</option>
-                      {GENDER_OPTIONS.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
+                      <option value="">{t('profile.personal.genderOptions.preferNotToSay')}</option>
+                      <option value="Female">{t('profile.personal.genderOptions.female')}</option>
+                      <option value="Male">{t('profile.personal.genderOptions.male')}</option>
+                      <option value="Non-binary">{t('profile.personal.genderOptions.nonBinary')}</option>
+                      <option value="Genderqueer">{t('profile.personal.genderOptions.genderqueer')}</option>
+                      <option value="Transgender">{t('profile.personal.genderOptions.transgender')}</option>
+                      <option value="Other">{t('profile.personal.genderOptions.other')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Email Address</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.email')}</label>
                   <input
                     value={profile?.email ?? ''}
                     disabled
                     className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm bg-stone-50 text-stone-400 cursor-not-allowed"
                   />
-                  <p className="text-xs text-stone-400 mt-1">Email cannot be changed. Contact support if needed.</p>
+                  <p className="text-xs text-stone-400 mt-1">{t('profile.personal.emailNote')}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Phone <span className="text-stone-400 font-normal">(optional)</span></label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.personal.phone')}</label>
                   <input
                     {...profileForm.register('phone')}
                     type="tel"
-                    placeholder="+1 555-000-0000"
+                    placeholder={t('profile.personal.phonePlaceholder')}
                     className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
 
                 <div className="pt-2">
                   <Button type="submit" loading={profileMutation.isPending}>
-                    Save Changes
+                    {t('common.save')}
                   </Button>
                 </div>
               </form>
@@ -278,11 +273,11 @@ export function UserProfile() {
             {/* ── Security ── */}
             {activeTab === 'security' && (
               <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-5">
-                <h2 className="text-base font-semibold text-stone-900">Change Password</h2>
-                <p className="text-sm text-stone-500">Choose a strong password of at least 8 characters.</p>
+                <h2 className="text-base font-semibold text-stone-900">{t('profile.security.title')}</h2>
+                <p className="text-sm text-stone-500">{t('profile.security.subtitle')}</p>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Current Password</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.security.current')}</label>
                   <div className="relative">
                     <input
                       {...passwordForm.register('currentPassword')}
@@ -299,7 +294,7 @@ export function UserProfile() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">New Password</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.security.new')}</label>
                   <div className="relative">
                     <input
                       {...passwordForm.register('newPassword')}
@@ -316,7 +311,7 @@ export function UserProfile() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-1">Confirm New Password</label>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('profile.security.confirm')}</label>
                   <input
                     {...passwordForm.register('confirmPassword')}
                     type="password"
@@ -327,33 +322,31 @@ export function UserProfile() {
                   )}
                 </div>
 
-                <Button type="submit" loading={passwordMutation.isPending}>Update Password</Button>
+                <Button type="submit" loading={passwordMutation.isPending}>{t('profile.security.submit')}</Button>
               </form>
             )}
 
             {/* ── Payment ── */}
             {activeTab === 'payment' && (
               <div className="space-y-6">
-                <h2 className="text-base font-semibold text-stone-900">Payment Methods</h2>
+                <h2 className="text-base font-semibold text-stone-900">{t('profile.payment.title')}</h2>
                 <div className="rounded-xl bg-stone-50 border border-stone-200 p-5">
                   <div className="flex items-start gap-3">
                     <CreditCard className="h-5 w-5 text-stone-400 mt-0.5 shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-stone-700">Secure Payment via Stripe</p>
+                      <p className="text-sm font-medium text-stone-700">{t('profile.payment.stripeTitle')}</p>
                       <p className="text-sm text-stone-500 mt-1">
-                        Your payment information is handled exclusively by Stripe, a PCI DSS Level 1 certified payment processor.
-                        ArtTherapy never stores your raw card number, CVV, or full card details on our servers.
+                        {t('profile.payment.stripeDesc')}
                       </p>
                       <p className="text-sm text-stone-500 mt-2">
-                        Payment methods are saved securely in your Stripe customer profile and can be managed during checkout.
-                        Each session payment is processed at the time of booking.
+                        {t('profile.payment.stripeDesc2')}
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="rounded-xl bg-teal-50 border border-teal-200 p-4 text-sm text-teal-800">
-                  <p className="font-medium mb-1">Privacy Note on Payments</p>
-                  <p>Platform fees are 15% per session. A record of each transaction (amount, date, therapist) is stored for your receipt history and is protected under our <Link to="/privacy" className="underline">Privacy Policy</Link>. Payment details visible to therapists are limited to session confirmation — they never see your full card information.</p>
+                  <p className="font-medium mb-1">{t('profile.payment.privacyNote')}</p>
+                  <p>{t('profile.payment.privacyDesc')} <Link to="/privacy" className="underline">{t('profile.payment.learnMore')}</Link></p>
                 </div>
               </div>
             )}
@@ -361,15 +354,17 @@ export function UserProfile() {
             {/* ── Privacy ── */}
             {activeTab === 'privacy' && (
               <div className="space-y-6">
-                <h2 className="text-base font-semibold text-stone-900">Privacy & Consent</h2>
+                <h2 className="text-base font-semibold text-stone-900">{t('profile.privacyTab.title')}</h2>
 
                 {profile?.privacyConsentAt ? (
                   <div className="flex items-center gap-3 rounded-xl bg-teal-50 border border-teal-200 p-4">
                     <CheckCircle className="h-5 w-5 text-teal-600 shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-teal-800">Privacy Terms Accepted</p>
+                      <p className="text-sm font-medium text-teal-800">{t('profile.privacyTab.accepted')}</p>
                       <p className="text-xs text-teal-600 mt-0.5">
-                        Accepted on {new Date(profile.privacyConsentAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        {t('profile.privacyTab.acceptedOn', {
+                          date: new Date(profile.privacyConsentAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        })}
                       </p>
                     </div>
                   </div>
@@ -377,9 +372,9 @@ export function UserProfile() {
                   <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 p-4">
                     <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-amber-800">Privacy Terms Not Yet Accepted</p>
+                      <p className="text-sm font-medium text-amber-800">{t('profile.privacyTab.notAccepted')}</p>
                       <p className="text-sm text-amber-700 mt-1">
-                        Please review and accept our privacy terms to enable all features.
+                        {t('profile.privacyTab.notAcceptedDesc')}
                       </p>
                       <Button
                         size="sm"
@@ -387,27 +382,26 @@ export function UserProfile() {
                         loading={privacyMutation.isPending}
                         onClick={() => privacyMutation.mutate()}
                       >
-                        Accept Privacy Terms
+                        {t('profile.privacyTab.acceptBtn')}
                       </Button>
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-3 text-sm text-stone-600">
-                  <p>You can review our full privacy practices at any time:</p>
                   <Link to="/privacy" className="inline-flex items-center gap-1.5 text-teal-700 font-medium hover:underline">
                     <Shield className="h-4 w-4" />
-                    Read Privacy Policy & Terms
+                    {t('profile.privacyTab.readPolicy')}
                   </Link>
                 </div>
 
                 <div className="border-t border-stone-100 pt-5">
-                  <p className="text-sm font-medium text-stone-700 mb-2">Your Data Rights</p>
+                  <p className="text-sm font-medium text-stone-700 mb-2">{t('profile.privacyTab.dataRights')}</p>
                   <ul className="space-y-1.5 text-sm text-stone-500">
-                    <li>• You may request a copy of your data by contacting support</li>
-                    <li>• You may request deletion of your account and data</li>
-                    <li>• Session notes and therapy records are subject to legal retention requirements (minimum 6 years)</li>
-                    <li>• Payment records are retained per PCI DSS requirements</li>
+                    <li>• {t('profile.privacyTab.right1')}</li>
+                    <li>• {t('profile.privacyTab.right2')}</li>
+                    <li>• {t('profile.privacyTab.right3')}</li>
+                    <li>• {t('profile.privacyTab.right4')}</li>
                   </ul>
                 </div>
               </div>

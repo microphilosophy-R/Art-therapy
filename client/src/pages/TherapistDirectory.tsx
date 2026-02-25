@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getTherapists } from '../api/therapists';
 import { TherapistCard } from '../components/therapists/TherapistCard';
 import { Input } from '../components/ui/Input';
@@ -28,6 +29,7 @@ const SORT_OPTIONS = [
 ];
 
 export const TherapistDirectory = () => {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<TherapistFilters>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -65,9 +67,9 @@ export const TherapistDirectory = () => {
       {/* Page header */}
       <div className="bg-white border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-stone-900">Find a Therapist</h1>
+          <h1 className="text-3xl font-bold text-stone-900">{t('therapists.directory.title')}</h1>
           <p className="text-stone-500 mt-1">
-            Browse certified art therapists and book a session.
+            {t('therapists.directory.subtitle')}
           </p>
 
           {/* Search bar */}
@@ -76,7 +78,7 @@ export const TherapistDirectory = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
               <input
                 type="text"
-                placeholder="Search by name or city..."
+                placeholder={t('therapists.directory.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -96,14 +98,14 @@ export const TherapistDirectory = () => {
               className="flex items-center gap-2"
             >
               <SlidersHorizontal className="h-4 w-4" />
-              Filters
+              {t('therapists.directory.filters')}
               {hasFilters && (
                 <span className="ml-1 h-2 w-2 rounded-full bg-teal-500" />
               )}
             </Button>
             {hasFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
-                Clear all
+                {t('therapists.directory.clearAll')}
               </Button>
             )}
           </div>
@@ -113,7 +115,7 @@ export const TherapistDirectory = () => {
             <div className="mt-4 p-4 rounded-xl border border-stone-200 bg-stone-50 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <Select
-                  label="Session format"
+                  label={t('therapists.directory.sessionFormat')}
                   value={filters.medium ?? ''}
                   onChange={(e) =>
                     setFilters((f) => ({
@@ -124,7 +126,7 @@ export const TherapistDirectory = () => {
                   options={SESSION_FORMATS}
                 />
                 <Select
-                  label="Sort by"
+                  label={t('therapists.directory.sortBy')}
                   value={filters.sortBy ?? ''}
                   onChange={(e) =>
                     setFilters((f) => ({ ...f, sortBy: e.target.value || undefined }))
@@ -133,10 +135,10 @@ export const TherapistDirectory = () => {
                 />
                 <div>
                   <Input
-                    label="Max price ($/session)"
+                    label={t('therapists.directory.maxPrice')}
                     type="number"
                     min={0}
-                    placeholder="e.g. 150"
+                    placeholder={t('therapists.directory.maxPricePlaceholder')}
                     value={filters.maxPrice ?? ''}
                     onChange={(e) =>
                       setFilters((f) => ({
@@ -150,7 +152,7 @@ export const TherapistDirectory = () => {
 
               <div>
                 <p className="text-xs font-medium text-stone-600 uppercase tracking-wide mb-2">
-                  Specialties
+                  {t('therapists.directory.specialties')}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {SPECIALTIES.map((s) => (
@@ -180,25 +182,25 @@ export const TherapistDirectory = () => {
         ) : (
           <>
             <p className="text-sm text-stone-500 mb-6">
-              {isFetching ? 'Updating...' : `${data?.total ?? 0} therapists found`}
+              {isFetching ? t('therapists.directory.updating') : t('therapists.directory.found', { count: data?.total ?? 0 })}
             </p>
 
             {data?.data && data.data.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {data.data.map((t) => (
-                  <TherapistCard key={t.id} therapist={t} />
+                {data.data.map((therapist) => (
+                  <TherapistCard key={therapist.id} therapist={therapist} />
                 ))}
               </div>
             ) : (
               <div className="text-center py-20">
                 <Search className="h-12 w-12 mx-auto text-stone-300 mb-4" />
-                <p className="text-stone-500 font-medium">No therapists found</p>
+                <p className="text-stone-500 font-medium">{t('therapists.directory.noResults')}</p>
                 <p className="text-stone-400 text-sm mt-1">
-                  Try adjusting your search or filters.
+                  {t('therapists.directory.noResultsHint')}
                 </p>
                 {hasFilters && (
                   <Button variant="outline" className="mt-4" onClick={clearFilters}>
-                    Clear filters
+                    {t('therapists.directory.clearFilters')}
                   </Button>
                 )}
               </div>

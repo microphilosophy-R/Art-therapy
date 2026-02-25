@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(exit:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\art therapy app\\\\client\\\\.vite\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\art therapy app\\\\client\\\\node_modules\\\\.vite\" -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Cache cleared\")",
+      "Bash(cmd /c \"rd /s /q \"\"c:\\\\art therapy app\\\\client\\\\node_modules\\\\.vite\"\" 2>nul & echo done\")",
+      "Bash(cmd /c \"rmdir /s /q \"\"c:\\\\art therapy app\\\\client\\\\node_modules\\\\.vite\"\" && echo DELETED || echo NOT_FOUND\")",
+      "Bash(cmd /c \"if exist \"\"c:\\\\art therapy app\\\\client\\\\node_modules\\\\.vite\"\" \\(echo EXISTS\\) else \\(echo GONE\\)\")",
+      "Bash(cmd /c \"dir \"\"c:\\\\art therapy app\\\\client\\\\node_modules\\\\@fullcalendar\\\\react\"\" /b 2>&1\")",
+      "Bash(cmd /c \"type nul > \"\"c:\\\\art therapy app\\\\client\\\\src\\\\api\\\\admin.ts\"\"\")",
+      "Bash(xargs:*)",
+      "Bash(npm install:*)",
+      "Bash(cmd /c \"mkdir \"\"c:\\\\art therapy app\\\\client\\\\src\\\\locales\"\" 2>nul & echo done\")"
     ]
   }
 }

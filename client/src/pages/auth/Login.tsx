@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { login } from '../../api/auth';
 import { useAuthStore } from '../../store/authStore';
@@ -20,6 +21,7 @@ export const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setAuth } = useAuthStore();
+  const { t } = useTranslation();
   const from = (location.state as { from?: string })?.from ?? '/';
 
   const {
@@ -39,7 +41,7 @@ export const Login = () => {
         : '/dashboard/client';
       navigate(from === '/' ? dashboard : from, { replace: true });
     } catch {
-      setError('root', { message: 'Invalid email or password.' });
+      setError('root', { message: t('auth.login.invalidCredentials') });
     }
   };
 
@@ -50,8 +52,8 @@ export const Login = () => {
           <div className="inline-flex items-center gap-2 font-semibold text-stone-900 text-xl mb-2">
             <Heart className="h-5 w-5 text-teal-600 fill-teal-600" /> ArtTherapy
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">Welcome back</h1>
-          <p className="text-stone-500 mt-1 text-sm">Sign in to your account</p>
+          <h1 className="text-2xl font-bold text-stone-900">{t('auth.login.title')}</h1>
+          <p className="text-stone-500 mt-1 text-sm">{t('auth.login.subtitle')}</p>
         </div>
 
         <Card>
@@ -63,30 +65,30 @@ export const Login = () => {
                 </div>
               )}
               <Input
-                label="Email"
+                label={t('auth.login.email')}
                 type="email"
                 autoComplete="email"
                 {...register('email')}
                 error={errors.email?.message}
               />
               <Input
-                label="Password"
+                label={t('auth.login.password')}
                 type="password"
                 autoComplete="current-password"
                 {...register('password')}
                 error={errors.password?.message}
               />
               <Button type="submit" loading={isSubmitting} className="w-full" size="lg">
-                Sign in
+                {t('auth.login.signIn')}
               </Button>
             </form>
           </CardContent>
         </Card>
 
         <p className="text-center text-sm text-stone-500 mt-4">
-          Don&apos;t have an account?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/register" className="font-medium text-teal-600 hover:text-teal-700">
-            Create one
+            {t('auth.login.createOne')}
           </Link>
         </p>
       </div>

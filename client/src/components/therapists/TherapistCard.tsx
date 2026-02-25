@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Clock, Video } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { TherapistProfile } from '../../types';
 import { formatPrice, getSpecialtyColor } from '../../utils/formatters';
 import { Card, CardContent } from '../ui/Card';
@@ -14,6 +15,7 @@ interface TherapistCardProps {
 }
 
 export const TherapistCard = ({ therapist }: TherapistCardProps) => {
+  const { t } = useTranslation();
   const { user, bio, specialties, sessionPrice, sessionLength, locationCity, rating, reviewCount, isAccepting } = therapist;
 
   return (
@@ -37,12 +39,12 @@ export const TherapistCard = ({ therapist }: TherapistCardProps) => {
                   </div>
                 )}
               </div>
-              {!isAccepting && <Badge variant="warning">Full</Badge>}
+              {!isAccepting && <Badge variant="warning">{t('therapists.card.full')}</Badge>}
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-stone-500">
               <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{locationCity}</span>
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sessionLength} min</span>
-              <span className="flex items-center gap-1"><Video className="h-3 w-3" />Video available</span>
+              <span className="flex items-center gap-1"><Video className="h-3 w-3" />{t('therapists.card.videoAvailable')}</span>
             </div>
           </div>
         </div>
@@ -61,7 +63,7 @@ export const TherapistCard = ({ therapist }: TherapistCardProps) => {
             </span>
           ))}
           {specialties.length > 4 && (
-            <span className="text-xs text-stone-400">+{specialties.length - 4} more</span>
+            <span className="text-xs text-stone-400">{t('therapists.card.moreSpecialties', { n: specialties.length - 4 })}</span>
           )}
         </div>
 
@@ -69,11 +71,11 @@ export const TherapistCard = ({ therapist }: TherapistCardProps) => {
         <div className="flex items-center justify-between pt-4 border-t border-stone-100">
           <div>
             <span className="text-lg font-semibold text-stone-900">{formatPrice(sessionPrice)}</span>
-            <span className="text-xs text-stone-500"> / session</span>
+            <span className="text-xs text-stone-500"> {t('therapists.card.perSession')}</span>
           </div>
           <Link to={`/therapists/${therapist.id}`}>
             <Button size="sm" disabled={!isAccepting}>
-              {isAccepting ? 'View Profile' : 'Not Available'}
+              {isAccepting ? t('therapists.card.viewProfile') : t('therapists.card.notAvailable')}
             </Button>
           </Link>
         </div>

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CheckCircle, AlertCircle, ChevronLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/Button';
 import { getFormForClient, submitForm, type FormQuestion } from '../../api/forms';
 
 export function FillForm() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -47,7 +49,7 @@ export function FillForm() {
   if (isError || !form) {
     return (
       <div className="min-h-screen flex items-center justify-center text-stone-500">
-        Form not found or no longer available.
+        {t('forms.fill.notFound')}
       </div>
     );
   }
@@ -57,23 +59,25 @@ export function FillForm() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-sm">
           <CheckCircle className="h-12 w-12 text-teal-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-stone-900">Already Submitted</h2>
-          <p className="text-stone-500 mt-2">You have already completed this form. Thank you!</p>
-          <Button className="mt-6" onClick={() => navigate('/dashboard/client')}>Back to Dashboard</Button>
+          <h2 className="text-xl font-semibold text-stone-900">{t('forms.fill.alreadySubmitted')}</h2>
+          <p className="text-stone-500 mt-2">{t('forms.fill.alreadySubmittedDesc')}</p>
+          <Button className="mt-6" onClick={() => navigate('/dashboard/client')}>{t('forms.fill.backToDashboard')}</Button>
         </div>
       </div>
     );
   }
 
+  const therapistName = `${form.sender?.firstName ?? ''} ${form.sender?.lastName ?? ''}`.trim();
+
   return (
     <div className="min-h-screen bg-stone-50 py-10">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700 mb-6">
-          <ChevronLeft className="h-4 w-4" /> Back
+          <ChevronLeft className="h-4 w-4" /> {t('forms.detail.back')}
         </button>
 
         <div className="mb-6">
-          <p className="text-sm text-stone-500 mb-1">From {form.sender?.firstName} {form.sender?.lastName}</p>
+          <p className="text-sm text-stone-500 mb-1">{t('forms.fill.from', { name: therapistName })}</p>
           <h1 className="text-2xl font-bold text-stone-900">{form.title}</h1>
           {form.description && <p className="text-stone-500 mt-2">{form.description}</p>}
         </div>
@@ -81,7 +85,7 @@ export function FillForm() {
         {validationErrors.length > 0 && (
           <div className="mb-6 flex items-center gap-2 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            Please answer all required questions before submitting.
+            {t('forms.fill.requiredError')}
           </div>
         )}
 
@@ -100,12 +104,12 @@ export function FillForm() {
 
         <div className="mt-8 flex justify-end">
           <Button onClick={handleSubmit} loading={submitMutation.isPending} size="lg">
-            Submit Form
+            {t('forms.fill.submit')}
           </Button>
         </div>
 
         {submitMutation.isError && (
-          <p className="text-sm text-rose-600 mt-3 text-right">Submission failed. Please try again.</p>
+          <p className="text-sm text-rose-600 mt-3 text-right">{t('forms.fill.submitError')}</p>
         )}
       </div>
     </div>
@@ -113,12 +117,14 @@ export function FillForm() {
 }
 
 function QuestionInput({ question: q, value, onChange }: { question: FormQuestion; value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation();
+
   if (q.type === 'SHORT_TEXT') {
-    return <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Your answer…" />;
+    return <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder={t('forms.fill.textPlaceholder')} />;
   }
 
   if (q.type === 'LONG_TEXT') {
-    return <textarea rows={4} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" placeholder="Your answer…" />;
+    return <textarea rows={4} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" placeholder={t('forms.fill.textPlaceholder')} />;
   }
 
   if (q.type === 'YES_NO') {
@@ -178,8 +184,8 @@ function QuestionInput({ question: q, value, onChange }: { question: FormQuestio
           ))}
         </div>
         <div className="flex justify-between text-xs text-stone-400 mt-1 px-0.5">
-          <span>{min} = Low</span>
-          <span>{max} = High</span>
+          <span>{t('forms.fill.scaleMin', { min })}</span>
+          <span>{t('forms.fill.scaleMax', { max })}</span>
         </div>
       </div>
     );

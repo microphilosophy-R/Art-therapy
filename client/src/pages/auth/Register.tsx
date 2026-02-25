@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
 import { register as registerApi } from '../../api/auth';
 import { useAuthStore } from '../../store/authStore';
@@ -22,6 +23,7 @@ type FormData = z.infer<typeof schema>;
 export const Register = () => {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
+  const { t } = useTranslation();
 
   const {
     register,
@@ -42,7 +44,7 @@ export const Register = () => {
       setAuth(res.user, res.accessToken);
       navigate(data.role === 'THERAPIST' ? '/dashboard/therapist' : '/dashboard/client');
     } catch {
-      setError('root', { message: 'Registration failed. This email may already be in use.' });
+      setError('root', { message: t('auth.register.registrationFailed') });
     }
   };
 
@@ -53,8 +55,8 @@ export const Register = () => {
           <div className="inline-flex items-center gap-2 font-semibold text-stone-900 text-xl mb-2">
             <Heart className="h-5 w-5 text-teal-600 fill-teal-600" /> ArtTherapy
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">Create your account</h1>
-          <p className="text-stone-500 mt-1 text-sm">Join our community</p>
+          <h1 className="text-2xl font-bold text-stone-900">{t('auth.register.title')}</h1>
+          <p className="text-stone-500 mt-1 text-sm">{t('auth.register.subtitle')}</p>
         </div>
 
         <Card>
@@ -68,7 +70,7 @@ export const Register = () => {
 
               {/* Role toggle */}
               <div>
-                <p className="text-sm font-medium text-stone-700 mb-2">I am a...</p>
+                <p className="text-sm font-medium text-stone-700 mb-2">{t('auth.register.iAm')}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {(['CLIENT', 'THERAPIST'] as const).map((r) => (
                     <label
@@ -86,7 +88,7 @@ export const Register = () => {
                         className="sr-only"
                       />
                       <span className="text-sm font-medium">
-                        {r === 'CLIENT' ? 'Client' : 'Therapist'}
+                        {r === 'CLIENT' ? t('auth.register.client') : t('auth.register.therapist')}
                       </span>
                     </label>
                   ))}
@@ -95,44 +97,44 @@ export const Register = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="First name"
+                  label={t('auth.register.firstName')}
                   autoComplete="given-name"
                   {...register('firstName')}
                   error={errors.firstName?.message}
                 />
                 <Input
-                  label="Last name"
+                  label={t('auth.register.lastName')}
                   autoComplete="family-name"
                   {...register('lastName')}
                   error={errors.lastName?.message}
                 />
               </div>
               <Input
-                label="Email"
+                label={t('auth.register.email')}
                 type="email"
                 autoComplete="email"
                 {...register('email')}
                 error={errors.email?.message}
               />
               <Input
-                label="Password"
+                label={t('auth.register.password')}
                 type="password"
                 autoComplete="new-password"
-                hint="At least 8 characters"
+                hint={t('auth.register.passwordHint')}
                 {...register('password')}
                 error={errors.password?.message}
               />
               <Button type="submit" loading={isSubmitting} className="w-full" size="lg">
-                Create account
+                {t('auth.register.submit')}
               </Button>
             </form>
           </CardContent>
         </Card>
 
         <p className="text-center text-sm text-stone-500 mt-4">
-          Already have an account?{' '}
+          {t('auth.register.alreadyHave')}{' '}
           <Link to="/login" className="font-medium text-teal-600 hover:text-teal-700">
-            Sign in
+            {t('auth.register.signIn')}
           </Link>
         </p>
       </div>

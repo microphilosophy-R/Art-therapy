@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut, LayoutDashboard, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 
 export const Navbar = () => {
   const { user, isAuthenticated, clearAuth } = useAuthStore();
@@ -12,6 +14,7 @@ export const Navbar = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     try { await logout(); } catch { /* ignore */ }
@@ -46,23 +49,25 @@ export const Navbar = () => {
                   : 'text-stone-600 hover:bg-stone-100'
               }`}
             >
-              Find a Therapist
+              {t('nav.findTherapist')}
             </Link>
 
-            {isAuthenticated ? (
+            <LanguageSwitcher />
+
+            {isAuthenticated && user ? (
               <div className="relative ml-2">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-stone-100 transition-colors"
                 >
                   <Avatar
-                    firstName={user!.firstName}
-                    lastName={user!.lastName}
-                    src={user!.avatarUrl}
+                    firstName={user.firstName}
+                    lastName={user.lastName}
+                    src={user.avatarUrl}
                     size="sm"
                   />
                   <span className="text-sm font-medium text-stone-700 hidden sm:block">
-                    {user!.firstName}
+                    {user.firstName}
                   </span>
                 </button>
 
@@ -75,21 +80,21 @@ export const Navbar = () => {
                         onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                       >
-                        <LayoutDashboard className="h-4 w-4" /> Dashboard
+                        <LayoutDashboard className="h-4 w-4" /> {t('nav.dashboard')}
                       </Link>
                       <Link
                         to="/profile"
                         onClick={() => setMenuOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                       >
-                        <User className="h-4 w-4" /> Profile
+                        <User className="h-4 w-4" /> {t('nav.profile')}
                       </Link>
                       <hr className="my-1 border-stone-100" />
                       <button
                         onClick={handleLogout}
                         className="flex items-center gap-2 w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
                       >
-                        <LogOut className="h-4 w-4" /> Sign out
+                        <LogOut className="h-4 w-4" /> {t('nav.signOut')}
                       </button>
                     </div>
                   </>
@@ -98,10 +103,10 @@ export const Navbar = () => {
             ) : (
               <div className="flex items-center gap-2 ml-2">
                 <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
-                  Sign in
+                  {t('nav.signIn')}
                 </Button>
                 <Button size="sm" onClick={() => navigate('/register')}>
-                  Get started
+                  {t('nav.getStarted')}
                 </Button>
               </div>
             )}
@@ -124,23 +129,26 @@ export const Navbar = () => {
               onClick={() => setMobileOpen(false)}
               className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
             >
-              Find a Therapist
+              {t('nav.findTherapist')}
             </Link>
-            {isAuthenticated ? (
+            <div className="px-1">
+              <LanguageSwitcher />
+            </div>
+            {isAuthenticated && user ? (
               <>
                 <Link
                   to={dashboardPath}
                   onClick={() => setMobileOpen(false)}
                   className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
                 >
-                  Dashboard
+                  {t('nav.dashboard')}
                 </Link>
                 <Link
                   to="/profile"
                   onClick={() => setMobileOpen(false)}
                   className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
                 >
-                  Profile
+                  {t('nav.profile')}
                 </Link>
                 {user?.role === 'CLIENT' && (
                   <Link
@@ -148,14 +156,14 @@ export const Navbar = () => {
                     onClick={() => setMobileOpen(false)}
                     className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
                   >
-                    My Forms
+                    {t('nav.myForms')}
                   </Link>
                 )}
                 <button
                   onClick={handleLogout}
                   className="text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-lg"
                 >
-                  Sign out
+                  {t('nav.signOut')}
                 </button>
               </>
             ) : (
@@ -165,14 +173,14 @@ export const Navbar = () => {
                   onClick={() => setMobileOpen(false)}
                   className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
                 >
-                  Sign in
+                  {t('nav.signIn')}
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMobileOpen(false)}
                   className="px-3 py-2 text-sm font-medium text-teal-700 hover:bg-teal-50 rounded-lg"
                 >
-                  Get started
+                  {t('nav.getStarted')}
                 </Link>
               </>
             )}

@@ -4,6 +4,15 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: [
+      '@fullcalendar/core',
+      '@fullcalendar/react',
+      '@fullcalendar/daygrid',
+      '@fullcalendar/timegrid',
+      '@fullcalendar/interaction',
+    ],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

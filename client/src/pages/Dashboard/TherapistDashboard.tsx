@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, DollarSign, Users, ExternalLink, AlertCircle, FileText, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -25,6 +26,7 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
 };
 
 export const TherapistDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -85,14 +87,21 @@ export const TherapistDashboard = () => {
     extendedProps: { status: appt.status, medium: appt.medium },
   }));
 
+  const calendarLegendLabels: Record<AppointmentStatus, string> = {
+    PENDING: t('dashboard.therapist.calendarLegend.pending'),
+    CONFIRMED: t('dashboard.therapist.calendarLegend.confirmed'),
+    CANCELLED: t('dashboard.therapist.calendarLegend.cancelled'),
+    COMPLETED: t('dashboard.therapist.calendarLegend.completed'),
+  };
+
   return (
     <div className="bg-stone-50 min-h-screen">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-stone-900">
-            Welcome back, {user?.firstName}
+            {t('dashboard.therapist.welcome', { name: user?.firstName })}
           </h1>
-          <p className="text-stone-500 mt-1">Manage your sessions and earnings.</p>
+          <p className="text-stone-500 mt-1">{t('dashboard.therapist.subtitle')}</p>
         </div>
 
         {/* Stripe Connect banner */}
@@ -101,10 +110,10 @@ export const TherapistDashboard = () => {
             <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-800">
-                Connect your bank account to receive payments
+                {t('dashboard.therapist.stripeTitle')}
               </p>
               <p className="text-xs text-amber-700 mt-0.5">
-                Clients can book but funds won't be transferred until your Stripe account is active.
+                {t('dashboard.therapist.stripeDesc')}
               </p>
             </div>
             <Button
@@ -114,7 +123,7 @@ export const TherapistDashboard = () => {
               className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              Set up payouts
+              {t('dashboard.therapist.setupPayouts')}
             </Button>
           </div>
         )}
@@ -122,9 +131,9 @@ export const TherapistDashboard = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { icon: Calendar, label: 'Sessions this month', value: '—', color: 'text-teal-600 bg-teal-50' },
-            { icon: DollarSign, label: 'Earnings this month', value: '—', color: 'text-green-600 bg-green-50' },
-            { icon: Users, label: 'Active clients', value: '—', color: 'text-blue-600 bg-blue-50' },
+            { icon: Calendar, label: t('dashboard.therapist.sessionsThisMonth'), value: '—', color: 'text-teal-600 bg-teal-50' },
+            { icon: DollarSign, label: t('dashboard.therapist.earningsThisMonth'), value: '—', color: 'text-green-600 bg-green-50' },
+            { icon: Users, label: t('dashboard.therapist.activeClients'), value: '—', color: 'text-blue-600 bg-blue-50' },
           ].map(({ icon: Icon, label, value, color }) => (
             <div key={label} className="bg-white rounded-xl border border-stone-200 p-5 flex items-center gap-4">
               <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${color}`}>
@@ -142,23 +151,31 @@ export const TherapistDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
             <div className="flex gap-1 flex-wrap">
-              {(['pending', 'upcoming', 'past', 'forms', 'calendar'] as Tab[]).map((t) => (
+              {(['pending', 'upcoming', 'past', 'forms', 'calendar'] as Tab[]).map((tabKey) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
+                  key={tabKey}
+                  onClick={() => setTab(tabKey)}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    tab === t
+                    tab === tabKey
                       ? 'bg-teal-50 text-teal-700'
                       : 'text-stone-500 hover:bg-stone-50'
                   }`}
                 >
-                  {t === 'forms' ? 'Forms' : t === 'calendar' ? 'Calendar' : t}
-                  {t === 'pending' && data?.total ? (
+                  {tabKey === 'forms'
+                    ? t('dashboard.therapist.forms')
+                    : tabKey === 'calendar'
+                    ? t('dashboard.therapist.calendar')
+                    : tabKey === 'pending'
+                    ? t('dashboard.therapist.pending')
+                    : tabKey === 'upcoming'
+                    ? t('dashboard.therapist.upcoming')
+                    : t('dashboard.therapist.past')}
+                  {tabKey === 'pending' && data?.total ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
                       {data.total}
                     </Badge>
                   ) : null}
-                  {t === 'forms' && (formsData?.total ?? 0) > 0 ? (
+                  {tabKey === 'forms' && (formsData?.total ?? 0) > 0 ? (
                     <Badge variant="info" className="ml-1.5 text-xs">
                       {formsData!.total}
                     </Badge>
@@ -172,10 +189,10 @@ export const TherapistDashboard = () => {
             {tab === 'calendar' ? (
               <div>
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
-                  {Object.entries(STATUS_COLORS).map(([status, color]) => (
+                  {(Object.entries(STATUS_COLORS) as [AppointmentStatus, string][]).map(([status, color]) => (
                     <span key={status} className="flex items-center gap-1.5 text-xs text-stone-500">
                       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                      {status.charAt(0) + status.slice(1).toLowerCase()}
+                      {calendarLegendLabels[status]}
                     </span>
                   ))}
                 </div>
@@ -204,30 +221,33 @@ export const TherapistDashboard = () => {
               <div>
                 <div className="flex justify-end mb-4">
                   <Link to="/forms/new">
-                    <Button size="sm"><Plus className="h-4 w-4" /> New Form</Button>
+                    <Button size="sm"><Plus className="h-4 w-4" /> {t('dashboard.therapist.newForm')}</Button>
                   </Link>
                 </div>
                 {(formsData?.data ?? []).length === 0 ? (
                   <div className="text-center py-12 text-stone-400">
                     <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                    <p>No forms sent yet.</p>
-                    <Link to="/forms/new" className="mt-3 inline-block text-sm text-teal-600 hover:underline">Create your first form</Link>
+                    <p>{t('dashboard.therapist.noForms')}</p>
+                    <Link to="/forms/new" className="mt-3 inline-block text-sm text-teal-600 hover:underline">{t('dashboard.therapist.createFirstForm')}</Link>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(formsData?.data ?? []).map((form: ClientForm) => (
-                      <div key={form.id} className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 hover:bg-stone-50">
-                        <div>
-                          <p className="text-sm font-medium text-stone-800">{form.title}</p>
-                          <p className="text-xs text-stone-400 mt-0.5">
-                            To: {form.recipient?.firstName} {form.recipient?.lastName} &bull; {form.status}
-                          </p>
+                    {(formsData?.data ?? []).map((form: ClientForm) => {
+                      const clientName = `${form.recipient?.firstName ?? ''} ${form.recipient?.lastName ?? ''}`.trim();
+                      return (
+                        <div key={form.id} className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 hover:bg-stone-50">
+                          <div>
+                            <p className="text-sm font-medium text-stone-800">{form.title}</p>
+                            <p className="text-xs text-stone-400 mt-0.5">
+                              {t('dashboard.therapist.formTo', { name: clientName })} &bull; {form.status}
+                            </p>
+                          </div>
+                          <Link to={`/forms/${form.id}/responses`}>
+                            <Button size="sm" variant="outline">View</Button>
+                          </Link>
                         </div>
-                        <Link to={`/forms/${form.id}/responses`}>
-                          <Button size="sm" variant="outline">View</Button>
-                        </Link>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -236,7 +256,7 @@ export const TherapistDashboard = () => {
             ) : appointments.length === 0 ? (
               <div className="text-center py-12 text-stone-400">
                 <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p>No {tab} appointments.</p>
+                <p>{t('dashboard.therapist.noAppointments', { tab })}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -253,7 +273,7 @@ export const TherapistDashboard = () => {
                           onClick={() => confirmMutation.mutate(appt.id)}
                           loading={confirmMutation.isPending}
                         >
-                          Confirm session
+                          {t('dashboard.therapist.confirmSession')}
                         </Button>
                       </div>
                     )}

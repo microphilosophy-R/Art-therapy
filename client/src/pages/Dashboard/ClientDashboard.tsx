@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Clock, Heart, FileText, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getAppointments, cancelAppointment } from '../../api/appointments';
 import { listReceivedForms, type ClientForm } from '../../api/forms';
 import { AppointmentCard } from '../../components/appointments/AppointmentCard';
@@ -13,6 +14,7 @@ import { Link } from 'react-router-dom';
 type Tab = 'upcoming' | 'past' | 'forms';
 
 export const ClientDashboard = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -45,9 +47,9 @@ export const ClientDashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-stone-900">
-            Welcome back, {user?.firstName}
+            {t('dashboard.client.welcome', { name: user?.firstName })}
           </h1>
-          <p className="text-stone-500 mt-1">Manage your therapy sessions here.</p>
+          <p className="text-stone-500 mt-1">{t('dashboard.client.subtitle')}</p>
         </div>
 
         {/* Forms notification banner */}
@@ -55,9 +57,9 @@ export const ClientDashboard = () => {
           <div className="mb-6 flex items-center gap-3 rounded-xl bg-teal-50 border border-teal-200 px-4 py-3">
             <Bell className="h-5 w-5 text-teal-600 shrink-0" />
             <p className="text-sm text-teal-800 flex-1">
-              You have <strong>{pendingForms.length}</strong> form{pendingForms.length > 1 ? 's' : ''} waiting for your response.
+              {t('dashboard.client.pendingForms', { count: pendingForms.length })}
             </p>
-            <button onClick={() => setTab('forms')} className="text-sm font-medium text-teal-700 hover:underline shrink-0">View forms</button>
+            <button onClick={() => setTab('forms')} className="text-sm font-medium text-teal-700 hover:underline shrink-0">{t('dashboard.client.viewForms')}</button>
           </div>
         )}
 
@@ -66,19 +68,19 @@ export const ClientDashboard = () => {
           {[
             {
               icon: Calendar,
-              label: 'Upcoming sessions',
+              label: t('dashboard.client.upcomingSessions'),
               value: data?.total ?? 0,
               color: 'text-teal-600 bg-teal-50',
             },
             {
               icon: Clock,
-              label: 'Hours in therapy',
+              label: t('dashboard.client.hoursInTherapy'),
               value: '—',
               color: 'text-blue-600 bg-blue-50',
             },
             {
               icon: Heart,
-              label: 'Therapists seen',
+              label: t('dashboard.client.therapistsSeen'),
               value: '—',
               color: 'text-rose-500 bg-rose-50',
             },
@@ -99,18 +101,22 @@ export const ClientDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
             <div className="flex gap-1">
-              {(['upcoming', 'past', 'forms'] as Tab[]).map((t) => (
+              {(['upcoming', 'past', 'forms'] as Tab[]).map((tabKey) => (
                 <button
-                  key={t}
-                  onClick={() => setTab(t)}
+                  key={tabKey}
+                  onClick={() => setTab(tabKey)}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    tab === t
+                    tab === tabKey
                       ? 'bg-teal-50 text-teal-700'
                       : 'text-stone-500 hover:bg-stone-50'
                   }`}
                 >
-                  {t === 'forms' ? 'My Forms' : t}
-                  {t === 'forms' && pendingForms.length > 0 && (
+                  {tabKey === 'forms'
+                    ? t('dashboard.client.forms')
+                    : tabKey === 'upcoming'
+                    ? t('dashboard.client.upcoming')
+                    : t('dashboard.client.past')}
+                  {tabKey === 'forms' && pendingForms.length > 0 && (
                     <Badge variant="warning" className="ml-1.5 text-xs">{pendingForms.length}</Badge>
                   )}
                 </button>
@@ -118,7 +124,7 @@ export const ClientDashboard = () => {
             </div>
             {tab !== 'forms' && (
               <Link to="/therapists">
-                <Button size="sm">Book session</Button>
+                <Button size="sm">{t('dashboard.client.bookSession')}</Button>
               </Link>
             )}
           </div>
@@ -128,32 +134,35 @@ export const ClientDashboard = () => {
               (formsData?.data ?? []).length === 0 ? (
                 <div className="text-center py-12 text-stone-400">
                   <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                  <p>No forms received yet.</p>
+                  <p>{t('dashboard.client.noForms')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(formsData?.data ?? []).map((form: ClientForm) => (
-                    <div key={form.id} className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 hover:bg-stone-50">
-                      <div>
-                        <p className="text-sm font-medium text-stone-800">{form.title}</p>
-                        <p className="text-xs text-stone-400 mt-0.5">
-                          From: {form.sender?.firstName} {form.sender?.lastName} &bull;{' '}
-                          {form.status === 'SENT' ? (
-                            <span className="text-amber-600 font-medium">Awaiting your response</span>
-                          ) : (
-                            <span className="text-teal-600">Submitted</span>
-                          )}
-                        </p>
+                  {(formsData?.data ?? []).map((form: ClientForm) => {
+                    const therapistName = `${form.sender?.firstName ?? ''} ${form.sender?.lastName ?? ''}`.trim();
+                    return (
+                      <div key={form.id} className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 hover:bg-stone-50">
+                        <div>
+                          <p className="text-sm font-medium text-stone-800">{form.title}</p>
+                          <p className="text-xs text-stone-400 mt-0.5">
+                            {t('dashboard.client.formFrom', { name: therapistName })} &bull;{' '}
+                            {form.status === 'SENT' ? (
+                              <span className="text-amber-600 font-medium">{t('dashboard.client.awaitingResponse')}</span>
+                            ) : (
+                              <span className="text-teal-600">{t('dashboard.client.submitted')}</span>
+                            )}
+                          </p>
+                        </div>
+                        {form.status === 'SENT' ? (
+                          <Link to={`/forms/${form.id}`}>
+                            <Button size="sm">{t('dashboard.client.fillOut')}</Button>
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-stone-400">{t('dashboard.client.completed')}</span>
+                        )}
                       </div>
-                      {form.status === 'SENT' ? (
-                        <Link to={`/forms/${form.id}`}>
-                          <Button size="sm">Fill out</Button>
-                        </Link>
-                      ) : (
-                        <span className="text-xs text-stone-400">Completed</span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )
             ) : isLoading ? (
@@ -161,10 +170,10 @@ export const ClientDashboard = () => {
             ) : appointments.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="h-10 w-10 mx-auto text-stone-300 mb-3" />
-                <p className="text-stone-500">No {tab} appointments.</p>
+                <p className="text-stone-500">{t('dashboard.client.noAppointments', { tab })}</p>
                 {tab === 'upcoming' && (
                   <Link to="/therapists">
-                    <Button variant="outline" className="mt-4">Find a therapist</Button>
+                    <Button variant="outline" className="mt-4">{t('dashboard.client.findTherapist')}</Button>
                   </Link>
                 )}
               </div>

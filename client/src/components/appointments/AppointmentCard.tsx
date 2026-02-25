@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Clock, Video, MapPin, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Appointment } from '../../types';
 import { formatDate, formatTime, hoursUntil } from '../../utils/formatters';
 import { Card, CardContent } from '../ui/Card';
@@ -20,14 +21,8 @@ const statusVariant = {
   COMPLETED: 'default',
 } as const;
 
-const statusLabel = {
-  PENDING:   'Awaiting Payment',
-  CONFIRMED: 'Confirmed',
-  CANCELLED: 'Cancelled',
-  COMPLETED: 'Completed',
-};
-
 export const AppointmentCard = ({ appointment, perspective, onCancel }: AppointmentCardProps) => {
+  const { t } = useTranslation();
   const { therapist, client, startTime, endTime, status, medium } = appointment;
   const person = perspective === 'client' ? therapist?.user : client;
   const canCancel = (status === 'CONFIRMED' || status === 'PENDING') && hoursUntil(startTime) > 0;
@@ -59,13 +54,13 @@ export const AppointmentCard = ({ appointment, perspective, onCancel }: Appointm
                   </span>
                   <span className="flex items-center gap-1.5">
                     {medium === 'VIDEO'
-                      ? <><Video className="h-3.5 w-3.5" /> Video</>
-                      : <><MapPin className="h-3.5 w-3.5" /> In Person</>
+                      ? <><Video className="h-3.5 w-3.5" /> {t('common.video')}</>
+                      : <><MapPin className="h-3.5 w-3.5" /> {t('common.inPerson')}</>
                     }
                   </span>
                 </div>
               </div>
-              <Badge variant={statusVariant[status]}>{statusLabel[status]}</Badge>
+              <Badge variant={statusVariant[status]}>{t(`common.status.${status}`)}</Badge>
             </div>
           </div>
         </div>
@@ -77,7 +72,7 @@ export const AppointmentCard = ({ appointment, perspective, onCancel }: Appointm
               onClick={() => onCancel(appointment.id)}
               className="text-rose-600 hover:bg-rose-50"
             >
-              <X className="h-4 w-4" /> Cancel
+              <X className="h-4 w-4" /> {t('appointments.cancel')}
             </Button>
           </div>
         )}

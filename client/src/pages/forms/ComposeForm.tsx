@@ -5,6 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Plus, Trash2, GripVertical, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/Button';
 import { createForm, sendForm, type QuestionType } from '../../api/forms';
 import api from '../../api/axios';
@@ -29,16 +30,17 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const QUESTION_TYPES: { value: QuestionType; label: string }[] = [
-  { value: 'SHORT_TEXT', label: 'Short Text' },
-  { value: 'LONG_TEXT', label: 'Long Text / Paragraph' },
-  { value: 'SINGLE_CHOICE', label: 'Single Choice' },
-  { value: 'MULTIPLE_CHOICE', label: 'Multiple Choice' },
-  { value: 'SCALE', label: 'Rating Scale' },
-  { value: 'YES_NO', label: 'Yes / No' },
+const QUESTION_TYPE_VALUES: QuestionType[] = [
+  'SHORT_TEXT',
+  'LONG_TEXT',
+  'SINGLE_CHOICE',
+  'MULTIPLE_CHOICE',
+  'SCALE',
+  'YES_NO',
 ];
 
 export function ComposeForm() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [expandedIdx, setExpandedIdx] = useState<number>(0);
   const [sendNow, setSendNow] = useState(true);
@@ -88,31 +90,31 @@ export function ComposeForm() {
     <div className="min-h-screen bg-stone-50 py-10">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-stone-900">New Client Form</h1>
-          <p className="text-stone-500 mt-1">Create a questionnaire or feedback form to send to a client.</p>
+          <h1 className="text-2xl font-bold text-stone-900">{t('forms.compose.title')}</h1>
+          <p className="text-stone-500 mt-1">{t('forms.compose.subtitle')}</p>
         </div>
 
         <form onSubmit={handleSubmit((v) => createMutation.mutate(v))} className="space-y-6">
           {/* Meta */}
           <div className="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Form Title</label>
-              <input {...register('title')} placeholder="e.g. Initial Intake Assessment" className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-              {errors.title && <p className="text-xs text-rose-600 mt-1">{errors.title.message}</p>}
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('forms.compose.formTitle')}</label>
+              <input {...register('title')} placeholder={t('forms.compose.titlePlaceholder')} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+              {errors.title && <p className="text-xs text-rose-600 mt-1">{t('forms.compose.titleRequired')}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Description <span className="text-stone-400 font-normal">(optional)</span></label>
-              <textarea {...register('description')} rows={2} placeholder="Brief instructions for the client" className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" />
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('forms.compose.description')}</label>
+              <textarea {...register('description')} rows={2} placeholder={t('forms.compose.descPlaceholder')} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">Send to Client</label>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('forms.compose.sendTo')}</label>
               <select {...register('recipientId')} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
-                <option value="">Select a client…</option>
+                <option value="">{t('forms.compose.selectClient')}</option>
                 {clients?.map((c) => (
                   <option key={c.id} value={c.id}>{c.firstName} {c.lastName} ({c.email})</option>
                 ))}
               </select>
-              {errors.recipientId && <p className="text-xs text-rose-600 mt-1">{errors.recipientId.message}</p>}
+              {errors.recipientId && <p className="text-xs text-rose-600 mt-1">{t('forms.compose.selectClientRequired')}</p>}
             </div>
           </div>
 
@@ -132,7 +134,7 @@ export function ComposeForm() {
                     <span className="flex-1 text-sm text-stone-700 font-medium truncate">
                       {watch(`questions.${idx}.label`) || `Question ${idx + 1}`}
                     </span>
-                    <span className="text-xs text-stone-400 shrink-0">{QUESTION_TYPES.find(t => t.value === qType)?.label}</span>
+                    <span className="text-xs text-stone-400 shrink-0">{t(`forms.compose.questionTypes.${qType}`)}</span>
                     {isExpanded ? <ChevronUp className="h-4 w-4 text-stone-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-stone-400 shrink-0" />}
                   </button>
 
@@ -140,22 +142,22 @@ export function ComposeForm() {
                     <div className="px-4 pb-4 space-y-3 border-t border-stone-100">
                       <div className="grid grid-cols-2 gap-3 pt-3">
                         <div className="col-span-2">
-                          <label className="block text-xs font-medium text-stone-600 mb-1">Question Text</label>
-                          <input {...register(`questions.${idx}.label`)} placeholder="Enter your question…" className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                          {errors.questions?.[idx]?.label && <p className="text-xs text-rose-600 mt-1">{errors.questions[idx]?.label?.message}</p>}
+                          <label className="block text-xs font-medium text-stone-600 mb-1">{t('forms.compose.questionText')}</label>
+                          <input {...register(`questions.${idx}.label`)} placeholder={t('forms.compose.questionPlaceholder')} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                          {errors.questions?.[idx]?.label && <p className="text-xs text-rose-600 mt-1">{t('forms.compose.questionRequired')}</p>}
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-stone-600 mb-1">Type</label>
+                          <label className="block text-xs font-medium text-stone-600 mb-1">{t('forms.compose.type')}</label>
                           <select {...register(`questions.${idx}.type`)} className="w-full border border-stone-300 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
-                            {QUESTION_TYPES.map((t) => (
-                              <option key={t.value} value={t.value}>{t.label}</option>
+                            {QUESTION_TYPE_VALUES.map((value) => (
+                              <option key={value} value={value}>{t(`forms.compose.questionTypes.${value}`)}</option>
                             ))}
                           </select>
                         </div>
                         <div className="flex items-end pb-1">
                           <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
                             <input type="checkbox" {...register(`questions.${idx}.required`)} className="rounded border-stone-300 text-teal-600" />
-                            Required
+                            {t('forms.compose.required')}
                           </label>
                         </div>
                       </div>
@@ -169,11 +171,11 @@ export function ComposeForm() {
                       {qType === 'SCALE' && (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs font-medium text-stone-600 mb-1">Min value</label>
+                            <label className="block text-xs font-medium text-stone-600 mb-1">{t('forms.compose.minValue')}</label>
                             <input type="number" {...register(`questions.${idx}.scaleMin`, { valueAsNumber: true })} defaultValue={1} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-stone-600 mb-1">Max value</label>
+                            <label className="block text-xs font-medium text-stone-600 mb-1">{t('forms.compose.maxValue')}</label>
                             <input type="number" {...register(`questions.${idx}.scaleMax`, { valueAsNumber: true })} defaultValue={10} className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
                           </div>
                         </div>
@@ -181,7 +183,7 @@ export function ComposeForm() {
 
                       <div className="flex justify-end pt-1">
                         <button type="button" onClick={() => remove(idx)} className="flex items-center gap-1.5 text-xs text-rose-500 hover:text-rose-700">
-                          <Trash2 className="h-3.5 w-3.5" /> Remove
+                          <Trash2 className="h-3.5 w-3.5" /> {t('forms.compose.remove')}
                         </button>
                       </div>
                     </div>
@@ -191,10 +193,10 @@ export function ComposeForm() {
             })}
 
             <button type="button" onClick={addQuestion} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-stone-300 rounded-xl text-sm text-stone-500 hover:border-teal-400 hover:text-teal-600 transition-colors">
-              <Plus className="h-4 w-4" /> Add Question
+              <Plus className="h-4 w-4" /> {t('forms.compose.addQuestion')}
             </button>
             {errors.questions && typeof errors.questions.message === 'string' && (
-              <p className="text-xs text-rose-600">{errors.questions.message}</p>
+              <p className="text-xs text-rose-600">{t('forms.compose.addQuestionFirst')}</p>
             )}
           </div>
 
@@ -202,16 +204,16 @@ export function ComposeForm() {
           <div className="bg-white rounded-2xl border border-stone-200 p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
             <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer flex-1">
               <input type="checkbox" checked={sendNow} onChange={(e) => setSendNow(e.target.checked)} className="rounded border-stone-300 text-teal-600" />
-              Send to client immediately after saving
+              {t('forms.compose.sendImmediately')}
             </label>
             <Button type="submit" loading={createMutation.isPending} className="shrink-0">
               <Send className="h-4 w-4" />
-              {sendNow ? 'Save & Send' : 'Save as Draft'}
+              {sendNow ? t('forms.compose.saveAndSend') : t('forms.compose.saveAsDraft')}
             </Button>
           </div>
 
           {createMutation.isError && (
-            <p className="text-sm text-rose-600">Failed to create form. Please try again.</p>
+            <p className="text-sm text-rose-600">{t('forms.compose.error')}</p>
           )}
         </form>
       </div>
@@ -220,6 +222,7 @@ export function ComposeForm() {
 }
 
 function OptionsEditor({ idx, watch, setValue }: { idx: number; watch: any; setValue: any }) {
+  const { t } = useTranslation();
   const options: string[] = watch(`questions.${idx}.options`) ?? [];
 
   const addOption = () => setValue(`questions.${idx}.options`, [...options, '']);
@@ -232,13 +235,13 @@ function OptionsEditor({ idx, watch, setValue }: { idx: number; watch: any; setV
 
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-medium text-stone-600">Answer Options</label>
+      <label className="block text-xs font-medium text-stone-600">{t('forms.compose.answerOptions')}</label>
       {options.map((opt, oi) => (
         <div key={oi} className="flex items-center gap-2">
           <input
             value={opt}
             onChange={(e) => updateOption(oi, e.target.value)}
-            placeholder={`Option ${oi + 1}`}
+            placeholder={t('forms.compose.optionPlaceholder', { n: oi + 1 })}
             className="flex-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
           <button type="button" onClick={() => removeOption(oi)} className="text-stone-400 hover:text-rose-500">
@@ -247,7 +250,7 @@ function OptionsEditor({ idx, watch, setValue }: { idx: number; watch: any; setV
         </div>
       ))}
       <button type="button" onClick={addOption} className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700">
-        <Plus className="h-3 w-3" /> Add option
+        <Plus className="h-3 w-3" /> {t('forms.compose.addOption')}
       </button>
     </div>
   );

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   MapPin, Clock, Video, Star, Shield, ChevronLeft, Calendar,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getTherapist } from '../api/therapists';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
@@ -15,6 +16,7 @@ import { formatPrice, getSpecialtyColor } from '../utils/formatters';
 import { useAuthStore } from '../store/authStore';
 
 export const TherapistProfile = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
@@ -32,9 +34,9 @@ export const TherapistProfile = () => {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-stone-500">Therapist not found.</p>
+          <p className="text-stone-500">{t('therapists.profile.notFound')}</p>
           <Button variant="ghost" className="mt-4" onClick={() => navigate('/therapists')}>
-            Back to directory
+            {t('therapists.profile.backToDirectory')}
           </Button>
         </div>
       </div>
@@ -52,6 +54,11 @@ export const TherapistProfile = () => {
     }
   };
 
+  const tabLabels: Record<'about' | 'reviews', string> = {
+    about: t('therapists.profile.about'),
+    reviews: t('therapists.profile.reviewsTab'),
+  };
+
   return (
     <div className="bg-stone-50 min-h-screen">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -60,7 +67,7 @@ export const TherapistProfile = () => {
           onClick={() => navigate(-1)}
           className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6"
         >
-          <ChevronLeft className="h-4 w-4" /> Back
+          <ChevronLeft className="h-4 w-4" /> {t('therapists.profile.back')}
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -87,16 +94,16 @@ export const TherapistProfile = () => {
                             <>
                               <StarRating rating={rating} />
                               <span className="text-sm text-stone-500">
-                                {rating.toFixed(1)} ({reviewCount ?? 0} reviews)
+                                {rating.toFixed(1)} ({reviewCount ?? 0} {t('therapists.profile.reviews')})
                               </span>
                             </>
                           )}
                         </div>
                       </div>
                       {isAccepting ? (
-                        <Badge variant="success">Accepting clients</Badge>
+                        <Badge variant="success">{t('therapists.profile.acceptingClients')}</Badge>
                       ) : (
-                        <Badge variant="warning">Not accepting</Badge>
+                        <Badge variant="warning">{t('therapists.profile.notAccepting')}</Badge>
                       )}
                     </div>
 
@@ -105,13 +112,13 @@ export const TherapistProfile = () => {
                         <MapPin className="h-4 w-4" /> {locationCity}
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" /> {sessionLength} min sessions
+                        <Clock className="h-4 w-4" /> {t('therapists.profile.minSession', { n: sessionLength })}
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <Video className="h-4 w-4" /> Video available
+                        <Video className="h-4 w-4" /> {t('therapists.profile.videoAvailable')}
                       </span>
                       <span className="flex items-center gap-1.5">
-                        <Shield className="h-4 w-4 text-teal-600" /> Verified therapist
+                        <Shield className="h-4 w-4 text-teal-600" /> {t('therapists.profile.verified')}
                       </span>
                     </div>
 
@@ -143,7 +150,7 @@ export const TherapistProfile = () => {
                         : 'text-stone-500 hover:text-stone-700'
                     }`}
                   >
-                    {tab}
+                    {tabLabels[tab]}
                   </button>
                 ))}
               </nav>
@@ -152,13 +159,13 @@ export const TherapistProfile = () => {
             {activeTab === 'about' && (
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="font-semibold text-stone-900 mb-3">About</h2>
+                  <h2 className="font-semibold text-stone-900 mb-3">{t('therapists.profile.aboutSection')}</h2>
                   <p className="text-stone-600 leading-relaxed text-sm">{bio}</p>
 
                   {refundPolicy && (
                     <div className="mt-6 p-4 rounded-lg bg-teal-50 border border-teal-100">
                       <h3 className="text-sm font-semibold text-teal-800 mb-1">
-                        Cancellation Policy
+                        {t('therapists.profile.cancellationPolicy')}
                       </h3>
                       <p className="text-sm text-teal-700">{refundPolicy.policyDescription}</p>
                     </div>
@@ -177,13 +184,13 @@ export const TherapistProfile = () => {
                       </span>
                       <div>
                         <StarRating rating={rating ?? 0} />
-                        <p className="text-sm text-stone-500 mt-0.5">{reviewCount} reviews</p>
+                        <p className="text-sm text-stone-500 mt-0.5">{reviewCount} {t('therapists.profile.reviews')}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-10 text-stone-400">
                       <Star className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">No reviews yet.</p>
+                      <p className="text-sm">{t('therapists.profile.noReviews')}</p>
                     </div>
                   )}
                 </CardContent>
@@ -199,7 +206,7 @@ export const TherapistProfile = () => {
                   <span className="text-3xl font-bold text-stone-900">
                     {formatPrice(sessionPrice)}
                   </span>
-                  <span className="text-stone-500 text-sm"> / session</span>
+                  <span className="text-stone-500 text-sm"> {t('therapists.profile.perSession')}</span>
                 </div>
 
                 <Button
@@ -209,27 +216,27 @@ export const TherapistProfile = () => {
                   onClick={handleBook}
                 >
                   <Calendar className="h-4 w-4" />
-                  {isAccepting ? 'Book a Session' : 'Not Available'}
+                  {isAccepting ? t('therapists.profile.bookSession') : t('therapists.profile.notAvailable')}
                 </Button>
 
                 {!isAuthenticated && isAccepting && (
                   <p className="text-xs text-center text-stone-400 mt-3">
-                    You'll be asked to sign in before booking.
+                    {t('therapists.profile.signInToBook')}
                   </p>
                 )}
 
                 <div className="mt-5 space-y-2 text-sm text-stone-500">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-teal-600 shrink-0" />
-                    {sessionLength} minute session
+                    {t('therapists.profile.minuteSession', { n: sessionLength })}
                   </div>
                   <div className="flex items-center gap-2">
                     <Video className="h-4 w-4 text-teal-600 shrink-0" />
-                    Video or in-person
+                    {t('therapists.profile.videoOrInPerson')}
                   </div>
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-teal-600 shrink-0" />
-                    Secure Stripe payment
+                    {t('therapists.profile.securePayment')}
                   </div>
                 </div>
               </CardContent>

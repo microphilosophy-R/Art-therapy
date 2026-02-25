@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Users, DollarSign, Calendar, TrendingUp, Shield,
   RotateCcw, ChevronLeft, ChevronRight, XCircle,
@@ -18,13 +19,6 @@ import { formatCurrency, formatDateTime, formatRelative } from '../../utils/form
 import type { UserRole, AppointmentStatus } from '../../types';
 
 type Tab = 'overview' | 'users' | 'appointments' | 'revenue';
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'users', label: 'Users' },
-  { id: 'appointments', label: 'Appointments' },
-  { id: 'revenue', label: 'Revenue' },
-];
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: 'CLIENT', label: 'Client' },
@@ -48,6 +42,7 @@ const statusBadgeVariant = (status: AppointmentStatus) => {
 // ─── Overview Tab ────────────────────────────────────────────────────────────
 
 const OverviewTab = () => {
+  const { t } = useTranslation();
   const { data: platformStats } = useQuery({
     queryKey: ['admin-platform-stats'],
     queryFn: getAdminPlatformStats,
@@ -58,12 +53,12 @@ const OverviewTab = () => {
   });
 
   const cards = [
-    { icon: Users,      label: 'Total users',        value: platformStats?.userCount ?? '—',        color: 'text-purple-600 bg-purple-50' },
-    { icon: Shield,     label: 'Therapists',          value: platformStats?.therapistCount ?? '—',   color: 'text-teal-600 bg-teal-50' },
-    { icon: Calendar,   label: 'Appointments',        value: platformStats?.appointmentCount ?? '—', color: 'text-blue-600 bg-blue-50' },
-    { icon: DollarSign, label: 'Gross revenue',       value: revenueStats ? formatCurrency(revenueStats.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
-    { icon: TrendingUp, label: 'Platform fees',       value: revenueStats ? formatCurrency(revenueStats.totalPlatformFees) : '—', color: 'text-amber-600 bg-amber-50' },
-    { icon: RotateCcw,  label: 'Total refunds',       value: revenueStats ? formatCurrency(revenueStats.totalRefunds) : '—',    color: 'text-rose-600 bg-rose-50' },
+    { icon: Users,      label: t('dashboard.admin.totalUsers'),        value: platformStats?.userCount ?? '—',        color: 'text-purple-600 bg-purple-50' },
+    { icon: Shield,     label: t('dashboard.admin.therapists'),         value: platformStats?.therapistCount ?? '—',   color: 'text-teal-600 bg-teal-50' },
+    { icon: Calendar,   label: t('dashboard.admin.appointmentsCount'),  value: platformStats?.appointmentCount ?? '—', color: 'text-blue-600 bg-blue-50' },
+    { icon: DollarSign, label: t('dashboard.admin.grossRevenue'),       value: revenueStats ? formatCurrency(revenueStats.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
+    { icon: TrendingUp, label: t('dashboard.admin.platformFees'),       value: revenueStats ? formatCurrency(revenueStats.totalPlatformFees) : '—', color: 'text-amber-600 bg-amber-50' },
+    { icon: RotateCcw,  label: t('dashboard.admin.totalRefunds'),       value: revenueStats ? formatCurrency(revenueStats.totalRefunds) : '—',    color: 'text-rose-600 bg-rose-50' },
   ];
 
   return (
@@ -88,6 +83,7 @@ const OverviewTab = () => {
 // ─── Users Tab ────────────────────────────────────────────────────────────────
 
 const UsersTab = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [page, setPage] = useState(1);
 
@@ -101,11 +97,19 @@ const UsersTab = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-users'] }),
   });
 
+  const tableHeaders = [
+    t('dashboard.admin.tableHeaders.name'),
+    t('dashboard.admin.tableHeaders.email'),
+    t('dashboard.admin.tableHeaders.role'),
+    t('dashboard.admin.tableHeaders.joined'),
+    t('dashboard.admin.tableHeaders.changeRole'),
+  ];
+
   return (
     <Card>
       <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-        <h2 className="font-semibold text-stone-900">Users</h2>
-        <span className="text-xs text-stone-400">{data?.total ?? 0} total</span>
+        <h2 className="font-semibold text-stone-900">{t('dashboard.admin.users')}</h2>
+        <span className="text-xs text-stone-400">{t('dashboard.admin.usersTotal', { total: data?.total ?? 0 })}</span>
       </div>
 
       {isLoading ? (
@@ -116,7 +120,7 @@ const UsersTab = () => {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-100">
                 <tr>
-                  {['Name', 'Email', 'Role', 'Joined', 'Change Role'].map((h) => (
+                  {tableHeaders.map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
                       {h}
                     </th>
@@ -136,7 +140,7 @@ const UsersTab = () => {
                     </td>
                     <td className="px-6 py-3 text-stone-500">{user.email}</td>
                     <td className="px-6 py-3">
-                      <Badge variant={roleBadgeVariant(user.role)}>{user.role}</Badge>
+                      <Badge variant={roleBadgeVariant(user.role)}>{t(`common.role.${user.role}`)}</Badge>
                     </td>
                     <td className="px-6 py-3 text-stone-400 text-xs">
                       {formatRelative(user.createdAt)}
@@ -158,7 +162,7 @@ const UsersTab = () => {
                 ))}
                 {!data?.data?.length && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-10 text-center text-stone-400">No users found.</td>
+                    <td colSpan={5} className="px-6 py-10 text-center text-stone-400">{t('dashboard.admin.noUsers')}</td>
                   </tr>
                 )}
               </tbody>
@@ -169,7 +173,7 @@ const UsersTab = () => {
           {(data?.totalPages ?? 1) > 1 && (
             <div className="px-6 py-3 border-t border-stone-100 flex items-center justify-between">
               <span className="text-xs text-stone-500">
-                Page {data?.page} of {data?.totalPages}
+                {t('dashboard.admin.page', { page: data?.page, total: data?.totalPages })}
               </span>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
@@ -189,18 +193,19 @@ const UsersTab = () => {
 
 // ─── Appointments Tab ─────────────────────────────────────────────────────────
 
-const STATUS_FILTERS: { label: string; value: AppointmentStatus | '' }[] = [
-  { label: 'All', value: '' },
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Confirmed', value: 'CONFIRMED' },
-  { label: 'Cancelled', value: 'CANCELLED' },
-  { label: 'Completed', value: 'COMPLETED' },
-];
-
 const AppointmentsTab = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | ''>('');
   const [page, setPage] = useState(1);
+
+  const STATUS_FILTERS: { label: string; value: AppointmentStatus | '' }[] = [
+    { label: t('dashboard.admin.filterAll'), value: '' },
+    { label: t('dashboard.admin.filterPending'), value: 'PENDING' },
+    { label: t('dashboard.admin.filterConfirmed'), value: 'CONFIRMED' },
+    { label: t('dashboard.admin.filterCancelled'), value: 'CANCELLED' },
+    { label: t('dashboard.admin.filterCompleted'), value: 'COMPLETED' },
+  ];
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-appointments', statusFilter, page],
@@ -216,6 +221,15 @@ const AppointmentsTab = () => {
     mutationFn: (id: string) => updateAppointmentStatus(id, 'CANCELLED'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-appointments'] }),
   });
+
+  const tableHeaders = [
+    t('dashboard.admin.tableHeaders.name'),
+    t('dashboard.admin.tableHeaders.name'),
+    t('dashboard.admin.tableHeaders.dateTime'),
+    t('dashboard.admin.tableHeaders.format'),
+    t('dashboard.admin.tableHeaders.status'),
+    t('dashboard.admin.tableHeaders.actions'),
+  ];
 
   return (
     <Card>
@@ -246,7 +260,7 @@ const AppointmentsTab = () => {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-100">
                 <tr>
-                  {['Client', 'Therapist', 'Date & Time', 'Format', 'Status', 'Actions'].map((h) => (
+                  {['Client', 'Therapist', t('dashboard.admin.tableHeaders.dateTime'), t('dashboard.admin.tableHeaders.format'), t('dashboard.admin.tableHeaders.status'), t('dashboard.admin.tableHeaders.actions')].map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
                       {h}
                     </th>
@@ -274,7 +288,7 @@ const AppointmentsTab = () => {
                     </td>
                     <td className="px-6 py-3">
                       <Badge variant={statusBadgeVariant(appt.status)}>
-                        {appt.status}
+                        {t(`common.status.${appt.status}`)}
                       </Badge>
                     </td>
                     <td className="px-6 py-3">
@@ -286,7 +300,7 @@ const AppointmentsTab = () => {
                           onClick={() => cancelMutation.mutate(appt.id)}
                         >
                           <XCircle className="h-3.5 w-3.5" />
-                          Cancel
+                          {t('dashboard.admin.cancelBtn')}
                         </Button>
                       )}
                     </td>
@@ -295,7 +309,7 @@ const AppointmentsTab = () => {
                 {!data?.data?.length && (
                   <tr>
                     <td colSpan={6} className="px-6 py-10 text-center text-stone-400">
-                      No appointments found.
+                      {t('dashboard.admin.noAppointments')}
                     </td>
                   </tr>
                 )}
@@ -306,7 +320,7 @@ const AppointmentsTab = () => {
           {(data?.totalPages ?? 1) > 1 && (
             <div className="px-6 py-3 border-t border-stone-100 flex items-center justify-between">
               <span className="text-xs text-stone-500">
-                Page {data?.page} of {data?.totalPages}
+                {t('dashboard.admin.page', { page: data?.page, total: data?.totalPages })}
               </span>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
@@ -327,6 +341,7 @@ const AppointmentsTab = () => {
 // ─── Revenue Tab ──────────────────────────────────────────────────────────────
 
 const RevenueTab = () => {
+  const { t } = useTranslation();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
@@ -336,10 +351,10 @@ const RevenueTab = () => {
   });
 
   const revenueCards = [
-    { label: 'Gross Revenue',       value: data ? formatCurrency(data.totalGrossRevenue) : '—',    color: 'text-green-600 bg-green-50' },
-    { label: 'Platform Fees',        value: data ? formatCurrency(data.totalPlatformFees) : '—',    color: 'text-teal-600 bg-teal-50' },
-    { label: 'Therapist Payouts',    value: data ? formatCurrency(data.totalTherapistPayouts) : '—', color: 'text-blue-600 bg-blue-50' },
-    { label: 'Total Refunds',        value: data ? formatCurrency(data.totalRefunds) : '—',         color: 'text-rose-600 bg-rose-50' },
+    { label: t('dashboard.admin.grossRevenue'),       value: data ? formatCurrency(data.totalGrossRevenue) : '—',    color: 'text-green-600 bg-green-50' },
+    { label: t('dashboard.admin.platformFeesCard'),   value: data ? formatCurrency(data.totalPlatformFees) : '—',    color: 'text-teal-600 bg-teal-50' },
+    { label: t('dashboard.admin.therapistPayouts'),   value: data ? formatCurrency(data.totalTherapistPayouts) : '—', color: 'text-blue-600 bg-blue-50' },
+    { label: t('dashboard.admin.totalRefunds'),       value: data ? formatCurrency(data.totalRefunds) : '—',         color: 'text-rose-600 bg-rose-50' },
   ];
 
   return (
@@ -347,10 +362,10 @@ const RevenueTab = () => {
       {/* Date filter */}
       <Card>
         <CardContent className="p-5">
-          <p className="text-sm font-medium text-stone-700 mb-3">Filter by date range</p>
+          <p className="text-sm font-medium text-stone-700 mb-3">{t('dashboard.admin.revenueFilter')}</p>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="text-xs text-stone-500 w-8">From</label>
+              <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.from')}</label>
               <input
                 type="date"
                 value={from}
@@ -359,7 +374,7 @@ const RevenueTab = () => {
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-stone-500 w-8">To</label>
+              <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.to')}</label>
               <input
                 type="date"
                 value={to}
@@ -375,8 +390,8 @@ const RevenueTab = () => {
           </div>
           <p className="text-xs text-stone-400 mt-2">
             {from || to
-              ? `Period: ${from || '…'} → ${to || '…'}`
-              : 'Showing all-time data'}
+              ? t('dashboard.admin.period', { from: from || '…', to: to || '…' })
+              : t('dashboard.admin.allTime')}
           </p>
         </CardContent>
       </Card>
@@ -406,7 +421,7 @@ const RevenueTab = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-stone-900">{data?.paymentCount ?? '—'}</p>
-                  <p className="text-xs text-stone-500">Paid bookings</p>
+                  <p className="text-xs text-stone-500">{t('dashboard.admin.paidBookings')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -417,7 +432,7 @@ const RevenueTab = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-stone-900">{data?.refundCount ?? '—'}</p>
-                  <p className="text-xs text-stone-500">Refunds issued</p>
+                  <p className="text-xs text-stone-500">{t('dashboard.admin.refundsIssued')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -431,7 +446,15 @@ const RevenueTab = () => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const AdminDashboard = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+
+  const TABS: { id: Tab; label: string }[] = [
+    { id: 'overview', label: t('dashboard.admin.overview') },
+    { id: 'users', label: t('dashboard.admin.users') },
+    { id: 'appointments', label: t('dashboard.admin.appointments') },
+    { id: 'revenue', label: t('dashboard.admin.revenue') },
+  ];
 
   return (
     <div className="bg-stone-50 min-h-screen">
@@ -440,9 +463,9 @@ export const AdminDashboard = () => {
         <div className="mb-7">
           <div className="flex items-center gap-2 mb-1">
             <Shield className="h-5 w-5 text-teal-600" />
-            <h1 className="text-2xl font-bold text-stone-900">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold text-stone-900">{t('dashboard.admin.title')}</h1>
           </div>
-          <p className="text-stone-500 text-sm">Platform overview and management.</p>
+          <p className="text-stone-500 text-sm">{t('dashboard.admin.subtitle')}</p>
         </div>
 
         {/* Tab bar */}

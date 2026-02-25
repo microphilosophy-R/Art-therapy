@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, DollarSign, Users, ExternalLink, AlertCircle, FileText, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import dayGridPlugin from '@fullcalendar/daygrid';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
 import { getConnectStatus, startConnectOnboarding } from '../../api/payments';
 import { listSentForms, type ClientForm } from '../../api/forms';
@@ -10,8 +13,16 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PageLoader } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
+import type { AppointmentStatus } from '../../types';
 
-type Tab = 'pending' | 'upcoming' | 'past' | 'forms';
+type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar';
+
+const STATUS_COLORS: Record<AppointmentStatus, string> = {
+  PENDING: '#fbbf24',
+  CONFIRMED: '#14b8a6',
+  CANCELLED: '#f87171',
+  COMPLETED: '#94a3b8',
+};
 
 export const TherapistDashboard = () => {
   const { user } = useAuthStore();
@@ -29,6 +40,7 @@ export const TherapistDashboard = () => {
             ? ['CONFIRMED']
             : ['COMPLETED', 'CANCELLED'],
       }),
+    enabled: tab !== 'calendar',
   });
 
   const { data: connectStatus, isLoading: loadingConnect } = useQuery({
@@ -53,7 +65,25 @@ export const TherapistDashboard = () => {
     queryFn: () => listSentForms(1),
   });
 
+  const { data: calendarData } = useQuery({
+    queryKey: ['appointments', 'therapist', 'calendar-all'],
+    queryFn: () => getAppointments({ limit: 100 }),
+    enabled: tab === 'calendar',
+  });
+
   const appointments = data?.data ?? [];
+
+  const calendarEvents = (calendarData?.data ?? []).map((appt) => ({
+    id: appt.id,
+    title: appt.client
+      ? `${appt.client.firstName} ${appt.client.lastName}`
+      : 'Client',
+    start: appt.startTime,
+    end: appt.endTime,
+    backgroundColor: STATUS_COLORS[appt.status],
+    borderColor: STATUS_COLORS[appt.status],
+    extendedProps: { status: appt.status, medium: appt.medium },
+  }));
 
   return (
     <div className="bg-stone-50 min-h-screen">
@@ -111,8 +141,8 @@ export const TherapistDashboard = () => {
         {/* Appointments */}
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
-            <div className="flex gap-1">
-              {(['pending', 'upcoming', 'past', 'forms'] as Tab[]).map((t) => (
+            <div className="flex gap-1 flex-wrap">
+              {(['pending', 'upcoming', 'past', 'forms', 'calendar'] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -122,7 +152,7 @@ export const TherapistDashboard = () => {
                       : 'text-stone-500 hover:bg-stone-50'
                   }`}
                 >
-                  {t === 'forms' ? 'Forms' : t}
+                  {t === 'forms' ? 'Forms' : t === 'calendar' ? 'Calendar' : t}
                   {t === 'pending' && data?.total ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
                       {data.total}
@@ -138,8 +168,39 @@ export const TherapistDashboard = () => {
             </div>
           </div>
 
-          <div className="p-6">
-            {tab === 'forms' ? (
+          <div className={tab === 'calendar' ? 'p-4' : 'p-6'}>
+            {tab === 'calendar' ? (
+              <div>
+                <div className="flex items-center gap-3 mb-4 flex-wrap">
+                  {Object.entries(STATUS_COLORS).map(([status, color]) => (
+                    <span key={status} className="flex items-center gap-1.5 text-xs text-stone-500">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                      {status.charAt(0) + status.slice(1).toLowerCase()}
+                    </span>
+                  ))}
+                </div>
+                <FullCalendar
+                  plugins={[timeGridPlugin, dayGridPlugin]}
+                  initialView="timeGridWeek"
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek',
+                  }}
+                  events={calendarEvents}
+                  height="auto"
+                  nowIndicator
+                  slotMinTime="07:00:00"
+                  slotMaxTime="21:00:00"
+                  eventContent={(arg) => (
+                    <div className="overflow-hidden px-1 text-xs leading-tight">
+                      <div className="font-semibold truncate">{arg.event.title}</div>
+                      <div className="opacity-80">{arg.event.extendedProps.medium === 'VIDEO' ? 'Video' : 'In person'}</div>
+                    </div>
+                  )}
+                />
+              </div>
+            ) : tab === 'forms' ? (
               <div>
                 <div className="flex justify-end mb-4">
                   <Link to="/forms/new">

@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { ChevronLeft, Calendar, Clock, Video, MapPin, Info } from 'lucide-react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { getTherapist, getAvailableSlots } from '../api/therapists';
 import { createAppointment } from '../api/appointments';
 import { createPaymentIntent } from '../api/payments';
@@ -28,6 +31,9 @@ export const BookAppointment = () => {
 
   const [step, setStep] = useState<Step>(1);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().slice(0, 10)
+  );
   const [medium, setMedium] = useState<'VIDEO' | 'IN_PERSON'>('VIDEO');
   const [notes, setNotes] = useState('');
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
@@ -40,8 +46,8 @@ export const BookAppointment = () => {
   });
 
   const { data: slotsData, isLoading: loadingSlots } = useQuery({
-    queryKey: ['slots', therapistId],
-    queryFn: () => getAvailableSlots(therapistId!, new Date().toISOString().slice(0, 10)),
+    queryKey: ['slots', therapistId, selectedDate],
+    queryFn: () => getAvailableSlots(therapistId!, selectedDate),
     enabled: !!therapistId,
   });
 
@@ -69,14 +75,6 @@ export const BookAppointment = () => {
   if (!therapist) return null;
 
   const slots: TimeSlot[] = slotsData ?? [];
-
-  // Group slots by date
-  const slotsByDate = slots.reduce<Record<string, TimeSlot[]>>((acc, s) => {
-    const date = new Date(s.startTime).toDateString();
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(s);
-    return acc;
-  }, {});
 
   const handlePaymentSuccess = () => {
     navigate(`/booking/confirmation?appointmentId=${appointmentId}&redirect_status=succeeded`);
@@ -136,39 +134,63 @@ export const BookAppointment = () => {
           <Card>
             <CardContent className="p-6">
               <h2 className="font-semibold text-stone-900 mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-teal-600" /> Choose a time slot
+                <Calendar className="h-5 w-5 text-teal-600" /> Choose a date & time
               </h2>
-              {loadingSlots ? (
-                <div className="py-10 text-center text-stone-400">Loading availability...</div>
-              ) : Object.keys(slotsByDate).length === 0 ? (
-                <div className="py-10 text-center text-stone-400">
-                  <Calendar className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p>No available slots at this time.</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {Object.entries(slotsByDate).map(([date, daySlots]) => (
-                    <div key={date}>
-                      <p className="text-sm font-medium text-stone-700 mb-2">{date}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {daySlots.map((slot) => (
-                          <button
-                            key={slot.startTime}
-                            onClick={() => setSelectedSlot(slot)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                              selectedSlot?.startTime === slot.startTime
-                                ? 'bg-teal-600 text-white border-teal-600'
-                                : 'border-stone-300 text-stone-700 hover:border-teal-400 bg-white'
-                            }`}
-                          >
-                            {formatTime(slot.startTime)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+
+              <div className="mb-5">
+                <FullCalendar
+                  plugins={[dayGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
+                  height="auto"
+                  dateClick={(info) => {
+                    setSelectedDate(info.dateStr);
+                    setSelectedSlot(null);
+                  }}
+                  events={[{
+                    start: selectedDate,
+                    allDay: true,
+                    display: 'background',
+                    color: '#99f6e4',
+                  }]}
+                  validRange={{ start: new Date().toISOString().slice(0, 10) }}
+                />
+              </div>
+
+              <div className="border-t border-stone-100 pt-4">
+                <p className="text-sm font-semibold text-stone-700 mb-3">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
+                {loadingSlots ? (
+                  <div className="py-6 text-center text-stone-400 text-sm">Loading slots…</div>
+                ) : slots.length === 0 ? (
+                  <div className="py-6 text-center text-stone-400 text-sm">
+                    No available slots on this day. Try another date.
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {slots.map((slot) => (
+                      <button
+                        key={slot.startTime}
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          selectedSlot?.startTime === slot.startTime
+                            ? 'bg-teal-600 text-white border-teal-600'
+                            : 'border-stone-300 text-stone-700 hover:border-teal-400 bg-white'
+                        }`}
+                      >
+                        {formatTime(slot.startTime)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="mt-6 flex justify-end">
                 <Button disabled={!selectedSlot} onClick={() => setStep(2)}>
                   Continue

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, DollarSign, Users, ExternalLink, AlertCircle } from 'lucide-react';
+import { Calendar, DollarSign, Users, ExternalLink, AlertCircle, FileText, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
 import { getConnectStatus, startConnectOnboarding } from '../../api/payments';
+import { listSentForms, type ClientForm } from '../../api/forms';
 import { AppointmentCard } from '../../components/appointments/AppointmentCard';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PageLoader } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 
-type Tab = 'pending' | 'upcoming' | 'past';
+type Tab = 'pending' | 'upcoming' | 'past' | 'forms';
 
 export const TherapistDashboard = () => {
   const { user } = useAuthStore();
@@ -44,6 +46,11 @@ export const TherapistDashboard = () => {
   const confirmMutation = useMutation({
     mutationFn: (id: string) => updateAppointmentStatus(id, 'CONFIRMED'),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
+  });
+
+  const { data: formsData } = useQuery({
+    queryKey: ['sent-forms'],
+    queryFn: () => listSentForms(1),
   });
 
   const appointments = data?.data ?? [];
@@ -105,7 +112,7 @@ export const TherapistDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
             <div className="flex gap-1">
-              {(['pending', 'upcoming', 'past'] as Tab[]).map((t) => (
+              {(['pending', 'upcoming', 'past', 'forms'] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -115,10 +122,15 @@ export const TherapistDashboard = () => {
                       : 'text-stone-500 hover:bg-stone-50'
                   }`}
                 >
-                  {t}
+                  {t === 'forms' ? 'Forms' : t}
                   {t === 'pending' && data?.total ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
                       {data.total}
+                    </Badge>
+                  ) : null}
+                  {t === 'forms' && (formsData?.total ?? 0) > 0 ? (
+                    <Badge variant="info" className="ml-1.5 text-xs">
+                      {formsData!.total}
                     </Badge>
                   ) : null}
                 </button>
@@ -127,7 +139,38 @@ export const TherapistDashboard = () => {
           </div>
 
           <div className="p-6">
-            {isLoading ? (
+            {tab === 'forms' ? (
+              <div>
+                <div className="flex justify-end mb-4">
+                  <Link to="/forms/new">
+                    <Button size="sm"><Plus className="h-4 w-4" /> New Form</Button>
+                  </Link>
+                </div>
+                {(formsData?.data ?? []).length === 0 ? (
+                  <div className="text-center py-12 text-stone-400">
+                    <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                    <p>No forms sent yet.</p>
+                    <Link to="/forms/new" className="mt-3 inline-block text-sm text-teal-600 hover:underline">Create your first form</Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {(formsData?.data ?? []).map((form: ClientForm) => (
+                      <div key={form.id} className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 hover:bg-stone-50">
+                        <div>
+                          <p className="text-sm font-medium text-stone-800">{form.title}</p>
+                          <p className="text-xs text-stone-400 mt-0.5">
+                            To: {form.recipient?.firstName} {form.recipient?.lastName} &bull; {form.status}
+                          </p>
+                        </div>
+                        <Link to={`/forms/${form.id}/responses`}>
+                          <Button size="sm" variant="outline">View</Button>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : isLoading ? (
               <PageLoader />
             ) : appointments.length === 0 ? (
               <div className="text-center py-12 text-stone-400">

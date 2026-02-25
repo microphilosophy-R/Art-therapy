@@ -10,6 +10,8 @@ import { therapistRouter } from './routes/therapist.routes';
 import { appointmentRouter } from './routes/appointment.routes';
 import { paymentRouter } from './routes/payment.routes';
 import { adminRouter } from './routes/admin.routes';
+import { profileRouter } from './routes/profile.routes';
+import { formRouter } from './routes/form.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();
@@ -43,6 +45,8 @@ api.use('/therapists', therapistRouter);
 api.use('/appointments', appointmentRouter);
 api.use('/payments', paymentRouter);
 api.use('/admin', adminRouter);
+api.use('/profile', profileRouter);
+api.use('/forms', formRouter);
 
 app.use('/api/v1', api);
 

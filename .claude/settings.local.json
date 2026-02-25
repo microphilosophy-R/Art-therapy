@@ -27,7 +27,8 @@
       "Bash(docker exec:*)",
       "Bash(npm run db:migrate:*)",
       "Bash(npx prisma db push:*)",
-      "Bash(npm run db:seed:*)"
+      "Bash(npm run db:seed:*)",
+      "Bash(npx prisma generate)"
     ]
   }
 }

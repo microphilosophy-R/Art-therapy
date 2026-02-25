@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Clock, Heart } from 'lucide-react';
+import { Calendar, Clock, Heart, FileText, Bell } from 'lucide-react';
 import { getAppointments, cancelAppointment } from '../../api/appointments';
+import { listReceivedForms, type ClientForm } from '../../api/forms';
 import { AppointmentCard } from '../../components/appointments/AppointmentCard';
 import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
 import { PageLoader } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 import { Link } from 'react-router-dom';
 
-type Tab = 'upcoming' | 'past';
+type Tab = 'upcoming' | 'past' | 'forms';
 
 export const ClientDashboard = () => {
   const { user } = useAuthStore();
@@ -21,6 +23,12 @@ export const ClientDashboard = () => {
       getAppointments({
         status: tab === 'upcoming' ? ['PENDING', 'CONFIRMED'] : ['COMPLETED', 'CANCELLED'],
       }),
+    enabled: tab !== 'forms',
+  });
+
+  const { data: formsData } = useQuery({
+    queryKey: ['received-forms'],
+    queryFn: () => listReceivedForms(1),
   });
 
   const cancelMutation = useMutation({
@@ -28,6 +36,7 @@ export const ClientDashboard = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
   });
 
+  const pendingForms = formsData?.data.filter((f: ClientForm) => f.status === 'SENT') ?? [];
   const appointments = data?.data ?? [];
 
   return (
@@ -40,6 +49,17 @@ export const ClientDashboard = () => {
           </h1>
           <p className="text-stone-500 mt-1">Manage your therapy sessions here.</p>
         </div>
+
+        {/* Forms notification banner */}
+        {pendingForms.length > 0 && tab !== 'forms' && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl bg-teal-50 border border-teal-200 px-4 py-3">
+            <Bell className="h-5 w-5 text-teal-600 shrink-0" />
+            <p className="text-sm text-teal-800 flex-1">
+              You have <strong>{pendingForms.length}</strong> form{pendingForms.length > 1 ? 's' : ''} waiting for your response.
+            </p>
+            <button onClick={() => setTab('forms')} className="text-sm font-medium text-teal-700 hover:underline shrink-0">View forms</button>
+          </div>
+        )}
 
         {/* Quick stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -75,11 +95,11 @@ export const ClientDashboard = () => {
           ))}
         </div>
 
-        {/* Appointments */}
+        {/* Tabs + content */}
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
             <div className="flex gap-1">
-              {(['upcoming', 'past'] as Tab[]).map((t) => (
+              {(['upcoming', 'past', 'forms'] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
@@ -89,17 +109,54 @@ export const ClientDashboard = () => {
                       : 'text-stone-500 hover:bg-stone-50'
                   }`}
                 >
-                  {t}
+                  {t === 'forms' ? 'My Forms' : t}
+                  {t === 'forms' && pendingForms.length > 0 && (
+                    <Badge variant="warning" className="ml-1.5 text-xs">{pendingForms.length}</Badge>
+                  )}
                 </button>
               ))}
             </div>
-            <Link to="/therapists">
-              <Button size="sm">Book session</Button>
-            </Link>
+            {tab !== 'forms' && (
+              <Link to="/therapists">
+                <Button size="sm">Book session</Button>
+              </Link>
+            )}
           </div>
 
           <div className="p-6">
-            {isLoading ? (
+            {tab === 'forms' ? (
+              (formsData?.data ?? []).length === 0 ? (
+                <div className="text-center py-12 text-stone-400">
+                  <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p>No forms received yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(formsData?.data ?? []).map((form: ClientForm) => (
+                    <div key={form.id} className="flex items-center justify-between rounded-xl border border-stone-200 px-4 py-3 hover:bg-stone-50">
+                      <div>
+                        <p className="text-sm font-medium text-stone-800">{form.title}</p>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          From: {form.sender?.firstName} {form.sender?.lastName} &bull;{' '}
+                          {form.status === 'SENT' ? (
+                            <span className="text-amber-600 font-medium">Awaiting your response</span>
+                          ) : (
+                            <span className="text-teal-600">Submitted</span>
+                          )}
+                        </p>
+                      </div>
+                      {form.status === 'SENT' ? (
+                        <Link to={`/forms/${form.id}`}>
+                          <Button size="sm">Fill out</Button>
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-stone-400">Completed</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : isLoading ? (
               <PageLoader />
             ) : appointments.length === 0 ? (
               <div className="text-center py-12">

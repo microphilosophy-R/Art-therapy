@@ -42,21 +42,43 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum FormStatus {
+  DRAFT
+  SENT
+  SUBMITTED
+  ARCHIVED
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  SCALE
+  YES_NO
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(CLIENT)
-  firstName    String
-  lastName     String
-  phone        String?
-  avatarUrl    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
+  role             Role      @default(CLIENT)
+  firstName        String
+  lastName         String
+  nickname         String?
+  age              Int?
+  gender           String?
+  phone            String?
+  avatarUrl        String?
+  privacyConsentAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   therapistProfile     TherapistProfile?
   appointmentsAsClient Appointment[]     @relation("ClientAppointments")
   reviews              Review[]
+  receivedForms        ClientForm[]      @relation("FormRecipient")
+  sentForms            ClientForm[]      @relation("FormSender")
 }
 
 model TherapistProfile {
@@ -175,4 +197,60 @@ model WebhookEvent {
   processedAt DateTime?
   rawPayload  Json
   createdAt   DateTime  @default(now())
+}
+
+// ─── Client Form System ────────────────────────────────────────────────────────
+
+model ClientForm {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      FormStatus @default(DRAFT)
+
+  senderId    String
+  sender      User       @relation("FormSender", fields: [senderId], references: [id])
+  recipientId String
+  recipient   User       @relation("FormRecipient", fields: [recipientId], references: [id])
+
+  sentAt      DateTime?
+  submittedAt DateTime?
+
+  questions   FormQuestion[]
+  responses   FormResponse[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FormQuestion {
+  id       String       @id @default(cuid())
+  formId   String
+  form     ClientForm   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  order    Int
+  type     QuestionType
+  label    String
+  required Boolean      @default(false)
+  options  String[]
+  scaleMin Int?
+  scaleMax Int?
+
+  answers  FormAnswer[]
+}
+
+model FormResponse {
+  id          String       @id @default(cuid())
+  formId      String
+  form        ClientForm   @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submittedAt DateTime     @default(now())
+
+  answers     FormAnswer[]
+}
+
+model FormAnswer {
+  id         String       @id @default(cuid())
+  responseId String
+  response   FormResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId String
+  question   FormQuestion @relation(fields: [questionId], references: [id])
+  value      String
 }

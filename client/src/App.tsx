@@ -11,6 +11,11 @@ import { Register } from './pages/auth/Register';
 import { ClientDashboard } from './pages/Dashboard/ClientDashboard';
 import { TherapistDashboard } from './pages/Dashboard/TherapistDashboard';
 import { AdminDashboard } from './pages/Dashboard/AdminDashboard';
+import { UserProfile } from './pages/UserProfile';
+import { PrivacyTerms } from './pages/PrivacyTerms';
+import { ComposeForm } from './pages/forms/ComposeForm';
+import { FillForm } from './pages/forms/FillForm';
+import { FormDetail } from './pages/forms/FormDetail';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({
@@ -34,6 +39,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/therapists" element={<TherapistDirectory />} />
           <Route path="/therapists/:id" element={<TherapistProfile />} />
+          <Route path="/privacy" element={<PrivacyTerms />} />
+
           <Route
             path="/book/:therapistId"
             element={
@@ -47,6 +54,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <BookingConfirmation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
               </ProtectedRoute>
             }
           />
@@ -71,6 +86,32 @@ export default function App() {
             element={
               <ProtectedRoute roles={['ADMIN']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Form system */}
+          <Route
+            path="/forms/new"
+            element={
+              <ProtectedRoute roles={['THERAPIST', 'ADMIN']}>
+                <ComposeForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/forms/:id"
+            element={
+              <ProtectedRoute roles={['CLIENT']}>
+                <FillForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/forms/:id/responses"
+            element={
+              <ProtectedRoute roles={['THERAPIST', 'ADMIN']}>
+                <FormDetail />
               </ProtectedRoute>
             }
           />

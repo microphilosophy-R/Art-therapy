@@ -135,6 +135,22 @@ export const Navbar = () => {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileOpen(false)}
+                  className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
+                >
+                  Profile
+                </Link>
+                {user?.role === 'CLIENT' && (
+                  <Link
+                    to="/forms"
+                    onClick={() => setMobileOpen(false)}
+                    className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
+                  >
+                    My Forms
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 rounded-lg"

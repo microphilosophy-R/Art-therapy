@@ -3,6 +3,8 @@ import { prisma } from '../lib/prisma';
 import { processAppointmentRefund } from '../services/refund.service';
 import type { CreateAppointmentInput } from '../schemas/appointment.schemas';
 
+const paymentsEnabled = process.env.PAYMENTS_ENABLED !== 'false';
+
 export const createAppointment = async (req: Request, res: Response) => {
   const body = req.body as CreateAppointmentInput;
 
@@ -11,7 +13,7 @@ export const createAppointment = async (req: Request, res: Response) => {
   });
   if (!therapist) return res.status(404).json({ message: 'Therapist not found' });
   if (!therapist.isAccepting) return res.status(400).json({ message: 'Therapist is not accepting new clients' });
-  if (therapist.stripeAccountStatus !== 'ACTIVE') {
+  if (paymentsEnabled && therapist.stripeAccountStatus !== 'ACTIVE') {
     return res.status(400).json({ message: 'Therapist payment account is not active' });
   }
 
@@ -36,6 +38,7 @@ export const createAppointment = async (req: Request, res: Response) => {
       endTime: new Date(body.endTime),
       medium: body.medium,
       clientNotes: body.clientNotes,
+      status: paymentsEnabled ? 'PENDING' : 'CONFIRMED',
     },
     include: { therapist: { include: { user: true } }, client: true },
   });

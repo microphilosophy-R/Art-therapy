@@ -24,6 +24,8 @@ export const BookAppointment = () => {
   const { therapistId } = useParams<{ therapistId: string }>();
   const navigate = useNavigate();
 
+  const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED !== 'false';
+
   const [step, setStep] = useState<Step>(1);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -56,12 +58,17 @@ export const BookAppointment = () => {
         medium,
         clientNotes: notes || undefined,
       });
+      if (!paymentsEnabled) return { appt, intent: null };
       const intent = await createPaymentIntent(appt.id);
       return { appt, intent };
     },
     onSuccess: ({ appt, intent }) => {
+      if (!paymentsEnabled) {
+        navigate(`/booking/confirmation?appointmentId=${appt.id}&paymentDisabled=true`);
+        return;
+      }
       setAppointmentId(appt.id);
-      setClientSecret(intent.clientSecret);
+      setClientSecret(intent!.clientSecret);
       setStep(4);
     },
   });
@@ -79,12 +86,18 @@ export const BookAppointment = () => {
     console.error('Payment error:', msg);
   };
 
-  const STEPS = [
-    { n: 1, label: t('booking.steps.dateTime') },
-    { n: 2, label: t('booking.steps.format') },
-    { n: 3, label: t('booking.steps.review') },
-    { n: 4, label: t('booking.steps.pay') },
-  ];
+  const STEPS = paymentsEnabled
+    ? [
+        { n: 1, label: t('booking.steps.dateTime') },
+        { n: 2, label: t('booking.steps.format') },
+        { n: 3, label: t('booking.steps.review') },
+        { n: 4, label: t('booking.steps.pay') },
+      ]
+    : [
+        { n: 1, label: t('booking.steps.dateTime') },
+        { n: 2, label: t('booking.steps.format') },
+        { n: 3, label: t('booking.steps.review') },
+      ];
 
   return (
     <div className="bg-stone-50 min-h-screen">
@@ -312,7 +325,9 @@ export const BookAppointment = () => {
                   onClick={() => createMutation.mutate()}
                   loading={createMutation.isPending}
                 >
-                  {t('booking.step3.proceedToPayment')}
+                  {paymentsEnabled
+                    ? t('booking.step3.proceedToPayment')
+                    : t('booking.step3.confirmBooking', 'Confirm Booking')}
                 </Button>
               </div>
               {createMutation.isError && (

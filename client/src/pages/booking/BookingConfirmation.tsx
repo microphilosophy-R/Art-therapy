@@ -16,11 +16,12 @@ export const BookingConfirmation = () => {
   const navigate = useNavigate();
   const appointmentId = params.get('appointmentId');
   const redirectStatus = params.get('redirect_status');
+  const paymentDisabled = params.get('paymentDisabled') === 'true';
 
   const { data: appointment, isLoading } = useQuery({
     queryKey: ['appointment', appointmentId],
     queryFn: () => getAppointment(appointmentId!),
-    enabled: !!appointmentId && redirectStatus === 'succeeded',
+    enabled: !!appointmentId && (redirectStatus === 'succeeded' || paymentDisabled),
     // Poll until CONFIRMED
     refetchInterval: (query) => {
       const status = query.state.data?.status;
@@ -33,7 +34,7 @@ export const BookingConfirmation = () => {
     if (!appointmentId) navigate('/');
   }, [appointmentId, navigate]);
 
-  if (redirectStatus !== 'succeeded') {
+  if (!paymentDisabled && redirectStatus !== 'succeeded') {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="text-center max-w-sm">

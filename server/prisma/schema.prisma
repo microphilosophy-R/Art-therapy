@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  THERAPIST
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum SessionMedium {
+  IN_PERSON
+  VIDEO
+}
+
+enum StripeAccountStatus {
+  NOT_CONNECTED
+  ONBOARDING_IN_PROGRESS
+  ACTIVE
+  RESTRICTED
+  DISABLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CLIENT)
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  therapistProfile     TherapistProfile?
+  appointmentsAsClient Appointment[]     @relation("ClientAppointments")
+  reviews              Review[]
+}
+
+model TherapistProfile {
+  id            String              @id @default(cuid())
+  userId        String              @unique
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio           String
+  specialties   String[]
+  sessionPrice  Decimal             @db.Decimal(10, 2)
+  sessionLength Int
+  locationCity  String
+  isAccepting   Boolean             @default(true)
+  rating        Float?
+
+  stripeAccountId     String?
+  stripeAccountStatus StripeAccountStatus @default(NOT_CONNECTED)
+
+  appointments Appointment[]
+  availability Availability[]
+  reviews      Review[]
+  refundPolicy RefundPolicy?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  clientId    String
+  client      User              @relation("ClientAppointments", fields: [clientId], references: [id])
+  therapistId String
+  therapist   TherapistProfile  @relation(fields: [therapistId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  status      AppointmentStatus @default(PENDING)
+  medium      SessionMedium     @default(IN_PERSON)
+  clientNotes String?
+  createdAt   DateTime          @default(now())
+
+  sessionNote SessionNote?
+  payment     Payment?
+}
+
+model SessionNote {
+  id            String      @id @default(cuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  content       String
+  artworkUrl    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Availability {
+  id          String           @id @default(cuid())
+  therapistId String
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+}
+
+model Review {
+  id          String           @id @default(cuid())
+  clientId    String
+  client      User             @relation(fields: [clientId], references: [id])
+  therapistId String
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id])
+  rating      Int
+  comment     String?
+  createdAt   DateTime         @default(now())
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  stripePaymentIntentId String        @unique
+  stripeChargeId        String?
+  stripeTransferId      String?
+  stripeRefundId        String?
+
+  amount                Int
+  currency              String        @default("usd")
+  platformFeeAmount     Int
+  therapistPayoutAmount Int
+
+  status        PaymentStatus @default(PENDING)
+  refundedAt    DateTime?
+  refundAmount  Int?
+  refundReason  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefundPolicy {
+  id          String           @id @default(cuid())
+  therapistId String           @unique
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  fullRefundHoursThreshold Int     @default(24)
+  allowPartialRefund       Boolean @default(false)
+  partialRefundPercent     Int?
+  policyDescription        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WebhookEvent {
+  id          String    @id
+  type        String
+  processed   Boolean   @default(false)
+  processedAt DateTime?
+  rawPayload  Json
+  createdAt   DateTime  @default(now())
+}

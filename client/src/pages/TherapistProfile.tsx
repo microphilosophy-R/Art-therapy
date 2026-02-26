@@ -14,6 +14,7 @@ import { StarRating } from '../components/ui/StarRating';
 import { PageLoader } from '../components/ui/Spinner';
 import { formatPrice, getSpecialtyColor } from '../utils/formatters';
 import { useAuthStore } from '../store/authStore';
+import { PriceDisplay } from '../components/ui/PriceDisplay';
 
 export const TherapistProfile = () => {
   const { t } = useTranslation();
@@ -203,9 +204,10 @@ export const TherapistProfile = () => {
             <Card className="sticky top-24">
               <CardContent className="p-6">
                 <div className="text-center mb-5">
-                  <span className="text-3xl font-bold text-stone-900">
-                    {formatPrice(sessionPrice)}
-                  </span>
+                  <PriceDisplay
+                    cnyAmount={sessionPrice}
+                    className="text-3xl font-bold text-stone-900"
+                  />
                   <span className="text-stone-500 text-sm"> {t('therapists.profile.perSession')}</span>
                 </div>
 

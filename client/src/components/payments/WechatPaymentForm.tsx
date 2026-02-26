@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import QRCode from 'qrcode.react';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { createWechatOrder } from '../../api/wechat';
 import { getAppointment } from '../../api/appointments';
 
@@ -32,7 +32,7 @@ export const WechatPaymentForm = ({ appointmentId, onSuccess, onError }: WechatP
     queryKey: ['appointment', appointmentId, 'wechat-poll'],
     queryFn: () => getAppointment(appointmentId),
     enabled: !!mutation.data?.codeUrl,
-    refetchInterval: (data) => (data?.status === 'CONFIRMED' ? false : 3000),
+    refetchInterval: (query) => (query.state.data?.status === 'CONFIRMED' ? false : 3000),
   });
 
   useEffect(() => {

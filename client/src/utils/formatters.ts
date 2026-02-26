@@ -3,8 +3,17 @@ import { format, formatDistanceToNow, parseISO, differenceInHours } from 'date-f
 export const formatCurrency = (cents: number, currency = 'USD'): string =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
 
+/** @deprecated prices are now CNY — use formatCNY or PriceDisplay instead */
 export const formatPrice = (dollars: number): string =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(dollars);
+
+/** Format a CNY amount (e.g. 500 → "¥500.00") */
+export const formatCNY = (yuan: number): string =>
+  `¥${new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(yuan)}`;
+
+/** Format a USD amount (e.g. 68.5 → "$68.50") */
+export const formatUSD = (usd: number): string =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usd);
 
 export const formatDate = (dateStr: string): string =>
   format(parseISO(dateStr), 'MMMM d, yyyy');

@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import https from 'https';
 
 import { stripeWebhookRouter } from './webhooks/stripe.webhook';
 import { alipayWebhookRouter } from './webhooks/alipay.webhook';
@@ -55,6 +56,28 @@ api.use('/wechat', wechatRouter);
 api.use('/admin', adminRouter);
 api.use('/profile', profileRouter);
 api.use('/forms', formRouter);
+
+// Exchange rate proxy — avoids CORS issues calling cn.apihz.cn from the browser
+// Uses APIHZ_ID / APIHZ_KEY env vars; falls back to the shared public demo key (rate-limited).
+api.get('/fx', (req, res) => {
+  const { from = 'CNY', to = 'USD', money = '1' } = req.query as Record<string, string>;
+  const id  = process.env.APIHZ_ID  ?? '88888888';
+  const key = process.env.APIHZ_KEY ?? '88888888';
+  const url = `https://cn.apihz.cn/api/jinrong/huilv.php?id=${id}&key=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&money=${encodeURIComponent(money)}`;
+  https.get(url, (upstream) => {
+    let body = '';
+    upstream.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+    upstream.on('end', () => {
+      try {
+        res.json(JSON.parse(body));
+      } catch {
+        res.status(502).json({ code: 502, msg: 'Bad upstream response' });
+      }
+    });
+  }).on('error', () => {
+    res.status(502).json({ code: 502, msg: 'Exchange rate fetch failed' });
+  });
+});
 
 app.use('/api/v1', api);
 

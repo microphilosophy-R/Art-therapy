@@ -59,7 +59,10 @@ export const startScheduledJobs = () => {
 
       for (const payment of stale) {
         try {
-          await stripe.paymentIntents.cancel(payment.stripePaymentIntentId);
+          // Only cancel Stripe payment intents; Alipay/WeChat orders expire on their own
+          if (payment.stripePaymentIntentId) {
+            await stripe.paymentIntents.cancel(payment.stripePaymentIntentId);
+          }
         } catch {
           // PI may already be cancelled by Stripe
         }

@@ -39,7 +39,7 @@ export const createWechatOrder = async (appointmentId: string, userId: string) =
   const notifyUrl = process.env.WECHAT_NOTIFY_URL ?? 'http://localhost:3001/webhooks/wechat';
   const description = `Art therapy session with ${appointment.therapist.user.firstName}`;
 
-  const { data } = await wechatpay!.v3.pay.transactions.native.post({
+  const response = await wechatpay!.v3.pay.transactions.native.post({
     mchid: process.env.WECHAT_MCH_ID!,
     appid: process.env.WECHAT_APP_ID!,
     description,
@@ -47,6 +47,7 @@ export const createWechatOrder = async (appointmentId: string, userId: string) =
     notify_url: notifyUrl,
     amount: { total: totalFen, currency: 'CNY' },
   });
+  const codeUrl = (response.data as any).code_url as string;
 
   const payment = await prisma.payment.create({
     data: {
@@ -60,7 +61,7 @@ export const createWechatOrder = async (appointmentId: string, userId: string) =
     },
   });
 
-  return { codeUrl: data.code_url, paymentId: payment.id };
+  return { codeUrl, paymentId: payment.id };
 };
 
 export const handleWechatNotification = async (

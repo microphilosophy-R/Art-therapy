@@ -16,8 +16,9 @@ import { PaymentMethodSelector, type PaymentMethod } from '../components/payment
 import { StripeUnavailable } from '../components/payments/StripeUnavailable';
 import { AlipayPaymentForm } from '../components/payments/AlipayPaymentForm';
 import { WechatPaymentForm } from '../components/payments/WechatPaymentForm';
-import { formatDate, formatTime, formatPrice } from '../utils/formatters';
+import { formatDate, formatTime } from '../utils/formatters';
 import type { TimeSlot } from '../types';
+import { PriceDisplay } from '../components/ui/PriceDisplay';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -310,7 +311,7 @@ export const BookAppointment = () => {
                 </div>
                 <div className="flex justify-between py-2 text-base">
                   <span className="font-semibold text-stone-900">{t('booking.step3.total')}</span>
-                  <span className="font-bold text-teal-700">{formatPrice(therapist.sessionPrice)}</span>
+                  <span className="font-bold text-teal-700"><PriceDisplay cnyAmount={therapist.sessionPrice} className="font-bold text-teal-700" /></span>
                 </div>
               </div>
 
@@ -347,7 +348,7 @@ export const BookAppointment = () => {
               <h2 className="font-semibold text-stone-900 mb-5">{t('booking.step4.title')}</h2>
               <div className="flex justify-between text-sm mb-5 p-3 bg-stone-50 rounded-lg">
                 <span className="text-stone-600">{t('booking.step4.amountDue')}</span>
-                <span className="font-semibold text-stone-900">{formatPrice(therapist.sessionPrice)}</span>
+                <span className="font-semibold text-stone-900"><PriceDisplay cnyAmount={therapist.sessionPrice} className="font-semibold text-stone-900" /></span>
               </div>
               <PaymentMethodSelector
                 alipayWechatEnabled={alipayWechatEnabled}

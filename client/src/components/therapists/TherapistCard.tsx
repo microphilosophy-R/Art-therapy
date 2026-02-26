@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import { MapPin, Clock, Video } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TherapistProfile } from '../../types';
-import { formatPrice, getSpecialtyColor } from '../../utils/formatters';
+import { getSpecialtyColor } from '../../utils/formatters';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { StarRating } from '../ui/StarRating';
+import { PriceDisplay } from '../ui/PriceDisplay';
 
 interface TherapistCardProps {
   therapist: TherapistProfile;
@@ -70,7 +71,7 @@ export const TherapistCard = ({ therapist }: TherapistCardProps) => {
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-stone-100">
           <div>
-            <span className="text-lg font-semibold text-stone-900">{formatPrice(sessionPrice)}</span>
+            <PriceDisplay cnyAmount={sessionPrice} className="text-lg font-semibold text-stone-900" />
             <span className="text-xs text-stone-500"> {t('therapists.card.perSession')}</span>
           </div>
           <Link to={`/therapists/${therapist.id}`}>

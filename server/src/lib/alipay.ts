@@ -1,4 +1,4 @@
-import AlipaySdk from 'alipay-sdk';
+import { AlipaySdk } from 'alipay-sdk';
 
 export const ALIPAY_WECHAT_ENABLED = process.env.ALIPAY_WECHAT_ENABLED === 'true';
 

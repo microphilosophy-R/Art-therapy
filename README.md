@@ -685,6 +685,32 @@ Therapists must complete Stripe onboarding before their profile appears as booka
 
 If the AccountLink expires mid-onboarding, `GET /payments/connect/refresh` generates a new one.
 
+### Alipay & WeChat Pay (Primary Payment Methods)
+
+Alipay and WeChat Pay are implemented as an **independent integration**, separate from Stripe. They are gated by the `ALIPAY_WECHAT_ENABLED=false` server flag (default off — not active until enabled).
+
+> **Stripe / Card note:** The Stripe card payment option is preserved in the codebase for future use. In the current UI, the Card option is shown with the message *"Sorry, we don't provide this service now."* Stripe code is untouched and can be re-enabled later.
+
+**Language-based initial suggestion:** When the app language is Chinese (`zh`), Alipay is pre-selected as the default method in the payment step. Users can still choose any available method.
+
+**Payment flows:**
+
+- **Alipay**: `POST /api/v1/alipay/create-order` → Backend signs and creates trade order → Returns `payUrl` → Browser redirects to Alipay's payment page → User authorizes → Alipay sends async notification to `POST /webhooks/alipay` → Appointment set to `CONFIRMED`
+- **WeChat Pay**: `POST /api/v1/wechat/create-order` → Backend creates native order → Returns `codeUrl` → Frontend renders QR code → User scans with WeChat → WeChat sends notification to `POST /webhooks/wechat` → Appointment set to `CONFIRMED`
+
+**New API endpoints:**
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| POST | `/api/v1/alipay/create-order` | Create Alipay trade order | Client |
+| GET | `/api/v1/alipay/order/:id` | Get Alipay payment record | Authenticated |
+| POST | `/api/v1/wechat/create-order` | Create WeChat Pay native order | Client |
+| GET | `/api/v1/wechat/order/:id` | Get WeChat payment record | Authenticated |
+| POST | `/webhooks/alipay` | Alipay async payment notification | Public (signature verified) |
+| POST | `/webhooks/wechat` | WeChat Pay payment notification | Public (AES-GCM verified) |
+
+**To enable:** Configure merchant accounts on [Alipay Open Platform](https://open.alipay.com) and [WeChat Pay](https://pay.weixin.qq.com), add credentials to `server/.env`, then set `ALIPAY_WECHAT_ENABLED=true` and `VITE_ALIPAY_WECHAT_ENABLED=true` and rebuild.
+
 ### Webhook Events Handled
 
 All events arrive at `POST /webhooks/stripe`. Each event is deduplicated using the `WebhookEvent` table — the Stripe event ID is the primary key, so duplicate deliveries are ignored.
@@ -985,6 +1011,14 @@ When Stripe integration is ready:
    VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
    ```
 3. Rebuild both frontend and backend (Steps 3–5 above).
+
+**To enable Alipay & WeChat Pay (primary payment methods):**
+1. Activate merchant accounts on Alipay Open Platform and WeChat Pay platform
+2. Add credentials to `server/.env` (see `ALIPAY_*` and `WECHAT_*` keys in `.env.example`)
+3. Set `ALIPAY_WECHAT_ENABLED=true` in `server/.env`
+4. Set `VITE_ALIPAY_WECHAT_ENABLED=true` in `client/.env`
+5. Rebuild backend: `npm run build && pm2 restart art-therapy-api`
+6. Rebuild frontend: `npm run build` + reload Nginx
 
 ---
 

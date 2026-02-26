@@ -5,10 +5,14 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import { stripeWebhookRouter } from './webhooks/stripe.webhook';
+import { alipayWebhookRouter } from './webhooks/alipay.webhook';
+import { wechatWebhookRouter } from './webhooks/wechat.webhook';
 import { authRouter } from './routes/auth.routes';
 import { therapistRouter } from './routes/therapist.routes';
 import { appointmentRouter } from './routes/appointment.routes';
 import { paymentRouter } from './routes/payment.routes';
+import { alipayRouter } from './routes/alipay.routes';
+import { wechatRouter } from './routes/wechat.routes';
 import { adminRouter } from './routes/admin.routes';
 import { profileRouter } from './routes/profile.routes';
 import { formRouter } from './routes/form.routes';
@@ -27,9 +31,11 @@ app.use(
   })
 );
 
-// ⚠️ Stripe webhook MUST be mounted before express.json()
-// It needs the raw Buffer body for signature verification
-app.use('/webhooks', express.raw({ type: 'application/json' }), stripeWebhookRouter);
+// ⚠️ Webhook routes MUST be mounted before express.json()
+// Stripe and WeChat webhooks require raw Buffer body; Alipay requires urlencoded
+app.use('/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRouter);
+app.use('/webhooks/alipay', express.urlencoded({ extended: false }), alipayWebhookRouter);
+app.use('/webhooks/wechat', express.raw({ type: 'application/json' }), wechatWebhookRouter);
 
 // Body parsers for all other routes
 app.use(express.json({ limit: '1mb' }));
@@ -44,6 +50,8 @@ api.use('/auth', authRouter);
 api.use('/therapists', therapistRouter);
 api.use('/appointments', appointmentRouter);
 api.use('/payments', paymentRouter);
+api.use('/alipay', alipayRouter);
+api.use('/wechat', wechatRouter);
 api.use('/admin', adminRouter);
 api.use('/profile', profileRouter);
 api.use('/forms', formRouter);

@@ -246,6 +246,19 @@
   "appointments": {
     "cancel": "Cancel"
   },
+  "payment": {
+    "selectMethod": "Select payment method",
+    "alipay": "Alipay 支付宝",
+    "wechat": "WeChat Pay 微信",
+    "card": "Credit / Debit Card",
+    "comingSoon": "Soon",
+    "cardUnavailableTitle": "Card payment not available",
+    "cardUnavailableDesc": "Sorry, we don't provide this service now. Please use Alipay or WeChat Pay.",
+    "redirectingToAlipay": "Redirecting to Alipay…",
+    "wechatScanPrompt": "Scan with WeChat to pay",
+    "wechatScanHint": "Open WeChat → Scan → Complete payment",
+    "waitingForPayment": "Waiting for payment…"
+  },
   "dashboard": {
     "client": {
       "welcome": "Welcome back, {{name}}",

@@ -7,7 +7,7 @@ import { sendAppointmentConfirmation } from '../services/email.service';
 export const stripeWebhookRouter = Router();
 
 stripeWebhookRouter.post(
-  '/stripe',
+  '/',
   // express.raw() is applied at the app level for this router
   async (req: Request, res: Response) => {
     const sig = req.headers['stripe-signature'];

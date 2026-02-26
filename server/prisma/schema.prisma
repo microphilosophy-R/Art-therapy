@@ -42,6 +42,12 @@ enum PaymentStatus {
   CANCELLED
 }
 
+enum PaymentProvider {
+  STRIPE
+  ALIPAY
+  WECHAT_PAY
+}
+
 enum FormStatus {
   DRAFT
   SENT
@@ -153,24 +159,31 @@ model Review {
 }
 
 model Payment {
-  id            String      @id @default(cuid())
-  appointmentId String      @unique
-  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  id            String          @id @default(cuid())
+  appointmentId String          @unique
+  appointment   Appointment     @relation(fields: [appointmentId], references: [id])
 
-  stripePaymentIntentId String        @unique
+  provider      PaymentProvider @default(STRIPE)
+
+  // Stripe fields (null for Alipay/WeChat payments)
+  stripePaymentIntentId String?  @unique
   stripeChargeId        String?
   stripeTransferId      String?
   stripeRefundId        String?
 
+  // Alipay / WeChat Pay fields (null for Stripe payments)
+  externalOrderId String? // platform-generated order ID sent to the provider
+  externalTradeNo String? // provider-assigned transaction number (set after success)
+
   amount                Int
-  currency              String        @default("usd")
+  currency              String          @default("cny")
   platformFeeAmount     Int
   therapistPayoutAmount Int
 
-  status        PaymentStatus @default(PENDING)
-  refundedAt    DateTime?
-  refundAmount  Int?
-  refundReason  String?
+  status       PaymentStatus @default(PENDING)
+  refundedAt   DateTime?
+  refundAmount Int?
+  refundReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

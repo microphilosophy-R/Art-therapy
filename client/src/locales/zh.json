@@ -246,6 +246,19 @@
   "appointments": {
     "cancel": "取消预约"
   },
+  "payment": {
+    "selectMethod": "选择付款方式",
+    "alipay": "支付宝 Alipay",
+    "wechat": "微信支付 WeChat Pay",
+    "card": "信用卡 / 借记卡",
+    "comingSoon": "即将上线",
+    "cardUnavailableTitle": "暂不支持银行卡付款",
+    "cardUnavailableDesc": "抱歉，暂不提供此付款服务。请使用支付宝或微信支付。",
+    "redirectingToAlipay": "正在跳转至支付宝…",
+    "wechatScanPrompt": "使用微信扫码付款",
+    "wechatScanHint": "打开微信 → 扫一扫 → 完成支付",
+    "waitingForPayment": "等待支付中…"
+  },
   "dashboard": {
     "client": {
       "welcome": "欢迎回来，{{name}}",

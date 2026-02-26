@@ -8,23 +8,27 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { useTranslation } from 'react-i18next';
 import { getTherapist, getAvailableSlots } from '../api/therapists';
 import { createAppointment } from '../api/appointments';
-import { createPaymentIntent } from '../api/payments';
 import { Avatar } from '../components/ui/Avatar';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { PageLoader } from '../components/ui/Spinner';
-import { PaymentElementWrapper } from '../components/payments/PaymentElementWrapper';
+import { PaymentMethodSelector, type PaymentMethod } from '../components/payments/PaymentMethodSelector';
+import { StripeUnavailable } from '../components/payments/StripeUnavailable';
+import { AlipayPaymentForm } from '../components/payments/AlipayPaymentForm';
+import { WechatPaymentForm } from '../components/payments/WechatPaymentForm';
 import { formatDate, formatTime, formatPrice } from '../utils/formatters';
 import type { TimeSlot } from '../types';
 
 type Step = 1 | 2 | 3 | 4;
 
 export const BookAppointment = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { therapistId } = useParams<{ therapistId: string }>();
   const navigate = useNavigate();
 
   const paymentsEnabled = import.meta.env.VITE_PAYMENTS_ENABLED !== 'false';
+  const alipayWechatEnabled = import.meta.env.VITE_ALIPAY_WECHAT_ENABLED === 'true';
+  const isZh = i18n.language.startsWith('zh');
 
   const [step, setStep] = useState<Step>(1);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
@@ -34,7 +38,7 @@ export const BookAppointment = () => {
   const [medium, setMedium] = useState<'VIDEO' | 'IN_PERSON'>('VIDEO');
   const [notes, setNotes] = useState('');
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(isZh ? 'alipay' : null);
 
   const { data: therapist, isLoading: loadingTherapist } = useQuery({
     queryKey: ['therapist', therapistId],
@@ -58,17 +62,14 @@ export const BookAppointment = () => {
         medium,
         clientNotes: notes || undefined,
       });
-      if (!paymentsEnabled) return { appt, intent: null };
-      const intent = await createPaymentIntent(appt.id);
-      return { appt, intent };
+      return appt;
     },
-    onSuccess: ({ appt, intent }) => {
+    onSuccess: (appt) => {
       if (!paymentsEnabled) {
         navigate(`/booking/confirmation?appointmentId=${appt.id}&paymentDisabled=true`);
         return;
       }
       setAppointmentId(appt.id);
-      setClientSecret(intent!.clientSecret);
       setStep(4);
     },
   });
@@ -340,7 +341,7 @@ export const BookAppointment = () => {
         )}
 
         {/* Step 4 — Payment */}
-        {step === 4 && clientSecret && appointmentId && (
+        {step === 4 && appointmentId && (
           <Card>
             <CardContent className="p-6">
               <h2 className="font-semibold text-stone-900 mb-5">{t('booking.step4.title')}</h2>
@@ -348,13 +349,27 @@ export const BookAppointment = () => {
                 <span className="text-stone-600">{t('booking.step4.amountDue')}</span>
                 <span className="font-semibold text-stone-900">{formatPrice(therapist.sessionPrice)}</span>
               </div>
-              <PaymentElementWrapper
-                clientSecret={clientSecret}
-                appointmentId={appointmentId}
-                amount={therapist.sessionPrice}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
+              <PaymentMethodSelector
+                alipayWechatEnabled={alipayWechatEnabled}
+                selectedMethod={selectedMethod}
+                onSelect={setSelectedMethod}
+                isZh={isZh}
               />
+              {selectedMethod === 'alipay' && alipayWechatEnabled && (
+                <AlipayPaymentForm
+                  appointmentId={appointmentId}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              )}
+              {selectedMethod === 'wechat' && alipayWechatEnabled && (
+                <WechatPaymentForm
+                  appointmentId={appointmentId}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              )}
+              {selectedMethod === 'card' && <StripeUnavailable />}
             </CardContent>
           </Card>
         )}

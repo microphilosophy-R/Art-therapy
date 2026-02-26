@@ -851,6 +851,143 @@ stripe listen --forward-to localhost:3001/webhooks/stripe
 
 ---
 
+## Production Deployment (Aliyun ECS via GitHub)
+
+### Server Details
+| Item | Value |
+|---|---|
+| Server | Aliyun ECS (`47.117.137.126`) |
+| Domain | `luyin.xyz` |
+| Project path | `/home/admin/art-therapy/` |
+| Nginx config | `/www/server/panel/vhost/nginx/art-therapy.conf` |
+| Process manager | PM2 (`art-therapy-api`) |
+
+### First-Time Setup (already completed)
+See git history for initial server provisioning steps (Node.js, PostgreSQL, Redis, PM2, Nginx).
+
+---
+
+### Rebuild & Publish After a Code Change
+
+Every time you push changes to GitHub, SSH into the server and run the following steps.
+
+#### 1. SSH into the server
+```bash
+ssh -i your-key.pem admin@47.117.137.126
+```
+
+#### 2. Pull latest code from GitHub
+```bash
+cd /home/admin/art-therapy
+git pull origin main
+```
+
+#### 3. Rebuild and restart the backend
+```bash
+cd /home/admin/art-therapy/server
+npm install
+npm run build
+pm2 restart art-therapy-api
+pm2 logs art-therapy-api --lines 20
+```
+
+Confirm you see:
+```
+[DB] Connected to PostgreSQL
+[Redis] Connected
+[Server] Running on http://localhost:3001
+```
+
+#### 4. Rebuild the frontend
+```bash
+cd /home/admin/art-therapy/client
+npm install
+npm run build
+```
+
+#### 5. Reload Nginx
+```bash
+sudo /www/server/nginx/sbin/nginx -s reload
+```
+
+#### 6. Verify
+Open `http://luyin.xyz` in a browser. The site should reflect your latest changes.
+
+---
+
+### Database Schema Changes
+
+If your code changes include Prisma schema modifications (`schema.prisma`), run this **before** restarting the backend:
+
+```bash
+cd /home/admin/art-therapy/server
+npx prisma db push
+```
+
+> `prisma db push` applies schema changes directly without generating migration files. Use `prisma migrate deploy` instead if you switch to a migrations-based workflow.
+
+---
+
+### Environment Variables
+
+The server `.env` is located at `/home/admin/art-therapy/server/.env` and is **not** tracked by Git (listed in `.gitignore`). Edit it directly on the server if you need to change values:
+
+```bash
+nano /home/admin/art-therapy/server/.env
+```
+
+Key production values:
+```env
+DATABASE_URL="postgresql://postgres:arttherapy123@127.0.0.1:5432/arttherapy"
+REDIS_URL="redis://127.0.0.1:6379"
+PAYMENTS_ENABLED=false
+PORT=3001
+CLIENT_URL="http://luyin.xyz"
+NODE_ENV=production
+```
+
+The client `.env` is at `/home/admin/art-therapy/client/.env`:
+```env
+VITE_API_URL=http://luyin.xyz/api/v1
+VITE_PAYMENTS_ENABLED=false
+```
+
+> After editing either `.env` file, re-run the relevant rebuild step (Step 3 for backend, Step 4 for frontend).
+
+---
+
+### PM2 Cheat Sheet
+
+```bash
+pm2 list                        # show all running processes
+pm2 restart art-therapy-api     # restart backend
+pm2 logs art-therapy-api        # tail live logs
+pm2 logs art-therapy-api --lines 50   # last 50 log lines
+pm2 stop art-therapy-api        # stop backend
+pm2 startup && pm2 save         # enable auto-start on reboot
+```
+
+---
+
+### Re-enabling Payments
+
+When Stripe integration is ready:
+
+1. Add real Stripe keys to `/home/admin/art-therapy/server/.env`:
+   ```env
+   PAYMENTS_ENABLED=true
+   STRIPE_SECRET_KEY=sk_live_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   ```
+2. Update `/home/admin/art-therapy/client/.env`:
+   ```env
+   VITE_PAYMENTS_ENABLED=true
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
+   ```
+3. Rebuild both frontend and backend (Steps 3–5 above).
+
+---
+
 ## Key Design Decisions
 
 | Decision | Rationale |

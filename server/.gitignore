@@ -3,3 +3,5 @@ dist/
 .env
 *.env.local
 prisma/migrations/*.sql
+code.md
+admin.pem

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  createTherapyPlan,
   getTherapyPlan,
   updateTherapyPlan,
   uploadTherapyPlanPoster,
@@ -26,6 +27,9 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
 import { Input } from '../../components/ui/Input';
+import { TemplatePickerModal } from '../../components/therapyPlans/TemplatePickerModal';
+import type { TherapyPlanTemplate, TherapyPlanType } from '../../types';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
@@ -43,6 +47,9 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
 
 export const EditTherapyPlan = () => {
   const { id } = useParams<{ id: string }>();
+  const isCreateMode = !id;
+  const navigate = useNavigate();
+
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -52,6 +59,12 @@ export const EditTherapyPlan = () => {
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [videoUploadPercent, setVideoUploadPercent] = useState(0);
+
+  // Create mode specific state
+  const [formKey, setFormKey] = useState(0);
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [initialCreateValues, setInitialCreateValues] = useState<Partial<TherapyPlanFormValues> | undefined>(undefined);
+  const [currentType, setCurrentType] = useState<TherapyPlanType>('PERSONAL_CONSULT');
 
   // Save-as-template state
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -98,6 +111,8 @@ export const EditTherapyPlan = () => {
     onSuccess: invalidate,
   });
 
+  const createMutation = useMutation({ mutationFn: createTherapyPlan });
+
   const submitMutation = useMutation({
     mutationFn: () => submitTherapyPlanForReview(id!),
     onSuccess: () => { invalidate(); setSubmitSuccess(true); },
@@ -118,11 +133,11 @@ export const EditTherapyPlan = () => {
     },
   });
 
-  const closeSignupMutation  = useMutation({ mutationFn: () => closeTherapyPlanSignup(id!),  onSuccess: invalidate });
-  const startMutation        = useMutation({ mutationFn: () => startTherapyPlan(id!),        onSuccess: invalidate });
-  const finishMutation       = useMutation({ mutationFn: () => finishTherapyPlan(id!),       onSuccess: invalidate });
-  const toGalleryMutation    = useMutation({ mutationFn: () => moveTherapyPlanToGallery(id!), onSuccess: invalidate });
-  const cancelPlanMutation   = useMutation({ mutationFn: () => cancelTherapyPlan(id!),       onSuccess: invalidate });
+  const closeSignupMutation = useMutation({ mutationFn: () => closeTherapyPlanSignup(id!), onSuccess: invalidate });
+  const startMutation = useMutation({ mutationFn: () => startTherapyPlan(id!), onSuccess: invalidate });
+  const finishMutation = useMutation({ mutationFn: () => finishTherapyPlan(id!), onSuccess: invalidate });
+  const toGalleryMutation = useMutation({ mutationFn: () => moveTherapyPlanToGallery(id!), onSuccess: invalidate });
+  const cancelPlanMutation = useMutation({ mutationFn: () => cancelTherapyPlan(id!), onSuccess: invalidate });
 
   const runLifecycle = async (fn: () => Promise<any>) => {
     setLifecycleError(null);
@@ -131,41 +146,73 @@ export const EditTherapyPlan = () => {
     }
   };
 
+  const handleTemplateSelect = (template: TherapyPlanTemplate) => {
+    const data = template.data as Partial<TherapyPlanFormValues>;
+    setInitialCreateValues({ ...data, events: [] });
+    setCurrentType(template.type);
+    setFormKey((k) => k + 1);
+  };
+
   const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => {
     setSaveError(null);
     setVideoUploadPercent(0);
     try {
-      await updateMutation.mutateAsync({
-        payload: {
+      let planId = id;
+
+      if (isCreateMode) {
+        const plan = await createMutation.mutateAsync({
           type: values.type,
           title: values.title,
-          slogan: values.slogan || null,
+          slogan: values.slogan || undefined,
           introduction: values.introduction,
           startTime: new Date(values.startTime).toISOString(),
-          endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+          endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
           location: values.location,
           maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
-          price: values.price ? parseFloat(values.price) : null,
           contactInfo: values.contactInfo,
           artSalonSubType: (values.artSalonSubType || null) as any,
           sessionMedium: (values.sessionMedium || null) as any,
           defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
-          posterUrl: values.poster?.type === 'custom' && !posterFile ? values.poster.url : null,
-        },
-      });
-
-      if (posterFile) {
-        await posterMutation.mutateAsync(posterFile);
+          posterUrl: null,
+        });
+        planId = plan.id;
+      } else {
+        await updateMutation.mutateAsync({
+          payload: {
+            type: values.type,
+            title: values.title,
+            slogan: values.slogan || null,
+            introduction: values.introduction,
+            startTime: new Date(values.startTime).toISOString(),
+            endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+            location: values.location,
+            maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
+            price: values.price ? parseFloat(values.price) : null,
+            contactInfo: values.contactInfo,
+            artSalonSubType: (values.artSalonSubType || null) as any,
+            sessionMedium: (values.sessionMedium || null) as any,
+            defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
+            posterUrl: values.poster?.type === 'custom' && !posterFile ? values.poster.url : null,
+          },
+        });
       }
 
-      if (videoFile) {
-        await uploadTherapyPlanVideo(id!, videoFile, (pct) => setVideoUploadPercent(pct));
+      if (posterFile && planId) {
+        await uploadTherapyPlanPoster(planId, posterFile);
       }
 
-      if (values.events.length > 0) {
-        await upsertTherapyPlanEvents(id!, {
+      if (videoFile && planId) {
+        await uploadTherapyPlanVideo(planId, videoFile, (pct) => setVideoUploadPercent(pct));
+      }
+
+      if (values.events.length > 0 && planId) {
+        await upsertTherapyPlanEvents(planId, {
           events: draftsToApiPayload(values.events),
         });
+      }
+
+      if (isCreateMode && planId) {
+        navigate(`/therapy-plans/${planId}/edit`);
       }
     } catch (err: any) {
       setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
@@ -181,23 +228,23 @@ export const EditTherapyPlan = () => {
     }
   };
 
-  if (isLoading) return <div className="flex justify-center py-16"><Spinner /></div>;
-  if (!plan) return <div className="text-center py-16 text-stone-500">{t('therapyPlans.detail.notFound')}</div>;
+  if (!isCreateMode && isLoading) return <div className="flex justify-center py-16"><Spinner /></div>;
+  if (!isCreateMode && !plan) return <div className="text-center py-16 text-stone-500">{t('therapyPlans.detail.notFound')}</div>;
 
-  const isOwner = plan.therapist?.userId === user?.id;
+  const isOwner = isCreateMode ? true : plan?.therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
   const isTherapist = user?.role === 'THERAPIST';
 
-  const canEdit =
+  const canEdit = isCreateMode ||
     isAdmin ||
-    (isOwner && ['DRAFT', 'REJECTED', 'IN_GALLERY'].includes(plan.status));
+    (isOwner && plan && ['DRAFT', 'REJECTED', 'IN_GALLERY'].includes(plan.status));
 
-  const canSubmit = isTherapist && isOwner && ['DRAFT', 'REJECTED'].includes(plan.status) && !submitSuccess;
+  const canSubmit = !isCreateMode && isTherapist && isOwner && plan && ['DRAFT', 'REJECTED'].includes(plan.status) && !submitSuccess;
 
-  const isNonPersonal = plan.type !== 'PERSONAL_CONSULT';
+  const isNonPersonal = isCreateMode ? currentType !== 'PERSONAL_CONSULT' : plan?.type !== 'PERSONAL_CONSULT';
   const activeStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
 
-  const isSaving = updateMutation.isPending || posterMutation.isPending || attachmentMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending || posterMutation.isPending || attachmentMutation.isPending;
   const isLifecycleBusy =
     closeSignupMutation.isPending || startMutation.isPending ||
     finishMutation.isPending || toGalleryMutation.isPending || cancelPlanMutation.isPending;
@@ -205,29 +252,48 @@ export const EditTherapyPlan = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold text-stone-900">{t('therapyPlans.form.editTitle')}</h1>
+        <h1 className="text-2xl font-bold text-stone-900">
+          {isCreateMode ? t('therapyPlans.form.createTitle') : t('therapyPlans.form.editTitle')}
+        </h1>
         <div className="flex items-center gap-2">
-          {(isOwner || isAdmin) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSaveTemplateOpen((v) => !v);
-                setTemplateSaved(false);
-                setTemplateError(null);
-              }}
-            >
-              {t('therapyPlans.templates.saveAsTemplate')}
+          {isCreateMode ? (
+            <Button variant="outline" size="sm" onClick={() => setTemplateModalOpen(true)}>
+              {t('therapyPlans.templates.loadTemplate')}
             </Button>
+          ) : (
+            <>
+              {(isOwner || isAdmin) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSaveTemplateOpen((v) => !v);
+                    setTemplateSaved(false);
+                    setTemplateError(null);
+                  }}
+                >
+                  {t('therapyPlans.templates.saveAsTemplate')}
+                </Button>
+              )}
+              {plan && (
+                <Badge variant={statusVariant[plan.status] ?? 'default'}>
+                  {t(`common.planStatus.${plan.status}`)}
+                </Badge>
+              )}
+            </>
           )}
-          <Badge variant={statusVariant[plan.status] ?? 'default'}>
-            {t(`common.planStatus.${plan.status}`)}
-          </Badge>
         </div>
       </div>
 
+      <TemplatePickerModal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        planType={currentType}
+        onSelect={handleTemplateSelect}
+      />
+
       {/* Save as template inline form */}
-      {saveTemplateOpen && (
+      {!isCreateMode && saveTemplateOpen && plan && (
         <div className="mb-6 rounded-lg border border-stone-200 bg-stone-50 p-4 space-y-3">
           <h3 className="text-sm font-semibold text-stone-700">
             {t('therapyPlans.templates.saveAsTemplate')}
@@ -285,21 +351,22 @@ export const EditTherapyPlan = () => {
 
       {canEdit ? (
         <TherapyPlanForm
-          initialValues={planToFormValues(plan)}
+          key={formKey}
+          initialValues={isCreateMode ? initialCreateValues : (plan ? planToFormValues(plan) : undefined)}
           onSubmit={handleSubmit}
-          submitLabel={t('therapyPlans.form.saveChanges')}
+          submitLabel={isCreateMode ? t('therapyPlans.form.saveDraft') : t('therapyPlans.form.saveChanges')}
           isLoading={isSaving}
           error={saveError}
-          rejectionReason={plan.status === 'REJECTED' ? plan.rejectionReason : null}
-          existingVideoUrl={plan.videoUrl}
-          existingAttachmentUrl={plan.attachmentUrl}
-          existingAttachmentName={plan.attachmentName}
-          galleryImages={plan.images ?? []}
-          onAddGalleryImage={(file) => addImageMutation.mutate(file)}
-          onDeleteGalleryImage={(imageId) => deleteImageMutation.mutate(imageId)}
+          rejectionReason={plan?.status === 'REJECTED' ? plan.rejectionReason : null}
+          existingVideoUrl={plan?.videoUrl}
+          existingAttachmentUrl={plan?.attachmentUrl}
+          existingAttachmentName={plan?.attachmentName}
+          galleryImages={plan?.images ?? []}
+          onAddGalleryImage={!isCreateMode ? (file) => addImageMutation.mutate(file) : undefined}
+          onDeleteGalleryImage={!isCreateMode ? (imageId) => deleteImageMutation.mutate(imageId) : undefined}
           isAddingGalleryImage={addImageMutation.isPending}
           galleryUploadError={galleryError}
-          onAttachmentFileChange={(file) => { if (file) attachmentMutation.mutate(file); }}
+          onAttachmentFileChange={!isCreateMode ? ((file) => { if (file) attachmentMutation.mutate(file); }) : undefined}
           videoUploadPercent={videoUploadPercent}
           secondaryAction={canSubmit ? (
             <>
@@ -318,7 +385,7 @@ export const EditTherapyPlan = () => {
             </>
           ) : undefined}
         />
-      ) : (
+      ) : plan ? (
         <>
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-amber-700">
@@ -378,10 +445,10 @@ export const EditTherapyPlan = () => {
             </div>
           )}
         </>
-      )}
+      ) : null}
 
       {/* Lifecycle actions */}
-      {(isOwner || isAdmin) && (
+      {!isCreateMode && plan && (isOwner || isAdmin) && (
         <div className="mt-6 pt-6 border-t border-stone-100 space-y-3">
           {lifecycleError && (
             <p className="text-sm text-rose-600">{lifecycleError}</p>

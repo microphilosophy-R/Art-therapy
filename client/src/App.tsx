@@ -18,7 +18,6 @@ import { FillForm } from './pages/forms/FillForm';
 import { FormDetail } from './pages/forms/FormDetail';
 import { TherapyPlansDirectory } from './pages/therapy-plans/TherapyPlansDirectory';
 import { TherapyPlanDetail } from './pages/therapy-plans/TherapyPlanDetail';
-import { CreateTherapyPlan } from './pages/therapy-plans/CreateTherapyPlan';
 import { EditTherapyPlan } from './pages/therapy-plans/EditTherapyPlan';
 import { Gallery } from './pages/Gallery';
 import { useAuthStore } from './store/authStore';
@@ -105,7 +104,7 @@ export default function App() {
             path="/therapy-plans/create"
             element={
               <ProtectedRoute roles={['THERAPIST']}>
-                <CreateTherapyPlan />
+                <EditTherapyPlan />
               </ProtectedRoute>
             }
           />

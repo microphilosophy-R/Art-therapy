@@ -11,8 +11,14 @@ export const getTherapist = async (id: string): Promise<TherapistProfile> => {
   return data;
 };
 
-export const getAvailableSlots = async (therapistId: string, date: string): Promise<TimeSlot[]> => {
-  const { data } = await api.get(`/therapists/${therapistId}/slots`, { params: { date } });
+export const getAvailableSlots = async (
+  therapistId: string,
+  date: string,
+  duration?: number,
+): Promise<TimeSlot[]> => {
+  const { data } = await api.get(`/therapists/${therapistId}/slots`, {
+    params: { date, ...(duration ? { duration } : {}) },
+  });
   return data;
 };
 

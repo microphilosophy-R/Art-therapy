@@ -22,9 +22,12 @@
     "status": {
       "PENDING": "Awaiting Payment",
       "CONFIRMED": "Confirmed",
+      "IN_PROGRESS": "In Progress",
       "CANCELLED": "Cancelled",
       "COMPLETED": "Completed"
     },
+    "previous": "Previous",
+    "next": "Next",
     "role": {
       "CLIENT": "Client",
       "THERAPIST": "Therapist",
@@ -56,6 +59,11 @@
       "PENDING_REVIEW": "Pending Review",
       "PUBLISHED": "Published",
       "REJECTED": "Rejected",
+      "SIGN_UP_CLOSED": "Sign-ups Closed",
+      "IN_PROGRESS": "In Progress",
+      "FINISHED": "Finished",
+      "IN_GALLERY": "In Gallery",
+      "CANCELLED": "Cancelled",
       "ARCHIVED": "Archived"
     },
     "artSalonSubType": {
@@ -74,6 +82,7 @@
   "nav": {
     "findTherapist": "Find a Therapist",
     "therapyPlans": "Therapy Plans",
+    "gallery": "Gallery",
     "signIn": "Sign in",
     "getStarted": "Get started",
     "dashboard": "Dashboard",
@@ -275,7 +284,14 @@
     "step1": {
       "title": "Choose a date & time",
       "loadingSlots": "Loading slots…",
-      "noSlots": "No available slots on this day. Try another date."
+      "noSlots": "No available slots on this day. Try another date.",
+      "duration": "Duration",
+      "at": "at",
+      "bookThis": "Book this →",
+      "searchingQuickPick": "Finding next available slot…",
+      "chooseDifferent": "Choose a different time",
+      "preview": "Appointment Preview",
+      "yourAppointment": "Your appointment"
     },
     "step2": {
       "title": "Session format",
@@ -482,7 +498,30 @@
       "edit": "Edit",
       "submitForReview": "Submit for Review",
       "archive": "Archive",
-      "rejectedBanner": "This plan was rejected"
+      "rejectedBanner": "This plan was rejected",
+      "pendingBanner": "This plan is pending review and cannot be edited.",
+      "publishedBanner": "This plan is published and cannot be edited.",
+      "exportIcs": "Add to My Calendar (Export)",
+      "closeSignup": "Close Sign-ups",
+      "startSession": "Start Session",
+      "finishSession": "Finish Session",
+      "moveToGallery": "Move to Gallery",
+      "cancelPlan": "Cancel Plan",
+      "signUp": "Sign Up",
+      "enrolled": "Enrolled",
+      "acceptanceDeadline": "Acceptance deadline"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "addEvent": "Add Time Slot",
+      "event": "Event",
+      "eventTitle": "Label",
+      "eventTitlePlaceholder": "e.g. Morning Session",
+      "empty": "No schedule events yet. Add one above.",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "numDays": "Number of days",
+      "setStartFirst": "Set the plan start date above to generate the schedule."
     },
     "form": {
       "createTitle": "Create Therapy Plan",
@@ -498,7 +537,9 @@
       "introduction": "Introduction",
       "introPlaceholder": "Describe what participants can expect...",
       "startTime": "Start Date & Time",
-      "endTime": "End Date & Time (optional)",
+      "duration": "Duration",
+      "durationPlaceholder": "e.g. 60",
+      "endTime": "End Date & Time",
       "location": "Location",
       "locationPlaceholder": "e.g. Studio 3, Central Arts Building",
       "maxParticipants": "Max Participants (optional)",
@@ -512,16 +553,43 @@
       "errorSave": "Failed to save plan.",
       "errorUpload": "Plan saved but poster upload failed.",
       "rejectedNotice": "This plan was rejected",
-      "maxParticipantsGroupError": "Group consults allow a maximum of 12 participants.",
+      "maxParticipantsGroupError": "Must be 1–12",
       "introductionPlaceholder": "Describe what participants can expect...",
-      "endTimeOptional": "End Date & Time (optional)",
+      "endTimeOptional": "(optional)",
       "contactInfoPlaceholder": "e.g. +1 555-000-0000 or email@example.com",
       "posterSection": "Poster",
       "defaultPosters": "Default posters",
       "uploadCustom": "Upload custom image",
       "posterHint": "Choose a default poster or upload your own (max 5 MB, recommended 800×450).",
-      "submitError": "Failed to submit plan for review."
+      "submitError": "Failed to submit plan for review.",
+      "titleMinLength": "Title must be at least 5 characters",
+      "titleMaxLength": "Title must be at most 100 characters",
+      "introMinLength": "Introduction must be at least 20 characters",
+      "sloganMaxLengthError": "Maximum 60 characters",
+      "endTimeAfterStart": "End time must be after start time",
+      "maxParticipantsMin": "Must be at least 1",
+      "maxParticipantsError": "Must be 1–100",
+      "price": "Price per seat (CNY)",
+      "pricePlaceholder": "e.g. 200",
+      "slogan": "Slogan",
+      "sloganPlaceholder": "A brief, catchy subtitle (e.g. Escape to Nature)"
+    },
+    "templates": {
+      "loadTemplate": "Load from Template",
+      "saveAsTemplate": "Save as Template",
+      "myTemplates": "My Templates",
+      "publicTemplates": "Public Templates",
+      "noTemplates": "No templates available.",
+      "templateName": "Template name",
+      "makePublic": "Share with all therapists",
+      "saved": "Template saved.",
+      "useTemplate": "Use",
+      "confirmDelete": "Delete this template?"
     }
+  },
+  "gallery": {
+    "title": "Gallery",
+    "subtitle": "Completed therapy programmes"
   },
   "messages": {
     "inbox": "Messages",
@@ -540,7 +608,14 @@
       "PLAN_SUBMITTED": "Plan submitted for review",
       "PLAN_APPROVED": "Plan approved",
       "PLAN_REJECTED": "Plan rejected",
-      "MANUAL": "Direct message"
+      "MANUAL": "Direct message",
+      "APPOINTMENT_DEADLINE_WARNING": "Appointment deadline approaching",
+      "APPOINTMENT_AUTO_CANCELLED": "Appointment auto-cancelled",
+      "PLAN_SIGNUP": "New plan sign-up",
+      "PLAN_SIGNUP_CANCELLED": "Plan sign-up cancelled",
+      "PLAN_STARTED": "Plan started",
+      "PLAN_FINISHED": "Plan finished",
+      "PLAN_CANCELLED_BY_THERAPIST": "Plan cancelled"
     }
   },
   "profile": {

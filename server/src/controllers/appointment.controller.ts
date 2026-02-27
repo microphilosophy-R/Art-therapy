@@ -5,6 +5,71 @@ import type { CreateAppointmentInput } from '../schemas/appointment.schemas';
 
 const paymentsEnabled = process.env.PAYMENTS_ENABLED !== 'false';
 
+const ACCEPT_DEADLINE_HOURS = 24;  // therapist must accept this many hours before appointment
+const WARN_DEADLINE_HOURS   = 48;  // send warning this many hours before appointment
+
+/**
+ * Lazily check if a PENDING appointment has passed its acceptance deadline
+ * and auto-cancel it. Returns the (possibly updated) appointment.
+ */
+const checkAndAutoCancel = async (appt: any): Promise<any> => {
+  if (appt.status !== 'PENDING') return appt;
+
+  const deadlineMs = new Date(appt.startTime).getTime() - ACCEPT_DEADLINE_HOURS * 60 * 60 * 1000;
+  if (Date.now() < deadlineMs) return appt;
+
+  // Past deadline — auto-cancel
+  const cancelled = await prisma.appointment.update({
+    where: { id: appt.id },
+    data: { status: 'CANCELLED' },
+  });
+
+  // Notify client
+  await prisma.message.create({
+    data: {
+      recipientId: appt.clientId,
+      body: `Your appointment on ${new Date(appt.startTime).toLocaleString()} was automatically cancelled because the therapist did not confirm in time.`,
+      trigger: 'APPOINTMENT_AUTO_CANCELLED',
+    },
+  });
+
+  if (appt.payment?.status === 'SUCCEEDED') {
+    await processAppointmentRefund(appt.id, false);
+  }
+
+  return { ...cancelled, payment: appt.payment, client: appt.client, therapist: appt.therapist, sessionNote: appt.sessionNote };
+};
+
+/**
+ * Lazily send a deadline warning message to the therapist if approaching
+ * and the warning has not yet been sent.
+ */
+const maybeSendDeadlineWarning = async (appt: any): Promise<void> => {
+  if (appt.status !== 'PENDING') return;
+
+  const warnMs = new Date(appt.startTime).getTime() - WARN_DEADLINE_HOURS * 60 * 60 * 1000;
+  if (Date.now() < warnMs) return;
+
+  // Check if warning already sent
+  const alreadySent = await prisma.message.findFirst({
+    where: {
+      recipientId: appt.therapist.userId,
+      trigger: 'APPOINTMENT_DEADLINE_WARNING',
+      body: { contains: appt.id },
+    },
+  });
+  if (alreadySent) return;
+
+  const deadline = new Date(new Date(appt.startTime).getTime() - ACCEPT_DEADLINE_HOURS * 60 * 60 * 1000);
+  await prisma.message.create({
+    data: {
+      recipientId: appt.therapist.userId,
+      body: `⏰ Reminder: You have a pending appointment on ${new Date(appt.startTime).toLocaleString()} (ID: ${appt.id}). Please confirm or cancel before ${deadline.toLocaleString()} to avoid auto-cancellation.`,
+      trigger: 'APPOINTMENT_DEADLINE_WARNING',
+    },
+  });
+};
+
 export const createAppointment = async (req: Request, res: Response) => {
   const body = req.body as CreateAppointmentInput;
 
@@ -78,7 +143,7 @@ export const listAppointments = async (req: Request, res: Response) => {
 };
 
 export const getAppointment = async (req: Request, res: Response) => {
-  const appt = await prisma.appointment.findUnique({
+  let appt = await prisma.appointment.findUnique({
     where: { id: req.params.id },
     include: { client: true, therapist: { include: { user: true } }, payment: true, sessionNote: true },
   });
@@ -92,7 +157,17 @@ export const getAppointment = async (req: Request, res: Response) => {
   if (!isClient && !isTherapist && !isAdmin) {
     return res.status(403).json({ message: 'Forbidden' });
   }
-  res.json(appt);
+
+  // Lazy deadline warning (send to therapist if approaching)
+  await maybeSendDeadlineWarning(appt);
+
+  // Lazy auto-cancellation (cancel if past acceptance deadline)
+  const checkedAppt = await checkAndAutoCancel(appt);
+
+  // Compute acceptance deadline for the client
+  const acceptanceDeadline = new Date(checkedAppt.startTime).getTime() - ACCEPT_DEADLINE_HOURS * 60 * 60 * 1000;
+
+  res.json({ ...checkedAppt, acceptanceDeadline: new Date(acceptanceDeadline).toISOString() });
 };
 
 export const cancelAppointment = async (req: Request, res: Response) => {
@@ -126,6 +201,24 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
   const isTherapist = appt.therapist.userId === req.user!.id;
   const isAdmin = req.user!.role === 'ADMIN';
   if (!isTherapist && !isAdmin) return res.status(403).json({ message: 'Forbidden' });
+
+  // Validate allowed transitions
+  const allowed: Record<string, string[]> = {
+    PENDING:     ['CONFIRMED', 'CANCELLED'],
+    CONFIRMED:   ['IN_PROGRESS', 'CANCELLED', 'COMPLETED'],
+    IN_PROGRESS: ['COMPLETED', 'CANCELLED'],
+  };
+  if (!allowed[appt.status]?.includes(status)) {
+    return res.status(400).json({
+      message: `Cannot transition from ${appt.status} to ${status}`,
+    });
+  }
+
+  // Lazy auto-cancel check before therapist action
+  const maybeCancelled = await checkAndAutoCancel(appt);
+  if (maybeCancelled.status === 'CANCELLED') {
+    return res.status(400).json({ message: 'Appointment was auto-cancelled due to acceptance deadline' });
+  }
 
   const updated = await prisma.appointment.update({
     where: { id: appt.id },

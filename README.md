@@ -1,6 +1,6 @@
-# Art Therapy Appointment Web Application
+# Art Therapy Appointment Platform
 
-A full-stack web application for managing art therapy appointments, clients, and therapists.
+A full-stack web application for managing art therapy appointments, group therapy programmes, payments, and client communications. The platform supports three user roles and four distinct therapy programme types, with multi-provider payment processing (Stripe, Alipay, WeChat Pay) and full English / Chinese (Mandarin) localisation.
 
 ---
 
@@ -11,165 +11,165 @@ A full-stack web application for managing art therapy appointments, clients, and
 3. [Architecture Overview](#architecture-overview)
 4. [Project Structure](#project-structure)
 5. [Database Design](#database-design)
-6. [API Design](#api-design)
-7. [Frontend Workflow](#frontend-workflow)
-8. [Backend Workflow](#backend-workflow)
-9. [Payment Architecture](#payment-architecture)
-10. [Authentication & Authorization](#authentication--authorization)
-11. [Development Workflow](#development-workflow)
-12. [Environment Setup](#environment-setup)
+6. [API Reference](#api-reference)
+7. [Key Workflows](#key-workflows)
+8. [Development Setup](#development-setup)
+9. [Environment Configuration](#environment-configuration)
+10. [User Manuals](#user-manuals)
 
 ---
 
 ## Project Overview
 
-This platform allows:
-- **Clients** to browse therapists, book appointments, and track session history
-- **Therapists** to manage their schedule, view upcoming sessions, and maintain client notes
-- **Admins** to oversee the platform, manage users, and view analytics
+### User Roles
 
-### Therapy Plans
-The platform offers four distinct classes of therapy plans, visibly structured on the dynamic front page:
-1. **Personal Consultations**: 1-on-1 private sessions with featured therapists.
-2. **Group Consultations**: Small, supportive group sessions (1 vs N) guided by a professional.
-3. **Art Salons**: Single-day open sessions (N vs N) focused on mindfulness and shared creativity.
-4. **Wellness Retreats**: Immersive multi-day experiences (N vs N) with scheduled itineraries.
+| Role | Description |
+|---|---|
+| `CLIENT` | Browses therapists, books personal appointments, signs up for group plans, submits forms, and manages their session history. |
+| `THERAPIST` | Manages their schedule and availability, creates and publishes therapy plans, writes session notes, sends intake forms, and connects a Stripe payout account. |
+| `ADMIN` | Reviews and approves therapy plans submitted by therapists, manages platform users, and views revenue analytics. |
 
-*Note: Group plans like Salons and Retreats prominently display attendee sign-up counts, whereas Personal sessions maintain strict privacy.*
+### Therapy Plan Types
+
+| Type | Description |
+|---|---|
+| `PERSONAL_CONSULT` | Private 1-on-1 session between a single client and a therapist. Booked directly through the therapist's availability calendar. |
+| `GROUP_CONSULT` | Small structured group session (one therapist, multiple clients). Requires admin approval before clients can sign up. |
+| `ART_SALON` | Open single-day event focused on shared creativity and mindfulness. Supports sub-types. Requires admin approval. |
+| `WELLNESS_RETREAT` | Immersive multi-day experience with a scheduled event itinerary. Requires admin approval. |
+
+Group plans (`GROUP_CONSULT`, `ART_SALON`, `WELLNESS_RETREAT`) display live participant counts. Personal consultations maintain strict privacy with no public attendee information.
+
+### Plan Status Lifecycle
+
+```
+DRAFT -> PENDING_REVIEW -> PUBLISHED -> SIGN_UP_CLOSED -> IN_PROGRESS -> FINISHED -> IN_GALLERY
+                        -> REJECTED
+  (any active stage)  -> CANCELLED
+                      -> ARCHIVED
+```
+
+Admin approval is required to transition from `PENDING_REVIEW` to `PUBLISHED`. A conflict detection check runs at submission time, verifying the therapist has no overlapping confirmed appointments or active plans.
 
 ---
 
 ## Tech Stack
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| **React 18** | UI component framework |
-| **TypeScript** | Type safety across the frontend |
-| **Vite** | Fast development server and bundler |
-| **React Router v6** | Client-side routing |
-| **TanStack Query (React Query)** | Server state management, caching, background refetching |
-| **Zustand** | Lightweight global UI state (auth, modal state) |
-| **Tailwind CSS** | Utility-first styling |
-| **shadcn/ui** | Accessible, composable UI components built on Radix UI |
-| **React Hook Form + Zod** | Form management and schema validation |
-| **Framer Motion** | Declarative page scroll animations and transitions |
-| **Lucide React** | Consistent, scalable SVG icon library |
-| **FullCalendar** | Interactive appointment scheduling calendar |
-| **Axios** | HTTP client with interceptors for auth tokens |
-| **@stripe/stripe-js** | Loads Stripe.js asynchronously, provides `loadStripe()` |
-| **@stripe/react-stripe-js** | `<Elements>`, `<PaymentElement>`, `useStripe` / `useElements` hooks |
+
+| Technology | Version | Purpose |
+|---|---|---|
+| React | 18 | UI component framework |
+| TypeScript | — | Type safety |
+| Vite | — | Development server and production bundler |
+| React Router | v6 | Client-side routing |
+| TanStack Query (React Query) | v5 | Server state management, caching, background refetching |
+| Zustand | — | Lightweight global state (auth store, persisted to localStorage) |
+| Tailwind CSS | — | Utility-first styling |
+| Radix UI primitives | — | Accessible, unstyled component primitives |
+| Framer Motion | — | Page scroll animations and transitions |
+| Lucide React | — | SVG icon library |
+| React Hook Form | — | Form state management |
+| Zod | — | Client-side schema validation |
+| FullCalendar | — | Interactive appointment scheduling calendar |
+| Axios | — | HTTP client with JWT Bearer token interceptors |
+| @stripe/stripe-js | — | Loads Stripe.js asynchronously |
+| @stripe/react-stripe-js | — | `<Elements>`, `<PaymentElement>`, `useStripe` / `useElements` hooks |
+| qrcode.react | — | WeChat Pay QR code rendering |
+| i18next + react-i18next | — | Internationalisation — English / Chinese (zh) |
 
 ### Backend
-| Technology | Purpose |
-|---|---|
-| **Node.js 20** | Runtime environment |
-| **Express.js** | HTTP server and REST API framework |
-| **TypeScript** | Type safety across the backend |
-| **Prisma ORM** | Database schema, migrations, and type-safe queries |
-| **PostgreSQL** | Primary relational database |
-| **Redis** | Session caching and rate limiting |
-| **JWT (jsonwebtoken)** | Stateless authentication tokens |
-| **bcrypt** | Password hashing |
-| **Nodemailer** | Email notifications (appointment confirmations, reminders) |
-| **node-cron** | Scheduled jobs (e.g., sending 24h reminders) |
-| **Zod** | Request body validation on API routes |
-| **Multer + Cloudinary** | File uploads (therapist profile photos, session artwork) |
-| **stripe** | Official Stripe Node.js SDK — PaymentIntents, Connect, Transfers, Refunds |
 
-### Database
-| Technology | Purpose |
-|---|---|
-| **PostgreSQL 16** | Relational data: users, appointments, notes |
-| **Redis 7** | Token blacklist, rate limiting, ephemeral cache |
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | 20 | Runtime environment |
+| Express.js | — | HTTP server and REST API framework |
+| TypeScript | — | Type safety |
+| Prisma ORM | — | Database schema, migrations, and type-safe queries |
+| PostgreSQL | 16 | Primary relational database |
+| Redis | 7 | Rate limiting, JWT token blacklist, short-lived cache |
+| jsonwebtoken | — | JWT access tokens (15m) and refresh tokens (7d) |
+| bcryptjs | — | Password hashing |
+| Zod | — | Server-side request body validation |
+| Stripe SDK | v14 | PaymentIntents, Connect Express accounts, Refunds |
+| alipay-sdk | — | Alipay order creation and signature verification |
+| wechatpay-axios-plugin | — | WeChat Pay v3 order creation and AES-GCM notification verification |
+| Multer + Cloudinary | — | File uploads (avatars, poster images, session artwork) |
+| Nodemailer | — | Email notifications (confirmations, reminders) |
+| node-cron | — | Scheduled jobs (reminders, auto-completion, stale cleanup) |
+| Helmet | — | HTTP security headers |
+| cors | — | Cross-origin request handling |
+| cookie-parser | — | httpOnly refresh token cookie parsing |
 
-### DevOps & Tooling
+### Infrastructure
+
 | Technology | Purpose |
 |---|---|
-| **Docker + Docker Compose** | Local development environment containerization |
-| **ESLint + Prettier** | Code linting and formatting |
-| **Vitest** | Frontend unit and component testing |
-| **Jest + Supertest** | Backend API integration testing |
-| **GitHub Actions** | CI pipeline (lint, test, build) |
+| Docker Compose | Local PostgreSQL 16 and Redis 7 containers |
 
 ---
 
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                        Browser                          │
-│         React + TypeScript + @stripe/react-stripe-js    │
-│              (Vite Dev Server / Static Build)           │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTPS / REST API calls            │ Stripe.js (loaded from CDN)
-                       │ (Axios + JWT Bearer Token)        ↕
-┌──────────────────────▼──────────────────────────────────┐
-│                   Express.js API Server                 │
-│                  (Node.js + TypeScript)                 │
-│                                                         │
-│  ┌──────────┐  ┌─────────────┐  ┌──────────────────┐   │
-│  │   Auth   │  │Appointments │  │ Payment Router + │   │
-│  │  Router  │  │   Router    │  │ Webhook Handler  │   │
-│  └──────────┘  └─────────────┘  └──────────────────┘   │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │             Middleware Layer                     │   │
-│  │  JWT Verify │ Role Guard │ Validator │ Rate Limit│   │
-│  └──────────────────────────────────────────────────┘   │
-└──────────────┬───────────────────┬─────────┬────────────┘
-               │ Prisma ORM        │ ioredis │ stripe SDK
-┌──────────────▼──────────┐  ┌────▼──────────────────┐
-│      PostgreSQL 16       │  │      Redis 7           │
-│  Users, Appointments,    │  │  Token blacklist,      │
-│  TherapistProfiles,      │  │  Rate limit counters,  │
-│  Payment, RefundPolicy,  │  │  Short-lived cache     │
-│  WebhookEvent, Reviews   │  └────────────────────────┘
-└─────────────────────────┘
-┌──────────────────────────────────────────────────────┐
-│                  Stripe Platform                     │
-│  PaymentIntents │ Connect Express Accounts           │
-│  Transfers │ Refunds │ Webhooks → POST /webhooks/stripe│
-└──────────────────────────────────────────────────────┘
++---------------------------------------------------------------+
+|                           Browser                             |
+|      React 18 + TypeScript  (Vite Dev Server / Static Build)  |
+|      @stripe/react-stripe-js  |  i18next  |  Framer Motion    |
++-----------------------------+---------------------------------+
+                              |
+                    HTTPS / REST  (Axios + JWT Bearer Token)
+                              |
++-----------------------------v---------------------------------+
+|                   Express.js API Server                       |
+|                  (Node.js 20 + TypeScript)                    |
+|                                                               |
+|   +----------+  +-----------+  +-----------+  +-----------+  |
+|   |   Auth   |  | Appoint-  |  |  Therapy  |  |  Payment  |  |
+|   |  Router  |  |   ments   |  |   Plans   |  |  Router   |  |
+|   +----------+  +-----------+  +-----------+  +-----------+  |
+|   +---------+  +--------+  +---------+  +-------------------+ |
+|   |  Forms  |  |  Msgs  |  | Profile |  |  Admin / Webhooks | |
+|   +---------+  +--------+  +---------+  +-------------------+ |
+|                                                               |
+|   +-----------------------------------------------------------+|
+|   |                   Middleware Layer                        ||
+|   |  Rate Limiter (Redis)  |  JWT Verify  |  Role Guard       ||
+|   |  Zod Validator         |  Helmet      |  CORS             ||
+|   +-----------------------------------------------------------+|
+|                                                               |
++----+------------------------+------------------+--------------+
+     | Prisma ORM             | ioredis          | Payment SDKs
+     v                        v                  v
++----+----------+  +----------+----------+  +----+--------------+
+| PostgreSQL 16 |  |       Redis 7        |  | Stripe  Platform |
+| Users         |  | Token blacklist      |  | Alipay  Platform |
+| Appointments  |  | Rate limit counters  |  | WeChat  Platform |
+| TherapyPlans  |  | Exchange rate cache  |  +------------------+
+| Payments      |  +----------------------+
+| Messages      |                            +------------------+
+| Forms, etc.   |                            | Cloudinary       |
++---------------+                            | (file storage)   |
+                                             +------------------+
 ```
 
-### Request Flow (Example: Book an Appointment)
+### Middleware Execution Order
 
 ```
-Client Browser
-  │
-  ├─ 1. User fills booking form (React Hook Form + Zod client validation)
-  │
-  ├─ 2. TanStack Query mutation fires POST /api/appointments
-  │      with JWT Bearer token in Authorization header
-  │
-  ├─ 3. Express middleware chain:
-  │      a. Rate limiter checks Redis (max 10 requests/min per IP)
-  │      b. JWT middleware verifies token, attaches req.user
-  │      c. Role guard ensures user is a CLIENT
-  │      d. Zod schema validates request body
-  │
-  ├─ 4. Appointment controller:
-  │      a. Verifies therapist Stripe account is ACTIVE (can receive payments)
-  │      b. Checks therapist availability (Prisma query)
-  │      c. Creates Appointment record (status: PENDING)
-  │      d. Returns appointmentId to frontend
-  │
-  ├─ 5. Frontend calls POST /payments/create-intent
-  │      a. Backend computes amount in cents, platform fee (15%)
-  │      b. stripe.paymentIntents.create({ transfer_data.destination })
-  │      c. Returns { clientSecret } to frontend
-  │
-  ├─ 6. Frontend renders <PaymentElement> → client submits card
-  │      stripe.confirmPayment() → Stripe processes charge
-  │
-  └─ 7. Stripe fires webhook: payment_intent.succeeded
-         → Backend marks Payment SUCCEEDED, Appointment CONFIRMED
-         → Sends confirmation email to client and therapist
-         → Frontend polls GET /appointments/:id until CONFIRMED
+Incoming Request
+  -> CORS
+  -> Helmet (security headers)
+  -> POST /webhooks/*   <-- express.raw() scope ONLY (must precede express.json())
+  -> express.json()     <-- all other routes
+  -> Redis rate limiter
+  -> Route matched
+       -> authenticate  (JWT verify, attaches req.user)
+       -> authorize     (role guard)
+       -> validate      (Zod schema check)
+       -> controller
+            -> service / Prisma
+            -> JSON response
 ```
-
-> **Note:** Appointment status does NOT transition to CONFIRMED during the `POST /appointments` request. It stays PENDING until the `payment_intent.succeeded` webhook is received. The webhook is the authoritative source of truth for appointment confirmation.
 
 ---
 
@@ -177,93 +177,163 @@ Client Browser
 
 ```
 art-therapy-app/
-├── client/                          # React frontend
-│   ├── public/
-│   ├── src/
-│   │   ├── api/                     # Axios instance + API call functions
-│   │   │   └── payments.ts          # createPaymentIntent, connect, stats calls
-│   │   ├── components/
-│   │   │   ├── ui/                  # shadcn/ui base components
-│   │   │   ├── layout/              # Navbar, Sidebar, Footer
-│   │   │   ├── appointments/        # Calendar, BookingModal, AppointmentCard
-│   │   │   ├── therapists/          # TherapistCard, TherapistProfile
-│   │   │   ├── payments/
-│   │   │   │   ├── PaymentForm.tsx           # <PaymentElement> + submit button
-│   │   │   │   └── PaymentElementWrapper.tsx # <Elements> provider
-│   │   │   └── auth/                # LoginForm, RegisterForm
-│   │   ├── hooks/                   # Custom React hooks
-│   │   ├── lib/
-│   │   │   └── stripe.ts            # loadStripe() singleton
-│   │   ├── pages/                   # Route-level page components
-│   │   │   ├── Home.tsx
-│   │   │   ├── TherapistDirectory.tsx
-│   │   │   ├── TherapistProfile.tsx
-│   │   │   ├── BookAppointment.tsx
-│   │   │   ├── booking/
-│   │   │   │   └── BookingConfirmation.tsx   # Post-payment confirmation page
-│   │   │   ├── Dashboard/
-│   │   │   │   ├── ClientDashboard.tsx
-│   │   │   │   ├── TherapistDashboard.tsx    # + Stripe Connect section
-│   │   │   │   └── AdminDashboard.tsx        # + Revenue analytics tab
-│   │   │   └── auth/
-│   │   │       ├── Login.tsx
-│   │   │       └── Register.tsx
-│   │   ├── store/                   # Zustand stores (auth, UI)
-│   │   ├── types/                   # Shared TypeScript interfaces
-│   │   │   └── payment.types.ts     # Payment, PaymentStatus, AdminPaymentStats
-│   │   ├── utils/                   # Date formatters, validators
-│   │   ├── App.tsx                  # Router setup
-│   │   └── main.tsx                 # Entry point
-│   ├── index.html
-│   ├── vite.config.ts
-│   ├── tailwind.config.ts
-│   └── tsconfig.json
-│
-├── server/                          # Express backend
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── auth.routes.ts
-│   │   │   ├── appointment.routes.ts
-│   │   │   ├── therapist.routes.ts
-│   │   │   ├── user.routes.ts
-│   │   │   ├── admin.routes.ts
-│   │   │   └── payment.routes.ts    # NEW
-│   │   ├── controllers/
-│   │   │   ├── auth.controller.ts
-│   │   │   ├── appointment.controller.ts
-│   │   │   ├── therapist.controller.ts
-│   │   │   ├── user.controller.ts
-│   │   │   └── payment.controller.ts # NEW
-│   │   ├── middleware/
-│   │   │   ├── authenticate.ts      # JWT verification
-│   │   │   ├── authorize.ts         # Role-based guard
-│   │   │   ├── validate.ts          # Zod request body validator
-│   │   │   └── rateLimiter.ts       # Redis-backed rate limiter
-│   │   ├── services/
-│   │   │   ├── email.service.ts     # Nodemailer templates
-│   │   │   ├── upload.service.ts    # Cloudinary integration
-│   │   │   ├── scheduler.service.ts # node-cron reminder + stale cleanup jobs
-│   │   │   ├── stripe.service.ts    # NEW — all Stripe SDK calls
-│   │   │   └── refund.service.ts    # NEW — refund eligibility + processing
-│   │   ├── webhooks/
-│   │   │   └── stripe.webhook.ts    # NEW — raw-body route + event handlers
-│   │   ├── schemas/                 # Zod validation schemas
-│   │   │   └── payment.schemas.ts   # NEW
-│   │   ├── lib/
-│   │   │   ├── prisma.ts            # Prisma client singleton
-│   │   │   ├── redis.ts             # Redis client singleton
-│   │   │   └── stripe.ts            # NEW — Stripe client singleton
-│   │   ├── types/                   # Express Request extensions
-│   │   └── app.ts                   # Express app setup
-│   ├── prisma/
-│   │   ├── schema.prisma            # Database schema
-│   │   └── migrations/              # Auto-generated migration files
-│   ├── server.ts                    # Entry point
-│   └── tsconfig.json
-│
-├── docker-compose.yml               # PostgreSQL + Redis containers
-├── .env.example                     # Environment variable template
-└── README.md
+|
++-- client/                              # React frontend (Vite)
+|   +-- public/
+|   +-- index.html
+|   +-- vite.config.ts
+|   +-- tailwind.config.ts
+|   +-- tsconfig.json
+|   +-- src/
+|       +-- api/                         # Axios instance + typed API call functions
+|       |   +-- axios.ts                 # Axios instance with JWT interceptor + refresh logic
+|       |   +-- admin.ts
+|       |   +-- alipay.ts
+|       |   +-- appointments.ts
+|       |   +-- auth.ts
+|       |   +-- forms.ts
+|       |   +-- messages.ts
+|       |   +-- payments.ts
+|       |   +-- profile.ts
+|       |   +-- therapists.ts
+|       |   +-- therapyPlans.ts
+|       |   +-- wechat.ts
+|       +-- components/
+|       |   +-- ui/                      # Radix UI-based base components
+|       |   +-- layout/                  # Navbar, Footer, Layout wrapper
+|       |   +-- appointments/            # AppointmentCard
+|       |   +-- messages/                # MessageItem
+|       |   +-- therapists/              # TherapistCard
+|       |   +-- therapyPlans/            # TherapyPlanCard, PosterSelector
+|       |   +-- payments/
+|       |       +-- AlipayPaymentForm.tsx
+|       |       +-- PaymentElementWrapper.tsx
+|       |       +-- PaymentForm.tsx
+|       |       +-- PaymentMethodSelector.tsx
+|       |       +-- StripeUnavailable.tsx
+|       |       +-- WechatPaymentForm.tsx
+|       +-- hooks/
+|       |   +-- useExchangeRate.ts       # TanStack Query hook for CNY->USD rate (1h cache)
+|       +-- i18n.ts                      # i18next initialisation (en / zh)
+|       +-- lib/
+|       |   +-- stripe.ts                # loadStripe() singleton
+|       +-- locales/
+|       |   +-- en.json
+|       |   +-- zh.json
+|       +-- pages/
+|       |   +-- Home.tsx
+|       |   +-- TherapistDirectory.tsx
+|       |   +-- TherapistProfile.tsx
+|       |   +-- BookAppointment.tsx
+|       |   +-- PrivacyTerms.tsx
+|       |   +-- UserProfile.tsx
+|       |   +-- Gallery.tsx                    # Public gallery of IN_GALLERY plans (/gallery)
+|       |   +-- auth/
+|       |   |   +-- Login.tsx
+|       |   |   +-- Register.tsx
+|       |   +-- booking/
+|       |   |   +-- BookingConfirmation.tsx
+|       |   +-- Dashboard/
+|       |   |   +-- ClientDashboard.tsx
+|       |   |   +-- TherapistDashboard.tsx
+|       |   |   +-- AdminDashboard.tsx
+|       |   |   +-- tabs/
+|       |   |       +-- AdminPlansTab.tsx
+|       |   |       +-- MessagesTab.tsx
+|       |   |       +-- TherapistPlansTab.tsx
+|       |   +-- forms/
+|       |   |   +-- ComposeForm.tsx
+|       |   |   +-- FillForm.tsx
+|       |   |   +-- FormDetail.tsx
+|       |   +-- therapy-plans/
+|       |       +-- CreateTherapyPlan.tsx
+|       |       +-- EditTherapyPlan.tsx
+|       |       +-- TherapyPlanDetail.tsx
+|       |       +-- TherapyPlanForm.tsx
+|       |       +-- TherapyPlansDirectory.tsx
+|       +-- store/
+|       |   +-- authStore.ts             # Zustand auth store (persisted to localStorage)
+|       +-- types/
+|       |   +-- index.ts                 # Shared TypeScript interfaces
+|       |   +-- payment.types.ts
+|       +-- utils/
+|           +-- cn.ts                    # Tailwind class merge helper
+|           +-- formatters.ts            # Date and currency formatters
+|           +-- therapyPlanUtils.ts
+|
++-- server/                              # Express backend
+|   +-- prisma/
+|   |   +-- schema.prisma                # Full database schema (19 models)
+|   |   +-- seed.ts                      # Demo data seeder
+|   |   +-- migrations/                  # Auto-generated Prisma migration files
+|   +-- tsconfig.json
+|   +-- src/
+|       +-- app.ts                       # Express app setup, middleware, route mounting
+|       +-- server.ts                    # Entry point
+|       +-- test-fx.ts                   # Exchange rate API diagnostic script
+|       +-- routes/
+|       |   +-- admin.routes.ts
+|       |   +-- alipay.routes.ts
+|       |   +-- appointment.routes.ts
+|       |   +-- auth.routes.ts
+|       |   +-- form.routes.ts
+|       |   +-- message.routes.ts
+|       |   +-- payment.routes.ts
+|       |   +-- profile.routes.ts
+|       |   +-- therapist.routes.ts
+|       |   +-- therapyPlan.routes.ts
+|       |   +-- wechat.routes.ts
+|       +-- controllers/
+|       |   +-- alipay.controller.ts
+|       |   +-- appointment.controller.ts
+|       |   +-- auth.controller.ts
+|       |   +-- form.controller.ts
+|       |   +-- message.controller.ts
+|       |   +-- payment.controller.ts
+|       |   +-- profile.controller.ts
+|       |   +-- therapist.controller.ts
+|       |   +-- therapyPlan.controller.ts
+|       |   +-- user.controller.ts
+|       |   +-- wechat.controller.ts
+|       +-- middleware/
+|       |   +-- authenticate.ts          # JWT verification (blocks unauthenticated requests)
+|       |   +-- authorize.ts             # Role-based access guard
+|       |   +-- optionalAuthenticate.ts  # Attaches user if token present; non-blocking
+|       |   +-- rateLimiter.ts           # Redis-backed rate limiter
+|       |   +-- validate.ts              # Zod schema request body validator
+|       +-- services/
+|       |   +-- alipay.service.ts
+|       |   +-- email.service.ts         # Nodemailer templates
+|       |   +-- message.service.ts       # In-app message creation logic
+|       |   +-- refund.service.ts        # Refund eligibility and processing
+|       |   +-- scheduler.service.ts     # node-cron jobs
+|       |   +-- stripe.service.ts        # All Stripe SDK calls
+|       |   +-- upload.service.ts        # Cloudinary integration
+|       |   +-- wechat.service.ts
+|       +-- webhooks/
+|       |   +-- alipay.webhook.ts
+|       |   +-- stripe.webhook.ts
+|       |   +-- wechat.webhook.ts
+|       +-- schemas/                     # Zod validation schemas per domain
+|       |   +-- appointment.schemas.ts
+|       |   +-- auth.schemas.ts
+|       |   +-- form.schemas.ts
+|       |   +-- message.schemas.ts
+|       |   +-- payment.schemas.ts
+|       |   +-- therapist.schemas.ts
+|       |   +-- therapyPlan.schemas.ts
+|       |   +-- user.schemas.ts
+|       +-- lib/
+|       |   +-- alipay.ts               # Alipay SDK client singleton
+|       |   +-- prisma.ts               # Prisma client singleton
+|       |   +-- redis.ts                # Redis client singleton
+|       |   +-- stripe.ts               # Stripe client singleton
+|       |   +-- wechat.ts               # WeChat Pay client singleton
+|       +-- types/
+|           +-- express.d.ts            # Express Request type augmentation
+|
++-- docker-compose.yml                  # PostgreSQL + Redis containers
++-- README.md
 ```
 
 ---
@@ -272,58 +342,79 @@ art-therapy-app/
 
 ### Entity-Relationship Summary
 
+The schema contains 19 models. The core relationships are:
+
 ```
-User (1) ────── (1) TherapistProfile
-User (1) ────── (N) Appointment  [as client]
-TherapistProfile (1) ── (N) Appointment
-Appointment (1) ─── (0..1) SessionNote
-Appointment (1) ─── (0..1) Payment         ← new
-TherapistProfile (1) ── (N) Availability
-TherapistProfile (1) ── (0..1) RefundPolicy ← new
-User (1) ────── (N) Review  [client writes review]
-TherapistProfile (1) ── (N) Review
+User (1) ──────────── (0..1) TherapistProfile
+User (1) ──────────── (N)    Appointment          [as client]
+User (1) ──────────── (N)    TherapyPlanParticipant
+User (1) ──────────── (N)    Review               [as client]
+User (1) ──────────── (N)    Message              [as recipient or sender]
+
+TherapistProfile (1) ─ (N)   Appointment
+TherapistProfile (1) ─ (N)   Availability
+TherapistProfile (1) ─ (N)   Review
+TherapistProfile (1) ─ (0..1) RefundPolicy
+TherapistProfile (1) ─ (N)   TherapyPlan
+TherapistProfile (1) ─ (N)   ClientForm
+TherapistProfile (1) ─ (N)   TherapyPlanTemplate
+
+Appointment (1) ────── (0..1) SessionNote
+Appointment (1) ────── (0..1) Payment
+
+TherapyPlan (1) ──────(N)    TherapyPlanEvent
+TherapyPlan (1) ──────(N)    TherapyPlanParticipant
+
+TherapyPlanParticipant (1) ── (0..1) PlanPayment
+
+ClientForm (1) ────── (N)    FormQuestion
+ClientForm (1) ────── (N)    FormResponse
+FormResponse (1) ───── (N)   FormAnswer
 ```
 
-### Prisma Schema (key models)
+### Key Models (Prisma Schema Snippets)
 
 ```prisma
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String
-  role          Role      @default(CLIENT)  // CLIENT | THERAPIST | ADMIN
-  firstName     String
-  lastName      String
-  phone         String?
-  avatarUrl     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CLIENT)  // CLIENT | THERAPIST | ADMIN
+  firstName    String
+  lastName     String
+  phone        String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  therapistProfile  TherapistProfile?
-  appointmentsAsClient  Appointment[]  @relation("ClientAppointments")
-  reviews         Review[]
+  therapistProfile       TherapistProfile?
+  appointmentsAsClient   Appointment[]             @relation("ClientAppointments")
+  reviews                Review[]
+  planParticipations     TherapyPlanParticipant[]
+  sentMessages           Message[]                 @relation("SentMessages")
+  receivedMessages       Message[]                 @relation("ReceivedMessages")
 }
 
 model TherapistProfile {
-  id            String    @id @default(cuid())
-  userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id])
-  bio           String
-  specialties   String[]  // e.g. ["Trauma", "Anxiety", "Children"]
-  sessionPrice  Decimal
-  sessionLength Int       // minutes (e.g. 50)
-  locationCity  String
-  isAccepting   Boolean   @default(true)
-  rating        Float?    // computed from Reviews
-
-  // Stripe Connect — therapist must be ACTIVE to be bookable
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  user                User                @relation(fields: [userId], references: [id])
+  bio                 String
+  specialties         String[]
+  sessionPrice        Decimal
+  locationCity        String
+  isAccepting         Boolean             @default(true)
+  rating              Float?
   stripeAccountId     String?
   stripeAccountStatus StripeAccountStatus @default(NOT_CONNECTED)
 
-  appointments  Appointment[]
-  availability  Availability[]
-  reviews       Review[]
-  refundPolicy  RefundPolicy?
+  appointments   Appointment[]
+  availability   Availability[]
+  reviews        Review[]
+  refundPolicy   RefundPolicy?
+  therapyPlans   TherapyPlan[]
+  forms          ClientForm[]
+  templates      TherapyPlanTemplate[]
 }
 
 enum StripeAccountStatus {
@@ -335,76 +426,58 @@ enum StripeAccountStatus {
 }
 
 model Appointment {
-  id              String            @id @default(cuid())
-  clientId        String
-  client          User              @relation("ClientAppointments", fields: [clientId], references: [id])
-  therapistId     String
-  therapist       TherapistProfile  @relation(fields: [therapistId], references: [id])
-  startTime       DateTime
-  endTime         DateTime
-  status          AppointmentStatus @default(PENDING)  // PENDING | CONFIRMED | CANCELLED | COMPLETED
-  medium          SessionMedium     @default(IN_PERSON) // IN_PERSON | VIDEO
-  clientNotes     String?           // notes submitted by client at booking
-  createdAt       DateTime          @default(now())
-
-  sessionNote     SessionNote?
-  payment         Payment?          // null until POST /payments/create-intent is called
-}
-
-model SessionNote {
-  id              String      @id @default(cuid())
-  appointmentId   String      @unique
-  appointment     Appointment @relation(fields: [appointmentId], references: [id])
-  content         String      // therapist's private notes
-  artworkUrl      String?     // uploaded artwork from session
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-}
-
-model Availability {
-  id          String           @id @default(cuid())
-  therapistId String
-  therapist   TherapistProfile @relation(fields: [therapistId], references: [id])
-  dayOfWeek   Int              // 0 = Sunday, 6 = Saturday
-  startTime   String           // "09:00"
-  endTime     String           // "17:00"
-}
-
-model Review {
-  id          String           @id @default(cuid())
+  id          String            @id @default(cuid())
   clientId    String
-  client      User             @relation(fields: [clientId], references: [id])
+  client      User              @relation("ClientAppointments", fields: [clientId], references: [id])
   therapistId String
-  therapist   TherapistProfile @relation(fields: [therapistId], references: [id])
-  rating      Int              // 1–5
-  comment     String?
-  createdAt   DateTime         @default(now())
+  therapist   TherapistProfile  @relation(fields: [therapistId], references: [id])
+  startTime   DateTime
+  endTime     DateTime
+  status      AppointmentStatus @default(PENDING)
+  medium      SessionMedium     @default(IN_PERSON)
+  clientNotes String?
+  createdAt   DateTime          @default(now())
+
+  sessionNote SessionNote?
+  payment     Payment?
 }
 
-// Tracks each payment linked to an appointment.
-// Amount fields are always stored as integer cents (e.g. 10000 = $100.00).
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  CANCELLED
+  COMPLETED
+}
+
+enum SessionMedium {
+  IN_PERSON
+  VIDEO
+}
+
 model Payment {
   id                    String        @id @default(cuid())
   appointmentId         String        @unique
   appointment           Appointment   @relation(fields: [appointmentId], references: [id])
-
-  stripePaymentIntentId String        @unique  // "pi_xxxxx"
-  stripeChargeId        String?                // "ch_xxxxx" — set after payment_intent.succeeded
-  stripeTransferId      String?                // "tr_xxxxx" — auto-created by Stripe Connect
-  stripeRefundId        String?                // "re_xxxxx" — set if refunded
-
-  amount                Int                    // total charged, in cents
-  currency              String        @default("usd")
-  platformFeeAmount     Int                    // retained by platform, in cents
-  therapistPayoutAmount Int                    // transferred to therapist, in cents
-
+  provider              PaymentProvider
+  stripePaymentIntentId String?       @unique
+  externalOrderId       String?
+  externalTradeNo       String?
+  amount                Int           // total in smallest currency unit (cents / fen)
+  currency              String        @default("cny")
+  platformFeeAmount     Int
+  therapistPayoutAmount Int
   status                PaymentStatus @default(PENDING)
   refundedAt            DateTime?
-  refundAmount          Int?                   // actual refund in cents
-  refundReason          String?
-
+  refundAmount          Int?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
+}
+
+enum PaymentProvider {
+  STRIPE
+  ALIPAY
+  WECHAT_PAY
 }
 
 enum PaymentStatus {
@@ -416,677 +489,685 @@ enum PaymentStatus {
   CANCELLED
 }
 
-// Each therapist configures their own cancellation/refund policy.
 model RefundPolicy {
   id                       String           @id @default(cuid())
   therapistId              String           @unique
   therapist                TherapistProfile @relation(fields: [therapistId], references: [id])
-
-  // Cancellations at or above this threshold before the session start → full refund.
-  // Cancellations below this threshold → no refund.
   fullRefundHoursThreshold Int              @default(24)
-
   allowPartialRefund       Boolean          @default(false)
-  partialRefundPercent     Int?             // 0–100, used only if allowPartialRefund = true
-
-  policyDescription        String           // human-readable text shown to clients at booking
-
+  partialRefundPercent     Int?
+  policyDescription        String
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
 }
 
-// Idempotency log for Stripe webhook events.
-// Stripe event ID is used as the primary key — duplicate deliveries are safely ignored.
 model WebhookEvent {
-  id          String    @id        // Stripe event ID: "evt_xxxxx"
-  type        String               // e.g. "payment_intent.succeeded"
+  id          String    @id   // provider event ID — acts as idempotency key
+  provider    String          // "STRIPE" | "ALIPAY" | "WECHAT_PAY"
+  externalId  String
   processed   Boolean   @default(false)
   processedAt DateTime?
-  rawPayload  Json                 // full Stripe Event object for debugging/replay
   createdAt   DateTime  @default(now())
+}
+
+model TherapyPlan {
+  id              String          @id @default(cuid())
+  therapistId     String
+  therapist       TherapistProfile @relation(fields: [therapistId], references: [id])
+  type            PlanType
+  title           String
+  introduction    String
+  startTime       DateTime
+  endTime         DateTime
+  location        String?
+  maxParticipants Int?
+  price           Decimal?        // null for PERSONAL_CONSULT
+  status          PlanStatus      @default(DRAFT)
+  contactInfo     String?
+  sessionMedium   SessionMedium?  // for PERSONAL_CONSULT only
+  artSalonSubType String?         // for ART_SALON only
+  posterUrl       String?
+  customPosterUrl String?
+  reviewNote      String?         // admin feedback on rejection
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  events       TherapyPlanEvent[]
+  participants TherapyPlanParticipant[]
+}
+
+enum PlanType {
+  PERSONAL_CONSULT
+  GROUP_CONSULT
+  ART_SALON
+  WELLNESS_RETREAT
+}
+
+enum PlanStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  SIGN_UP_CLOSED
+  IN_PROGRESS
+  FINISHED
+  IN_GALLERY
+  CANCELLED
+  ARCHIVED
+}
+
+model TherapyPlanParticipant {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  planId     String
+  plan       TherapyPlan @relation(fields: [planId], references: [id])
+  status     ParticipantStatus @default(SIGNED_UP)
+  enrolledAt DateTime    @default(now())
+
+  payment    PlanPayment?
+}
+
+enum ParticipantStatus {
+  SIGNED_UP
+  CANCELLED
+}
+
+model PlanPayment {
+  id                    String            @id @default(cuid())
+  participantId         String            @unique
+  participant           TherapyPlanParticipant @relation(fields: [participantId], references: [id])
+  provider              PaymentProvider
+  amount                Int
+  currency              String
+  platformFeeAmount     Int
+  therapistPayoutAmount Int
+  status                PaymentStatus     @default(PENDING)
+  refundedAt            DateTime?
+  refundAmount          Int?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+}
+
+model ClientForm {
+  id          String      @id @default(cuid())
+  therapistId String
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id])
+  clientId    String?
+  title       String
+  status      FormStatus  @default(DRAFT)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  questions   FormQuestion[]
+  responses   FormResponse[]
+}
+
+enum FormStatus {
+  DRAFT
+  SENT
+  SUBMITTED
+  ARCHIVED
+}
+
+model FormQuestion {
+  id           String       @id @default(cuid())
+  formId       String
+  form         ClientForm   @relation(fields: [formId], references: [id])
+  order        Int
+  questionText String
+  type         QuestionType
+  options      String[]
+  required     Boolean      @default(false)
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  SCALE
+  YES_NO
+}
+
+model Message {
+  id          String        @id @default(cuid())
+  recipientId String
+  recipient   User          @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  senderId    String?
+  sender      User?         @relation("SentMessages", fields: [senderId], references: [id])
+  body        String
+  isRead      Boolean       @default(false)
+  trigger     MessageTrigger @default(MANUAL)
+  createdAt   DateTime      @default(now())
+}
+
+enum MessageTrigger {
+  PLAN_SUBMITTED
+  PLAN_APPROVED
+  PLAN_REJECTED
+  MANUAL
+  APPOINTMENT_DEADLINE_WARNING
+  APPOINTMENT_AUTO_CANCELLED
+  PLAN_SIGNUP
+  PLAN_SIGNUP_CANCELLED
+  PLAN_STARTED
+  PLAN_FINISHED
+  PLAN_CANCELLED_BY_THERAPIST
 }
 ```
 
 ---
 
-## API Design
+## API Reference
 
 All endpoints are prefixed with `/api/v1`.
 
-### Authentication
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| POST | `/auth/register` | Register new user | Public |
-| POST | `/auth/login` | Login, returns JWT | Public |
-| POST | `/auth/logout` | Blacklist token in Redis | Required |
-| POST | `/auth/refresh` | Refresh access token | Refresh token |
+### Auth
 
-### Therapists
-| Method | Endpoint | Description | Auth |
+| Method | Endpoint | Description | Access |
 |---|---|---|---|
-| GET | `/therapists` | List therapists (filterable) | Public |
-| GET | `/therapists/:id` | Get therapist profile + availability | Public |
-| GET | `/therapists/:id/slots` | Get available time slots for a date | Public |
-| PUT | `/therapists/:id` | Update own profile | Therapist |
-| PUT | `/therapists/:id/availability` | Set weekly availability | Therapist |
+| POST | `/auth/register` | Register a new user account | Public |
+| POST | `/auth/login` | Login; returns access token + sets refresh cookie | Public |
+| POST | `/auth/logout` | Blacklist access token in Redis | Authenticated |
+| POST | `/auth/refresh` | Issue a new access token using the refresh cookie | Refresh token |
+| GET | `/auth/me` | Return the currently authenticated user | Authenticated |
 
 ### Appointments
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| POST | `/appointments` | Book an appointment | Client |
-| GET | `/appointments` | List own appointments | Client/Therapist |
-| GET | `/appointments/:id` | Get single appointment | Owner |
-| PATCH | `/appointments/:id/status` | Confirm or cancel | Therapist/Admin |
-| DELETE | `/appointments/:id` | Cancel (client, 24h+ before) | Client |
 
-### Session Notes
-| Method | Endpoint | Description | Auth |
+| Method | Endpoint | Description | Access |
 |---|---|---|---|
-| POST | `/appointments/:id/notes` | Create session note | Therapist |
-| GET | `/appointments/:id/notes` | Read session note | Therapist (owner) |
-| PUT | `/appointments/:id/notes` | Update session note | Therapist (owner) |
+| POST | `/appointments` | Book a new personal appointment | CLIENT |
+| GET | `/appointments` | List own appointments (filtered by role) | Authenticated |
+| GET | `/appointments/:id` | Get a single appointment by ID | Owner |
+| PATCH | `/appointments/:id/status` | Update appointment status (confirm, in-progress) | THERAPIST / ADMIN |
+| DELETE | `/appointments/:id` | Cancel an appointment | CLIENT |
+| POST | `/appointments/:id/notes` | Create a session note | THERAPIST |
+| GET | `/appointments/:id/notes` | Read session notes for an appointment | THERAPIST |
+
+### Therapists
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/therapists` | List all therapist profiles (with filters) | Public |
+| GET | `/therapists/:id` | Get therapist profile and availability | Public |
+| GET | `/therapists/:id/slots` | Get available booking slots for a given date | Public |
+| PUT | `/therapists/:id/availability` | Set weekly availability blocks | THERAPIST (owner) |
+
+### Therapy Plans
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/therapy-plans` | Create a new therapy plan (DRAFT) | THERAPIST |
+| GET | `/therapy-plans` | List published therapy plans (or own drafts) | Public / Authenticated |
+| GET | `/therapy-plans/:id` | Get a therapy plan by ID | Public / Authenticated |
+| PUT | `/therapy-plans/:id` | Update a DRAFT or REJECTED plan | THERAPIST (owner) |
+| DELETE | `/therapy-plans/:id` | Delete a DRAFT plan | THERAPIST (owner) |
+| POST | `/therapy-plans/:id/submit` | Submit plan for admin review (PENDING_REVIEW) | THERAPIST (owner) |
+| POST | `/therapy-plans/:id/review` | Approve or reject a submitted plan | ADMIN |
+| POST | `/therapy-plans/:id/close-signup` | Close sign-ups (SIGN_UP_CLOSED) | THERAPIST (owner) |
+| POST | `/therapy-plans/:id/start` | Mark plan as started (IN_PROGRESS) | THERAPIST (owner) |
+| POST | `/therapy-plans/:id/finish` | Mark plan as finished (FINISHED) | THERAPIST (owner) |
+| POST | `/therapy-plans/:id/to-gallery` | Move finished plan to gallery (IN_GALLERY) | THERAPIST (owner) |
+| POST | `/therapy-plans/:id/cancel-plan` | Cancel an active plan; refunds all participants | THERAPIST (owner) / ADMIN |
+| POST | `/therapy-plans/:id/signup` | Sign up and pay for a group plan | CLIENT |
+| DELETE | `/therapy-plans/:id/signup` | Cancel sign-up; triggers refund | CLIENT |
+
+### Payments (Stripe)
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/payments/create-intent` | Create a Stripe PaymentIntent for an appointment | CLIENT |
+| GET | `/payments/connect/status` | Check the therapist's Stripe Connect account status | THERAPIST |
+| POST | `/payments/connect/onboard` | Start Stripe Express account onboarding | THERAPIST |
+| GET | `/payments/appointment/:id` | Get the payment record for an appointment | Authenticated |
+| GET | `/payments/admin/stats` | Platform revenue analytics (filterable by date) | ADMIN |
+
+### Alipay
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/alipay/create-order` | Create an Alipay trade order | CLIENT |
+| GET | `/alipay/order-status/:outTradeNo` | Poll Alipay order status | Authenticated |
+
+### WeChat Pay
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/wechat/create-order` | Create a WeChat Pay native order; returns QR code URL | CLIENT |
+| GET | `/wechat/order-status/:outTradeNo` | Poll WeChat Pay order status | Authenticated |
+
+### Forms
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/forms` | Create a new intake / session form | THERAPIST |
+| GET | `/forms` | List forms (own forms for therapist; received forms for client) | Authenticated |
+| GET | `/forms/:id` | Get a form with its questions | Authenticated |
+| POST | `/forms/:id/send` | Send form to a client (SENT) | THERAPIST |
+| POST | `/forms/:id/submit` | Submit completed form answers (SUBMITTED) | CLIENT |
+| GET | `/forms/:id/responses` | View all responses for a form | THERAPIST |
+
+### Messages
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/messages` | List all messages for the authenticated user | Authenticated |
+| GET | `/messages/unread-count` | Get unread message count | Authenticated |
+| PATCH | `/messages/:id/read` | Mark a single message as read | Authenticated |
+| PATCH | `/messages/mark-all-read` | Mark all messages as read | Authenticated |
+| POST | `/messages` | Send a broadcast message to all users | ADMIN |
+
+### Profile
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/profile` | Get own user profile | Authenticated |
+| PATCH | `/profile` | Update own profile fields | Authenticated |
+| PATCH | `/profile/password` | Change password | Authenticated |
+| POST | `/profile/consent` | Record consent to terms and privacy policy | Authenticated |
 
 ### Admin
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| GET | `/admin/users` | List all users | Admin |
-| PATCH | `/admin/users/:id` | Update user role/status | Admin |
-| GET | `/admin/stats` | Platform analytics | Admin |
 
-### Payments
-| Method | Endpoint | Description | Auth |
+| Method | Endpoint | Description | Access |
 |---|---|---|---|
-| POST | `/payments/create-intent` | Create Stripe PaymentIntent for an appointment | Client |
-| GET | `/payments/connect/status` | Check therapist Stripe Connect account status | Therapist |
-| POST | `/payments/connect/onboard` | Start Stripe Express account onboarding | Therapist |
-| GET | `/payments/connect/return` | Handle Stripe redirect after onboarding completes | Public (Stripe) |
-| GET | `/payments/connect/refresh` | Re-generate an expired onboarding link | Public (Stripe) |
-| GET | `/payments/appointment/:id` | Get payment record for an appointment | Client/Therapist/Admin |
-| GET | `/payments/admin/stats` | Revenue analytics (filterable by date range) | Admin |
+| GET | `/admin/users` | List all platform users | ADMIN |
+| PATCH | `/admin/users/:id` | Update a user's role or status | ADMIN |
+| GET | `/admin/stats` | Platform usage and revenue statistics | ADMIN |
 
 ### Webhooks
-| Method | Endpoint | Description | Auth |
+
+| Method | Endpoint | Description | Verification |
 |---|---|---|---|
-| POST | `/webhooks/stripe` | Receive Stripe webhook events | Stripe (signature-verified) |
+| POST | `/webhooks/stripe` | Receive Stripe webhook events | Stripe signature header |
+| POST | `/webhooks/alipay` | Receive Alipay async payment notifications | Alipay RSA signature |
+| POST | `/webhooks/wechat` | Receive WeChat Pay payment notifications | AES-GCM decryption |
 
 ---
 
-## Frontend Workflow
+## Key Workflows
 
-### Page Routes
-
-```
-/                           → Home (hero, featured therapists, CTA)
-/therapists                 → Therapist directory with filters
-/therapists/:id             → Therapist profile + book button
-/book/:therapistId          → Booking flow (date/time picker → payment)
-/booking/confirmation       → Post-payment confirmation page (Stripe redirect target)
-/login                      → Login
-/register                   → Register (choose Client or Therapist role)
-/dashboard                  → Redirects based on role:
-  /dashboard/client         → Upcoming appointments, history
-  /dashboard/therapist      → Schedule calendar, client list, notes, Stripe Connect
-  /dashboard/admin          → User management, analytics, revenue stats
-```
-
-### State Management Strategy
-
-- **Server state** (appointments, therapists, user profile): TanStack Query
-  - Automatic background refetching
-  - Optimistic updates for cancellations
-  - Stale-while-revalidate caching
-- **Auth state** (current user, token): Zustand (persisted to localStorage)
-- **UI state** (modal open/close, filter values): Local `useState`
-
-### Booking Flow (Multi-step)
+### 1. Personal Consultation Booking
 
 ```
-Step 1: Select Date
-  └─ Calendar UI shows therapist availability
-  └─ Fetches GET /therapists/:id/slots?date=YYYY-MM-DD
+1. CLIENT browses /therapists and selects a therapist.
 
-Step 2: Select Time Slot
-  └─ Displays available hour slots for chosen date
+2. CLIENT views the therapist's profile and picks an available slot
+   via FullCalendar. Available slots are computed server-side:
+     -> GET /therapists/:id/slots?date=YYYY-MM-DD
+     -> Server fetches Availability rows for that dayOfWeek
+     -> Generates candidate slots (e.g. every 50 min from 09:00-17:00)
+     -> Excludes slots conflicting with existing PENDING or CONFIRMED appointments
+     -> Returns available time windows
 
-Step 3: Add Notes (optional)
-  └─ Text field for client to describe goals/concerns
+3. CLIENT selects slot, chooses medium (IN_PERSON / VIDEO),
+   optionally enters notes, and proceeds to payment.
 
-Step 4: Confirm & Pay
-  └─ Displays: therapist name, date/time, session price, refund policy text
-  └─ POST /appointments → creates Appointment (status: PENDING)
-  └─ POST /payments/create-intent { appointmentId } → receives { clientSecret }
-  └─ <PaymentElement> renders (Stripe-hosted card / Apple Pay / Google Pay)
-  └─ stripe.confirmPayment() submits payment to Stripe
-  └─ On success: navigate to /booking/confirmation?appointmentId=xxx
-  └─ Webhook payment_intent.succeeded → Appointment becomes CONFIRMED server-side
+4. CLIENT submits booking:
+     -> POST /appointments
+        Body: { therapistId, startTime, endTime, medium, clientNotes }
+        Server validates therapist Stripe Connect status = ACTIVE
+        Server creates Appointment (status: PENDING)
+        Returns { appointmentId }
 
-/booking/confirmation page:
-  └─ Reads ?appointmentId + ?redirect_status=succeeded from Stripe redirect
-  └─ Polls GET /appointments/:id until status = CONFIRMED (TanStack Query)
-  └─ Shows: receipt summary, therapist name, date/time, amount paid
-  └─ Shows: "A confirmation email has been sent to you"
-  └─ Link to /dashboard/client
+5. CLIENT initiates payment:
+     -> POST /payments/create-intent  { appointmentId }
+        Server computes amount in cents and platform fee (15%)
+        Server calls stripe.paymentIntents.create()
+        Server creates Payment record (status: PENDING)
+        Returns { clientSecret }
+
+   OR for Alipay:
+     -> POST /alipay/create-order  { appointmentId }
+        Returns { payUrl } -- browser redirects to Alipay payment page
+
+   OR for WeChat Pay:
+     -> POST /wechat/create-order  { appointmentId }
+        Returns { codeUrl } -- frontend renders QR code for scanning
+
+6. Payment completed. Payment provider fires webhook to server:
+     -> POST /webhooks/stripe  (or /alipay or /wechat)
+        Server deduplicates via WebhookEvent table
+        Server sets Payment.status = SUCCEEDED
+        Server sets Appointment.status = CONFIRMED
+        Server sends confirmation email to client and therapist via Nodemailer
+        Server creates in-app Message records for both parties
+
+7. Frontend polls GET /appointments/:id until status = CONFIRMED.
+   Displays booking confirmation with session details and receipt.
+
+Automated background jobs:
+  At 48h before start:
+    -> node-cron finds CONFIRMED appointments starting in ~48h
+    -> Sends deadline warning message to therapist
+  At 24h before start (if therapist has not confirmed):
+    -> Auto-cancellation job fires
+    -> Appointment set to CANCELLED
+    -> Client receives APPOINTMENT_AUTO_CANCELLED message
+  Daily midnight:
+    -> Past CONFIRMED appointments set to COMPLETED
+  Every 30 minutes:
+    -> PENDING payments older than 30 minutes are cancelled
+    -> Corresponding appointments are cancelled
+    -> Time slots are freed for rebooking
 ```
 
----
-
-## Backend Workflow
-
-### Middleware Execution Order
+### 2. Group Plan Lifecycle
 
 ```
-Request
-  → CORS
-  → Helmet (security headers)
-  → /webhooks/stripe  ← express.raw() only — MUST come before express.json()
-  → express.json()    ← all other routes
-  → rateLimiter (Redis)
-  → Route handler
-      → authenticate (JWT verify)
-      → authorize (role check)
-      → validate (Zod schema)
-      → controller
-          → service / Prisma query
-          → response
+THERAPIST creates plan:
+  -> POST /therapy-plans
+     Type: GROUP_CONSULT | ART_SALON | WELLNESS_RETREAT
+     Status begins at DRAFT
+     Therapist sets title, dates, location, price, max participants,
+     event schedule (TherapyPlanEvents), and poster image
+
+THERAPIST submits for review:
+  -> POST /therapy-plans/:id/submit
+     Server runs conflict detection:
+       - Checks for overlapping CONFIRMED appointments for this therapist
+       - Checks for overlapping active TherapyPlans for this therapist
+     If no conflicts: status -> PENDING_REVIEW
+     Admin receives in-app message with trigger PLAN_SUBMITTED
+
+ADMIN reviews:
+  -> POST /therapy-plans/:id/review
+     Body: { approved: true } or { approved: false, reviewNote: "..." }
+     On approval:   status -> PUBLISHED, therapist notified (PLAN_APPROVED)
+     On rejection:  status -> REJECTED,  therapist notified (PLAN_REJECTED)
+                    Therapist can edit and resubmit
+
+CLIENTS sign up (while plan is PUBLISHED):
+  -> POST /therapy-plans/:id/signup
+     Server creates TherapyPlanParticipant (status: SIGNED_UP)
+     Payment is collected immediately (Stripe / Alipay / WeChat Pay)
+     PlanPayment record created
+     Therapist receives PLAN_SIGNUP message
+     Server enforces maxParticipants limit
+
+THERAPIST closes sign-ups:
+  -> POST /therapy-plans/:id/close-signup
+     Status -> SIGN_UP_CLOSED
+     No further sign-ups accepted
+
+THERAPIST starts the session:
+  -> POST /therapy-plans/:id/start
+     Status -> IN_PROGRESS
+     All participants receive PLAN_STARTED message
+
+THERAPIST finishes the session:
+  -> POST /therapy-plans/:id/finish
+     Status -> FINISHED
+     All participants receive PLAN_FINISHED message
+
+THERAPIST moves to gallery:
+  -> POST /therapy-plans/:id/to-gallery
+     Status -> IN_GALLERY
+     Plan appears in the public programme gallery
+
+Cancellation (at any active stage):
+  -> POST /therapy-plans/:id/cancel-plan (THERAPIST owner or ADMIN)
+     Status -> CANCELLED
+     All SIGNED_UP participants receive PLAN_CANCELLED_BY_THERAPIST message
+     Refund service processes full refund for every participant's PlanPayment
 ```
 
-### Availability & Conflict Logic
-
-When a client requests time slots:
-1. Fetch therapist's `Availability` rows for the requested `dayOfWeek`
-2. Generate all possible slots (e.g., every 50 min from 09:00–17:00)
-3. Query existing `Appointment` records for that therapist/date with status `PENDING` or `CONFIRMED`
-4. Return slots excluding those that conflict with existing appointments
-
-### Scheduled Jobs (node-cron)
+### 3. Intake / Session Form Workflow
 
 ```
-Every hour:
-  → Find appointments starting in 24 hours with status CONFIRMED
-  → Send reminder email to client and therapist via Nodemailer
+THERAPIST creates form:
+  -> POST /forms
+     Body: { title, questions: [{ questionText, type, options, required, order }] }
+     Supported question types:
+       SHORT_TEXT | LONG_TEXT | SINGLE_CHOICE | MULTIPLE_CHOICE | SCALE | YES_NO
+     Status begins at DRAFT
 
-Every night at midnight:
-  → Mark past CONFIRMED appointments as COMPLETED
+THERAPIST sends form to a client:
+  -> POST /forms/:id/send  { clientId }
+     Status -> SENT
+     Client receives an in-app message notification
 
-Every 30 minutes:
-  → Find Payments with status PENDING older than 30 minutes
-  → stripe.paymentIntents.cancel(stripePaymentIntentId)
-  → Set Payment CANCELLED, Appointment CANCELLED
-  → Re-opens the time slot (prevents ghost bookings from abandoned checkouts)
+CLIENT views and fills the form:
+  -> GET /forms/:id
+     Returns form with all questions
+  -> POST /forms/:id/submit
+     Body: { answers: [{ questionId, value }] }
+     Creates FormResponse and FormAnswer records
+     Status -> SUBMITTED
+
+THERAPIST reviews responses:
+  -> GET /forms/:id/responses
+     Returns all FormResponse records with associated FormAnswers
 ```
 
----
+### 4. Conflict Detection (Plan Submission)
 
-## Payment Architecture
+When a therapist submits a therapy plan for review, the server performs two overlap checks against the plan's `startTime` / `endTime` window:
 
-### Stripe Marketplace Model
+1. **Appointment conflicts** — Queries for any `Appointment` records assigned to the therapist with status `CONFIRMED` or `IN_PROGRESS` that overlap the plan's time range.
+2. **Plan conflicts** — Queries for any `TherapyPlan` records owned by the same therapist with an active status (`PUBLISHED`, `SIGN_UP_CLOSED`, `IN_PROGRESS`) that overlap the plan's time range.
 
-The platform uses **Stripe Connect Express accounts**. Money flow per session:
+If any conflicts are found, the submission is rejected with a `409 Conflict` response listing the conflicting resources. The therapist must adjust the plan's dates before resubmitting.
 
-1. Client pays the full session price — Stripe charges the client's card via a PaymentIntent
-2. Stripe automatically transfers `(amount − platformFee)` to the therapist's Express account using `transfer_data.destination` on the PaymentIntent
-3. Platform retains the `platformFee` (default: **15%**) via `application_fee_amount`
-4. Therapists manage their bank account and tax documents through the Stripe Express Dashboard
+### 5. Payment Provider Selection
 
-Fee calculation always uses integer cents to avoid floating-point errors:
+The payment method shown to clients on the booking page is influenced by the active UI language:
 
-```typescript
-const totalCents        = Math.round(Number(sessionPrice) * 100);
-const platformFee       = Math.round(totalCents * PLATFORM_FEE_PERCENT / 100);
-const therapistPayout   = totalCents - platformFee;
-```
+- When the UI language is Chinese (`zh`), Alipay is pre-selected by default.
+- When the UI language is English (`en`), Stripe card payment is shown first.
 
-### Payment Flow Sequence (Booking — Step 4)
+Clients can always switch to any available payment method. Stripe card payment is gated by `VITE_PAYMENTS_ENABLED`. Alipay and WeChat Pay are gated by `VITE_ALIPAY_WECHAT_ENABLED`.
 
-```
-1. Frontend: POST /appointments
-   → Creates Appointment (status: PENDING)
-   → Validates therapist stripeAccountStatus = ACTIVE
+### 6. Exchange Rate Display
 
-2. Frontend: POST /payments/create-intent { appointmentId }
-   → Backend computes amount in cents + platform fee
-   → stripe.paymentIntents.create({
-       amount, currency,
-       application_fee_amount: platformFee,
-       transfer_data: { destination: therapist.stripeAccountId },
-       metadata: { appointmentId, therapistId, clientId },
-       automatic_payment_methods: { enabled: true },
-     })
-   → Creates Payment record (status: PENDING)
-   → Returns { clientSecret } to frontend
+Session prices are stored in Chinese Yuan (CNY). Display behaviour by language:
 
-3. Frontend: renders <PaymentElement> with clientSecret
-   → Client enters card/wallet details
-   → stripe.confirmPayment() submits to Stripe
+- **Chinese UI (`zh`)**: Prices shown as `¥500.00` only.
+- **English UI (`en`)**: Prices shown as `¥500.00` with a live USD equivalent, e.g. `~ $68.50`.
 
-4. Stripe fires webhook: payment_intent.succeeded
-   → Backend sets Payment.status = SUCCEEDED
-   → Backend sets Appointment.status = CONFIRMED
-   → Sends confirmation email to client and therapist
-
-5. Frontend: polls GET /appointments/:id until status = CONFIRMED
-   → Navigates to /booking/confirmation
-```
-
-> **Critical — webhook route ordering in `app.ts`:**
-> The Stripe webhook route must be mounted **before** `express.json()`. The signature verification function `stripe.webhooks.constructEvent()` requires the raw request body buffer, not a parsed JSON object. Mounting after `express.json()` will cause all webhook verifications to fail.
->
-> ```typescript
-> app.use('/webhooks', stripeWebhookRouter);  // express.raw() scoped here
-> app.use(express.json());                    // all other routes
-> app.use('/api/v1/payments', paymentRouter);
-> ```
-
-### Stripe Connect Onboarding (Therapists)
-
-Therapists must complete Stripe onboarding before their profile appears as bookable. The `stripeAccountStatus` field gates the booking flow.
-
-```
-1. Therapist clicks "Connect Bank Account" in their dashboard
-2. Backend: stripe.accounts.create({ type: 'express', email }) → stripeAccountId saved
-3. Backend: stripe.accountLinks.create({ type: 'account_onboarding' }) → url (15 min TTL)
-4. Frontend: redirects browser to the Stripe-hosted onboarding URL
-5. Therapist completes identity verification + bank account on Stripe's UI
-6. Stripe redirects to GET /payments/connect/return
-7. Backend: stripe.accounts.retrieve() → checks charges_enabled
-   → stripeAccountStatus = ACTIVE (if complete) or ONBOARDING_IN_PROGRESS
-8. Authoritative update: webhook account.updated fires
-   → Backend syncs stripeAccountStatus based on charges_enabled / requirements
-```
-
-If the AccountLink expires mid-onboarding, `GET /payments/connect/refresh` generates a new one.
-
-### Alipay & WeChat Pay (Primary Payment Methods)
-
-Alipay and WeChat Pay are implemented as an **independent integration**, separate from Stripe. They are gated by the `ALIPAY_WECHAT_ENABLED=false` server flag (default off — not active until enabled).
-
-> **Stripe / Card note:** The Stripe card payment option is preserved in the codebase for future use. In the current UI, the Card option is shown with the message *"Sorry, we don't provide this service now."* Stripe code is untouched and can be re-enabled later.
-
-**Language-based initial suggestion:** When the app language is Chinese (`zh`), Alipay is pre-selected as the default method in the payment step. Users can still choose any available method.
-
-**Payment flows:**
-
-- **Alipay**: `POST /api/v1/alipay/create-order` → Backend signs and creates trade order → Returns `payUrl` → Browser redirects to Alipay's payment page → User authorizes → Alipay sends async notification to `POST /webhooks/alipay` → Appointment set to `CONFIRMED`
-- **WeChat Pay**: `POST /api/v1/wechat/create-order` → Backend creates native order → Returns `codeUrl` → Frontend renders QR code → User scans with WeChat → WeChat sends notification to `POST /webhooks/wechat` → Appointment set to `CONFIRMED`
-
-**New API endpoints:**
-
-| Method | Endpoint | Description | Auth |
-|---|---|---|---|
-| POST | `/api/v1/alipay/create-order` | Create Alipay trade order | Client |
-| GET | `/api/v1/alipay/order/:id` | Get Alipay payment record | Authenticated |
-| POST | `/api/v1/wechat/create-order` | Create WeChat Pay native order | Client |
-| GET | `/api/v1/wechat/order/:id` | Get WeChat payment record | Authenticated |
-| POST | `/webhooks/alipay` | Alipay async payment notification | Public (signature verified) |
-| POST | `/webhooks/wechat` | WeChat Pay payment notification | Public (AES-GCM verified) |
-
-**To enable:** Configure merchant accounts on [Alipay Open Platform](https://open.alipay.com) and [WeChat Pay](https://pay.weixin.qq.com), add credentials to `server/.env`, then set `ALIPAY_WECHAT_ENABLED=true` and `VITE_ALIPAY_WECHAT_ENABLED=true` and rebuild.
-
-### Currency & Exchange Rate Display
-
-All session prices are stored and processed in **Chinese Yuan (CNY ¥)**. The `sessionPrice` field on `TherapistProfile` represents yuan.
-
-**Display behavior:**
-
-- **Chinese users** (`i18n.language` starts with `zh`): prices shown as `¥500.00` only.
-- **English users**: prices shown as `¥500.00` with a live USD equivalent below — e.g. `≈ $68.50`.
-
-The USD conversion is fetched via a server-side proxy to avoid browser CORS restrictions:
+The conversion rate is fetched server-side through a proxy endpoint to avoid browser CORS restrictions:
 
 ```
 GET /api/v1/fx?from=CNY&to=USD&money=1
-  → Backend calls cn.apihz.cn/api/jinrong/huilv.php (daily-updated free API)
-  → Returns { code: 200, rate: "0.1455..." }
-```
-
-**Key files:**
-
-| File | Purpose |
-|---|---|
-| `client/src/components/ui/PriceDisplay.tsx` | Renders `¥ amount` + optional `≈ $X.XX` for non-Chinese users |
-| `client/src/hooks/useExchangeRate.ts` | TanStack Query hook — fetches rate, caches 1 hour (API updates daily) |
-| `server/src/app.ts` → `api.get('/fx', ...)` | Backend proxy — avoids CORS when calling `cn.apihz.cn` from the browser |
-| `server/src/test-fx.ts` | Diagnostic script: `npx tsx src/test-fx.ts` (server must be running) |
-
-**Environment variables (`server/.env`):**
-
-```env
-# Exchange rate API — cn.apihz.cn (free, daily-updated)
-# Register at https://www.apihz.cn for your own key (the default demo key is shared/rate-limited).
-APIHZ_ID="88888888"
-APIHZ_KEY="88888888"
-```
-
-The default demo key (`88888888`) works out of the box but is shared across all users of the public API and is rate-limited (~326 req/min). For production, register a free account at [apihz.cn](https://www.apihz.cn) and set your own `APIHZ_ID` / `APIHZ_KEY`.
-
-> **Route ordering note:** The `/fx` handler is registered as `api.get('/fx', ...)` **inside** the `api` router, which is then mounted at `app.use('/api/v1', api)`. Registering it directly on `app` after that mount would cause a 404 because Express routes all `/api/v1/*` requests through the `api` router first.
-
-### Webhook Events Handled
-
-All events arrive at `POST /webhooks/stripe`. Each event is deduplicated using the `WebhookEvent` table — the Stripe event ID is the primary key, so duplicate deliveries are ignored.
-
-| Event | Action |
-|---|---|
-| `payment_intent.succeeded` | Set Payment `SUCCEEDED`, set Appointment `CONFIRMED`, send confirmation email |
-| `payment_intent.payment_failed` | Set Payment `FAILED`; frontend shows card-declined retry prompt |
-| `payment_intent.canceled` | Set Payment `CANCELLED`, set Appointment `CANCELLED` |
-| `charge.refunded` | Confirm Payment `REFUNDED` after Stripe-side refund completes |
-| `account.updated` | Sync therapist `stripeAccountStatus` (`ACTIVE` / `RESTRICTED` / `ONBOARDING_IN_PROGRESS`) |
-
-### Refund Logic
-
-Cancellations trigger `refundService.processAppointmentRefund(appointmentId)`:
-
-1. Fetch appointment with its `Payment` and the therapist's `RefundPolicy`
-2. Compute hours until session start
-3. If `hoursUntilSession >= fullRefundHoursThreshold` → `stripe.refunds.create({ charge: chargeId })` — full refund
-4. If below threshold → no refund; client notified by email with the policy reason
-5. If the **therapist** cancels a confirmed appointment → always issue a full refund, regardless of policy
-
-### Stale Appointment Cleanup
-
-A new `node-cron` job runs every 30 minutes to prevent ghost bookings when clients abandon mid-payment:
-
-```
-Every 30 minutes:
-  → Find Payments with status PENDING older than 30 minutes
-  → stripe.paymentIntents.cancel(stripePaymentIntentId)
-  → Set Payment CANCELLED, Appointment CANCELLED
-  → Re-opens the time slot for other clients
+  -> Server calls cn.apihz.cn exchange rate API
+  -> Returns { rate: "0.1370" }
+  -> Client-side hook (useExchangeRate) caches result for 1 hour
 ```
 
 ---
 
-## Authentication & Authorization
+## Development Setup
 
-### JWT Strategy
+### Prerequisites
 
-- **Access Token**: short-lived (15 min), stored in memory (Zustand store)
-- **Refresh Token**: long-lived (7 days), stored in `httpOnly` cookie (not accessible by JS)
-- **Logout**: access token ID added to Redis blacklist (TTL = remaining token lifetime)
+- Node.js 20 or later
+- Docker and Docker Compose
 
-### Role-Based Access Control
+### Step-by-Step
 
-| Role | Permissions |
-|---|---|
-| `CLIENT` | Book/cancel own appointments, write reviews, view own data |
-| `THERAPIST` | Manage own schedule, write session notes, view assigned clients |
-| `ADMIN` | Full read/write access to all resources |
-
----
-
-## Development Workflow
-
-### 1. Local Environment Bootstrap
+**1. Clone the repository**
 
 ```bash
-# Start PostgreSQL and Redis via Docker
+git clone <repository-url>
+cd art-therapy-app
+```
+
+**2. Start the database and cache services**
+
+```bash
 docker-compose up -d
-
-# Install dependencies
-cd server && npm install
-cd ../client && npm install
-
-# Set up database
-cd ../server
-npx prisma migrate dev --name init
-npx prisma db seed          # optional: seed demo therapists
-
-# Start dev servers (two terminals)
-cd server && npm run dev    # Express on :3001
-cd client && npm run dev    # Vite on :5173
 ```
 
-### 2. Development Cycle
+This starts PostgreSQL 16 on port 5432 and Redis 7 on port 6379.
 
+**3. Configure and start the backend**
+
+```bash
+cd server
+cp .env.example .env
+# Edit .env and fill in all required values (see Environment Configuration below)
+npm install
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
 ```
-Feature branch → implement → write tests → PR → CI checks → merge
+
+The API server starts on `http://localhost:3001`.
+
+**4. Configure and start the frontend**
+
+```bash
+cd ../client
+cp .env.example .env
+# Edit .env and fill in the required values
+npm install
+npm run dev
 ```
 
-### 3. CI Pipeline (GitHub Actions)
+The frontend starts on `http://localhost:5173`.
 
-On every pull request:
-1. Lint (ESLint + Prettier check)
-2. Type check (`tsc --noEmit`)
-3. Backend tests (`jest --coverage`)
-4. Frontend tests (`vitest run`)
-5. Build check (`vite build`)
+### Testing Webhooks Locally
+
+Stripe webhook events require a real signature from Stripe. Use the Stripe CLI to forward events to your local server:
+
+```bash
+stripe login
+stripe listen --forward-to localhost:3001/webhooks/stripe
+# Copy the printed signing secret into server/.env as STRIPE_WEBHOOK_SECRET
+```
+
+**Stripe test card numbers:**
+
+| Card number | Scenario |
+|---|---|
+| `4242 4242 4242 4242` | Successful payment |
+| `4000 0000 0000 9995` | Card declined (insufficient funds) |
+| `4000 0025 0000 3155` | Requires 3D Secure authentication |
+
+### Scheduled Jobs
+
+The following `node-cron` jobs run automatically when the server is running:
+
+| Schedule | Job |
+|---|---|
+| Every hour | Find CONFIRMED appointments starting in ~48h; send deadline warning messages to therapists |
+| Every 30 minutes | Cancel PENDING payments and appointments older than 30 minutes (abandoned checkout cleanup) |
+| Daily at midnight | Mark past CONFIRMED appointments as COMPLETED |
 
 ---
 
-## Environment Setup
+## Environment Configuration
 
-Copy `.env.example` to `.env` in the `server/` directory:
+### Server (`server/.env`)
 
 ```env
-# Database
+# ── Database ──────────────────────────────────────────────────
 DATABASE_URL="postgresql://postgres:password@localhost:5432/arttherapy"
 
-# Redis
+# ── Redis ─────────────────────────────────────────────────────
 REDIS_URL="redis://localhost:6379"
 
-# JWT
-JWT_ACCESS_SECRET="your-access-secret-here"
-JWT_REFRESH_SECRET="your-refresh-secret-here"
+# ── JWT ───────────────────────────────────────────────────────
+JWT_ACCESS_SECRET="replace-with-a-long-random-string"
+JWT_REFRESH_SECRET="replace-with-a-different-long-random-string"
 JWT_ACCESS_EXPIRES_IN="15m"
 JWT_REFRESH_EXPIRES_IN="7d"
 
-# Email (SMTP)
+# ── App ───────────────────────────────────────────────────────
+PORT=3001
+CLIENT_URL="http://localhost:5173"
+NODE_ENV="development"
+
+# ── Email (SMTP) ──────────────────────────────────────────────
 SMTP_HOST="smtp.gmail.com"
 SMTP_PORT=587
 SMTP_USER="your-email@gmail.com"
 SMTP_PASS="your-app-password"
 EMAIL_FROM="Art Therapy App <noreply@arttherapy.com>"
 
-# Cloudinary (file uploads)
+# ── File Uploads (Cloudinary) ─────────────────────────────────
 CLOUDINARY_CLOUD_NAME=""
 CLOUDINARY_API_KEY=""
 CLOUDINARY_API_SECRET=""
 
-# Stripe
+# ── Stripe ────────────────────────────────────────────────────
 STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="your-webhook-secret"  # from Stripe CLI during local dev (see below)
-STRIPE_PLATFORM_FEE_PERCENT=15           # integer percentage the platform retains
+STRIPE_WEBHOOK_SECRET="whsec_..."      # From Stripe CLI during local development
+STRIPE_PLATFORM_FEE_PERCENT=15         # Integer: percentage retained by the platform
 STRIPE_CONNECT_RETURN_URL="http://localhost:3001/api/v1/payments/connect/return"
 STRIPE_CONNECT_REFRESH_URL="http://localhost:3001/api/v1/payments/connect/refresh"
 
-# App
-PORT=3001
-CLIENT_URL="http://localhost:5173"
-NODE_ENV="development"
+# ── Alipay ────────────────────────────────────────────────────
+ALIPAY_APP_ID=""
+ALIPAY_PRIVATE_KEY=""
+ALIPAY_PUBLIC_KEY=""
+ALIPAY_GATEWAY="https://openapi.alipay.com/gateway.do"
+ALIPAY_NOTIFY_URL="https://yourdomain.com/webhooks/alipay"
+ALIPAY_WECHAT_ENABLED=false
+
+# ── WeChat Pay ────────────────────────────────────────────────
+WECHAT_APP_ID=""
+WECHAT_MCH_ID=""
+WECHAT_PRIVATE_KEY=""
+WECHAT_SERIAL_NO=""
+WECHAT_API_V3_KEY=""
+WECHAT_NOTIFY_URL="https://yourdomain.com/webhooks/wechat"
+
+# ── Exchange Rate API (cn.apihz.cn) ──────────────────────────
+# Register a free account at https://www.apihz.cn for your own key.
+# The default demo key (88888888) is shared and rate-limited.
+APIHZ_ID="88888888"
+APIHZ_KEY="88888888"
 ```
 
-Copy `.env.example` to `.env` in the `client/` directory:
+### Client (`client/.env`)
 
 ```env
-VITE_API_URL="http://localhost:3001/api/v1"
-VITE_STRIPE_PUBLISHABLE_KEY="pk_test_..."
+VITE_API_URL=http://localhost:3001/api/v1
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+VITE_PAYMENTS_ENABLED=true
+VITE_ALIPAY_WECHAT_ENABLED=false
 ```
 
-### Stripe CLI (local webhook testing)
-
-The Stripe webhook handler requires a real signature from Stripe. Use the Stripe CLI to forward events to your local server:
-
-```bash
-# Install Stripe CLI
-# Windows: https://stripe.com/docs/stripe-cli (download the exe or use scoop)
-# macOS:   brew install stripe/stripe-cli/stripe
-
-stripe login
-stripe listen --forward-to localhost:3001/webhooks/stripe
-# The CLI prints a signing secret — copy it to server/.env as STRIPE_WEBHOOK_SECRET
-```
-
-**Test cards (use in Stripe test mode):**
-
-| Card number | Scenario |
+| Variable | Description |
 |---|---|
-| `4242 4242 4242 4242` | Successful payment |
-| `4000 0000 0000 9995` | Card declined (insufficient funds) |
-| `4000 0025 0000 3155` | Requires 3DS authentication |
+| `VITE_API_URL` | Base URL for all API requests |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key used to initialise Stripe.js |
+| `VITE_PAYMENTS_ENABLED` | Set to `false` to hide Stripe card payment UI |
+| `VITE_ALIPAY_WECHAT_ENABLED` | Set to `true` to show Alipay and WeChat Pay options |
 
----
+### Enabling Alipay and WeChat Pay
 
-## Production Deployment (Aliyun ECS via GitHub)
+1. Register merchant accounts on [Alipay Open Platform](https://open.alipay.com) and [WeChat Pay](https://pay.weixin.qq.com).
+2. Populate the `ALIPAY_*` and `WECHAT_*` variables in `server/.env`.
+3. Set `ALIPAY_WECHAT_ENABLED=true` in `server/.env`.
+4. Set `VITE_ALIPAY_WECHAT_ENABLED=true` in `client/.env`.
+5. Rebuild and restart both services.
 
-### Server Details
-| Item | Value |
+### Authentication Token Strategy
+
+| Token | Lifetime | Storage | Notes |
+|---|---|---|---|
+| Access token | 15 minutes | Zustand store (memory) | Sent as `Authorization: Bearer <token>` header |
+| Refresh token | 7 days | `httpOnly` cookie | Not accessible to JavaScript; sent automatically by the browser |
+| Logout | Immediate | Redis blacklist | Access token ID stored in Redis with TTL equal to its remaining lifetime |
+
+### Role-Based Access Control
+
+| Role | Key Permissions |
 |---|---|
-| Server | Aliyun ECS (`47.117.137.126`) |
-| Domain | `luyin.xyz` |
-| Project path | `/home/admin/art-therapy/` |
-| Nginx config | `/www/server/panel/vhost/nginx/art-therapy.conf` |
-| Process manager | PM2 (`art-therapy-api`) |
-
-### First-Time Setup (already completed)
-See git history for initial server provisioning steps (Node.js, PostgreSQL, Redis, PM2, Nginx).
+| `CLIENT` | Book and cancel appointments, sign up for group plans, submit forms, view own data |
+| `THERAPIST` | Manage schedule, create and publish therapy plans, write session notes, send forms, connect Stripe account |
+| `ADMIN` | Approve or reject therapy plans, manage all users, view platform analytics, send broadcast messages |
 
 ---
 
-### Rebuild & Publish After a Code Change
+## User Manuals
 
-Every time you push changes to GitHub, SSH into the server and run the following steps.
+Role-specific guides for end users are located in the [`docs/`](docs/) directory:
 
-#### 1. SSH into the server
-```bash
-ssh -i your-key.pem admin@47.117.137.126
-```
-
-#### 2. Pull latest code from GitHub
-```bash
-cd /home/admin/art-therapy
-git pull origin main
-```
-
-#### 3. Rebuild and restart the backend
-```bash
-cd /home/admin/art-therapy/server
-npm install
-npm run build
-pm2 restart art-therapy-api
-pm2 logs art-therapy-api --lines 20
-```
-
-Confirm you see:
-```
-[DB] Connected to PostgreSQL
-[Redis] Connected
-[Server] Running on http://localhost:3001
-```
-
-#### 4. Rebuild the frontend
-```bash
-cd /home/admin/art-therapy/client
-npm install
-npm run build
-```
-
-#### 5. Reload Nginx
-```bash
-sudo /www/server/nginx/sbin/nginx -s reload
-```
-
-#### 6. Verify
-Open `http://luyin.xyz` in a browser. The site should reflect your latest changes.
-
----
-
-### Database Schema Changes
-
-If your code changes include Prisma schema modifications (`schema.prisma`), run this **before** restarting the backend:
-
-```bash
-cd /home/admin/art-therapy/server
-npx prisma db push
-```
-
-> `prisma db push` applies schema changes directly without generating migration files. Use `prisma migrate deploy` instead if you switch to a migrations-based workflow.
-
----
-
-### Environment Variables
-
-The server `.env` is located at `/home/admin/art-therapy/server/.env` and is **not** tracked by Git (listed in `.gitignore`). Edit it directly on the server if you need to change values:
-
-```bash
-nano /home/admin/art-therapy/server/.env
-```
-
-Key production values:
-```env
-DATABASE_URL="postgresql://postgres:arttherapy123@127.0.0.1:5432/arttherapy"
-REDIS_URL="redis://127.0.0.1:6379"
-PAYMENTS_ENABLED=false
-PORT=3001
-CLIENT_URL="http://luyin.xyz"
-NODE_ENV=production
-```
-
-The client `.env` is at `/home/admin/art-therapy/client/.env`:
-```env
-VITE_API_URL=http://luyin.xyz/api/v1
-VITE_PAYMENTS_ENABLED=false
-```
-
-> After editing either `.env` file, re-run the relevant rebuild step (Step 3 for backend, Step 4 for frontend).
-
----
-
-### PM2 Cheat Sheet
-
-```bash
-pm2 list                        # show all running processes
-pm2 restart art-therapy-api     # restart backend
-pm2 logs art-therapy-api        # tail live logs
-pm2 logs art-therapy-api --lines 50   # last 50 log lines
-pm2 stop art-therapy-api        # stop backend
-pm2 startup && pm2 save         # enable auto-start on reboot
-```
-
----
-
-### Re-enabling Payments
-
-When Stripe integration is ready:
-
-1. Add real Stripe keys to `/home/admin/art-therapy/server/.env`:
-   ```env
-   PAYMENTS_ENABLED=true
-   STRIPE_SECRET_KEY=sk_live_...
-   STRIPE_WEBHOOK_SECRET=whsec_...
-   ```
-2. Update `/home/admin/art-therapy/client/.env`:
-   ```env
-   VITE_PAYMENTS_ENABLED=true
-   VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
-   ```
-3. Rebuild both frontend and backend (Steps 3–5 above).
-
-**To enable Alipay & WeChat Pay (primary payment methods):**
-1. Activate merchant accounts on Alipay Open Platform and WeChat Pay platform
-2. Add credentials to `server/.env` (see `ALIPAY_*` and `WECHAT_*` keys in `.env.example`)
-3. Set `ALIPAY_WECHAT_ENABLED=true` in `server/.env`
-4. Set `VITE_ALIPAY_WECHAT_ENABLED=true` in `client/.env`
-5. Rebuild backend: `npm run build && pm2 restart art-therapy-api`
-6. Rebuild frontend: `npm run build` + reload Nginx
-
----
-
-## Key Design Decisions
-
-| Decision | Rationale |
-|---|---|
-| PostgreSQL over MongoDB | Appointment scheduling is inherently relational (users, slots, conflicts require joins and transactions) |
-| Prisma over raw SQL | Type-safe queries, auto-generated migrations, great DX |
-| TanStack Query over Redux | Server state and UI state have different lifecycles; TQ handles caching, refetching, and loading states with far less boilerplate |
-| Zustand over Redux | Auth state is minimal; Zustand is lighter and avoids Redux ceremony |
-| JWT + httpOnly refresh cookie | Balances statelessness (access token) with security (refresh token not accessible to XSS attacks) |
-| Redis for rate limiting | In-memory speed is appropriate; rate limit counters don't need persistence |
-| Monorepo structure | Shared types can be extracted into a `packages/shared` folder later without a major refactor |
-| PaymentIntent created server-side | Amount and platform fee are computed server-side — prevents clients from tampering with the price in the browser |
-| `transfer_data.destination` over manual Transfer | The transfer is atomic with the charge; if the charge fails, no transfer happens — simpler and safer than issuing a manual `stripe.transfers.create()` afterwards |
-| Webhooks as source of truth for CONFIRMED status | Browser-to-server redirects can fail mid-flow; Stripe retries webhook delivery with exponential back-off, making it reliable for state transitions |
-| Stripe Connect Express accounts | Stripe hosts the onboarding UI and handles identity verification — no custom KYC flow to build or maintain |
-| `WebhookEvent` idempotency table | Stripe guarantees at-least-once delivery; using the Stripe event ID as the primary key makes duplicate processing a no-op |
-| Integer cents for all money values | Eliminates floating-point rounding errors; standard practice for any financial data |
-| Stale PENDING appointment cleanup (30 min cron) | Prevents ghost bookings blocking a therapist's calendar when a client abandons mid-payment; the 30-minute window also covers 3DS authentication delays |
+| Manual | Audience | Path |
+|---|---|---|
+| Client Manual | Clients booking sessions and signing up for group plans | [`docs/manual-client.md`](docs/manual-client.md) |
+| Therapist Manual | Therapists managing their profile, plans, and clients | [`docs/manual-therapist.md`](docs/manual-therapist.md) |
+| Administrator Manual | Platform administrators reviewing plans and managing users | [`docs/manual-admin.md`](docs/manual-admin.md) |

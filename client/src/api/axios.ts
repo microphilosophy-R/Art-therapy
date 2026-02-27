@@ -32,7 +32,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch {
         useAuthStore.getState().clearAuth();
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
     return Promise.reject(error);

@@ -48,6 +48,19 @@ export const TherapistDashboard = () => {
     enabled: tab !== 'calendar',
   });
 
+  // Independent count queries — always enabled so badge numbers stay correct
+  // regardless of which tab is active.
+  const { data: pendingCountData } = useQuery({
+    queryKey: ['appointments', 'therapist', 'count', 'pending'],
+    queryFn: () => getAppointments({ status: ['PENDING'], limit: 1 }),
+  });
+  const { data: upcomingCountData } = useQuery({
+    queryKey: ['appointments', 'therapist', 'count', 'upcoming'],
+    queryFn: () => getAppointments({ status: ['CONFIRMED'], limit: 1 }),
+  });
+  const pendingCount = pendingCountData?.total ?? 0;
+  const upcomingCount = upcomingCountData?.total ?? 0;
+
   const { data: connectStatus, isLoading: loadingConnect } = useQuery({
     queryKey: ['connect-status'],
     queryFn: getConnectStatus,
@@ -184,9 +197,14 @@ export const TherapistDashboard = () => {
                     : tabKey === 'messages'
                     ? t('dashboard.therapist.messages')
                     : t('dashboard.therapist.past')}
-                  {tabKey === 'pending' && data?.total ? (
+                  {tabKey === 'pending' && pendingCount > 0 ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
-                      {data.total}
+                      {pendingCount}
+                    </Badge>
+                  ) : null}
+                  {tabKey === 'upcoming' && upcomingCount > 0 ? (
+                    <Badge variant="info" className="ml-1.5 text-xs">
+                      {upcomingCount}
                     </Badge>
                   ) : null}
                   {tabKey === 'forms' && (formsData?.total ?? 0) > 0 ? (

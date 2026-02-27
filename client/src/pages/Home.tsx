@@ -4,9 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Heart, Shield, Clock, Star, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getTherapists } from '../api/therapists';
 import { listTherapyPlans } from '../api/therapyPlans';
-import { TherapistCard } from '../components/therapists/TherapistCard';
 import { TherapyPlanCard } from '../components/therapyPlans/TherapyPlanCard';
 import { Button } from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Spinner';
@@ -35,9 +33,9 @@ export const Home = () => {
     queryFn: () => listTherapyPlans({ type: 'GROUP_CONSULT', limit: 4, timeFilter: 'upcoming' }),
   });
 
-  const { data: therapists, isLoading: isTherapistsLoading } = useQuery({
-    queryKey: ['therapists', 'featured'],
-    queryFn: () => getTherapists({ limit: 4 }),
+  const { data: personalConsults, isLoading: isPersonalLoading } = useQuery({
+    queryKey: ['therapy-plans', 'personal-consults'],
+    queryFn: () => listTherapyPlans({ type: 'PERSONAL_CONSULT', limit: 4, timeFilter: 'upcoming' }),
   });
 
   const { data: gallery, isLoading: isGalleryLoading } = useQuery({
@@ -200,44 +198,15 @@ export const Home = () => {
         "bg-white"
       )}
 
-      {/* Personal Consultations (Therapists) */}
-      <motion.section
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.6 }}
-        className={`bg-stone-50 ${(!therapists?.data || therapists.data?.length === 0) ? 'py-8' : 'py-20'}`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <h2 className="text-3xl font-bold text-stone-900">{t('home.sections.personal.title', 'Personal Consultations')}</h2>
-              <p className="text-stone-500 mt-1">{t('home.sections.personal.subtitle', 'Connect 1-on-1 with our featured therapists.')}</p>
-            </div>
-            <Link
-              to="/therapists"
-              className="text-sm font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
-            >
-              {t('home.viewAllProviders', 'View all providers')} <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {isTherapistsLoading ? (
-            <PageLoader />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {(therapists?.data ?? []).map((therapist) => (
-                <TherapistCard key={therapist.id} therapist={therapist} />
-              ))}
-              {(!therapists?.data || therapists.data?.length === 0) && (
-                <div className="col-span-full text-center py-12 text-stone-400">
-                  <Heart className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                  <p>{t('home.featured.empty')}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </motion.section>
+      {/* Personal Consultations */}
+      {renderPlanSection(
+        t('home.sections.personal.title', 'Personal Consultations'),
+        t('home.sections.personal.subtitle', 'Connect 1-on-1 with our featured therapists.'),
+        personalConsults?.data,
+        isPersonalLoading,
+        t('home.featured.empty'),
+        'bg-stone-50',
+      )}
 
       {/* Gallery (Past Plans) */}
       {renderPlanSection(

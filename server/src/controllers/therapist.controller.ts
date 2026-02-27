@@ -61,7 +61,7 @@ export const getTherapist = async (req: Request, res: Response) => {
 
 export const getAvailableSlots = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { date } = req.query as { date?: string };
+  const { date, duration: durationParam } = req.query as { date?: string; duration?: string };
   if (!date) return res.status(400).json({ message: 'date query param required (YYYY-MM-DD)' });
 
   const profile = await prisma.therapistProfile.findUnique({
@@ -70,42 +70,57 @@ export const getAvailableSlots = async (req: Request, res: Response) => {
   });
   if (!profile) return res.status(404).json({ message: 'Therapist not found' });
 
+  // Use requested duration, or fall back to the therapist's default session length.
+  // Always generate start times on 30-minute boundaries so clients can pick any granularity.
+  const duration = durationParam
+    ? Math.max(30, Math.min(180, parseInt(durationParam, 10) || profile.sessionLength))
+    : profile.sessionLength;
+  const BASE_UNIT = 30; // minutes
+
   const requestedDate = new Date(date);
   const dayOfWeek = requestedDate.getDay();
   const avail = profile.availability.find((a) => a.dayOfWeek === dayOfWeek);
   if (!avail) return res.json([]);
 
-  // Generate slot times
   const [startH, startM] = avail.startTime.split(':').map(Number);
   const [endH, endM] = avail.endTime.split(':').map(Number);
-  const slotMinutes = profile.sessionLength;
+  const windowStart = startH * 60 + startM;
+  const windowEnd = endH * 60 + endM;
 
-  const slots: { startTime: string; endTime: string; available: boolean }[] = [];
-  let current = startH * 60 + startM;
-  const endMinutes = endH * 60 + endM;
-
-  while (current + slotMinutes <= endMinutes) {
-    const slotStart = new Date(date);
-    slotStart.setHours(Math.floor(current / 60), current % 60, 0, 0);
-    const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60 * 1000);
-    slots.push({ startTime: slotStart.toISOString(), endTime: slotEnd.toISOString(), available: true });
-    current += slotMinutes;
+  // Build all 30-min block start times within the availability window
+  const allBlockStarts: number[] = []; // in minutes-from-midnight
+  for (let t = windowStart; t + BASE_UNIT <= windowEnd; t += BASE_UNIT) {
+    allBlockStarts.push(t);
   }
 
-  // Remove booked slots
+  // Fetch booked appointments for the day
   const booked = await prisma.appointment.findMany({
     where: {
       therapistId: id,
       status: { in: ['PENDING', 'CONFIRMED'] },
       startTime: { gte: new Date(date), lt: new Date(new Date(date).getTime() + 86400000) },
     },
+    select: { startTime: true, endTime: true },
   });
 
-  const availableSlots = slots.filter(
-    (s) => !booked.some((b) => b.startTime.toISOString() === s.startTime)
-  );
+  // Helper: does a proposed [slotStartMs, slotEndMs) overlap any booked appointment?
+  const overlapsBooked = (slotStartMs: number, slotEndMs: number) =>
+    booked.some((b) => slotStartMs < b.endTime.getTime() && b.startTime.getTime() < slotEndMs);
 
-  res.json(availableSlots);
+  // A candidate start is valid if the entire [start, start+duration) block:
+  //  • fits inside the availability window
+  //  • does not overlap any booked appointment
+  const slots = allBlockStarts
+    .filter((t) => t + duration <= windowEnd)
+    .map((t) => {
+      const slotStart = new Date(date);
+      slotStart.setHours(Math.floor(t / 60), t % 60, 0, 0);
+      const slotEnd = new Date(slotStart.getTime() + duration * 60_000);
+      return { startTime: slotStart.toISOString(), endTime: slotEnd.toISOString(), available: true };
+    })
+    .filter((s) => !overlapsBooked(new Date(s.startTime).getTime(), new Date(s.endTime).getTime()));
+
+  res.json(slots);
 };
 
 export const updateProfile = async (req: Request, res: Response) => {

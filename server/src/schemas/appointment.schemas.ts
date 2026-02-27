@@ -9,11 +9,11 @@ export const createAppointmentSchema = z.object({
 });
 
 export const updateStatusSchema = z.object({
-  status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED']),
+  status: z.enum(['CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED']),
 });
 
 export const appointmentFiltersSchema = z.object({
-  status: z.array(z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'])).optional(),
+  status: z.array(z.enum(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED'])).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

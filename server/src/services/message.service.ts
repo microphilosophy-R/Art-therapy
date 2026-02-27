@@ -65,3 +65,79 @@ export const notifyTherapistOnRejection = async (
     },
   });
 };
+
+/**
+ * Notify all SIGNED_UP participants that a plan has started.
+ */
+export const notifyParticipantsPlanStarted = async (
+  planId: string,
+  planTitle: string,
+  participantUserIds: string[],
+): Promise<void> => {
+  if (participantUserIds.length === 0) return;
+  await prisma.message.createMany({
+    data: participantUserIds.map((uid) => ({
+      recipientId: uid,
+      body: `🟢 "${planTitle}" has started. See you there!`,
+      trigger: 'PLAN_STARTED' as const,
+      planId,
+    })),
+  });
+};
+
+/**
+ * Notify all SIGNED_UP participants that a plan has been cancelled by the therapist.
+ */
+export const notifyParticipantsPlanCancelled = async (
+  planId: string,
+  planTitle: string,
+  participantUserIds: string[],
+): Promise<void> => {
+  if (participantUserIds.length === 0) return;
+  await prisma.message.createMany({
+    data: participantUserIds.map((uid) => ({
+      recipientId: uid,
+      body: `⚠️ "${planTitle}" has been cancelled by the therapist. A refund will be processed if applicable.`,
+      trigger: 'PLAN_CANCELLED_BY_THERAPIST' as const,
+      planId,
+    })),
+  });
+};
+
+/**
+ * Notify the therapist that a client has signed up for their plan.
+ */
+export const notifyTherapistOnSignup = async (
+  therapistUserId: string,
+  planId: string,
+  planTitle: string,
+  clientName: string,
+): Promise<void> => {
+  await prisma.message.create({
+    data: {
+      recipientId: therapistUserId,
+      body: `✅ ${clientName} signed up for "${planTitle}".`,
+      trigger: 'PLAN_SIGNUP',
+      planId,
+    },
+  });
+};
+
+/**
+ * Notify the therapist that a client has cancelled their sign-up.
+ */
+export const notifyTherapistOnSignupCancelled = async (
+  therapistUserId: string,
+  planId: string,
+  planTitle: string,
+  clientName: string,
+): Promise<void> => {
+  await prisma.message.create({
+    data: {
+      recipientId: therapistUserId,
+      body: `🚪 ${clientName} cancelled their sign-up for "${planTitle}".`,
+      trigger: 'PLAN_SIGNUP_CANCELLED',
+      planId,
+    },
+  });
+};

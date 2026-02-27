@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  MapPin, Calendar, Clock, Users, Phone, ChevronLeft, Video,
+  MapPin, Calendar, Users, Phone, ChevronLeft, Video, Download, CheckCircle2,
 } from 'lucide-react';
 import {
   getTherapyPlan,
   submitTherapyPlanForReview,
   archiveTherapyPlan,
+  getTherapyPlanIcsUrl,
+  signUpForTherapyPlan,
+  cancelTherapyPlanSignup,
 } from '../../api/therapyPlans';
+import { PlanSchedule } from '../../components/therapyPlans/PlanSchedule';
 import { getPosterUrl } from '../../utils/therapyPlanUtils';
 import { Avatar } from '../../components/ui/Avatar';
 import { Badge } from '../../components/ui/Badge';
@@ -22,6 +26,11 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
   PENDING_REVIEW: 'warning',
   PUBLISHED: 'success',
   REJECTED: 'danger',
+  SIGN_UP_CLOSED: 'warning',
+  IN_PROGRESS: 'info',
+  FINISHED: 'default',
+  IN_GALLERY: 'outline',
+  CANCELLED: 'danger',
   ARCHIVED: 'default',
 };
 
@@ -31,6 +40,7 @@ export const TherapyPlanDetail = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const [signupError, setSignupError] = useState<string | null>(null);
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['therapy-plan', id],
@@ -46,6 +56,28 @@ export const TherapyPlanDetail = () => {
   const archiveMutation = useMutation({
     mutationFn: () => archiveTherapyPlan(id!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] }),
+  });
+
+  const signupMutation = useMutation({
+    mutationFn: () => signUpForTherapyPlan(id!, { paymentProvider: 'ALIPAY' }),
+    onSuccess: () => {
+      setSignupError(null);
+      queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
+    },
+    onError: (err: any) => {
+      setSignupError(err?.response?.data?.message ?? t('common.errors.generic', 'An error occurred'));
+    },
+  });
+
+  const cancelSignupMutation = useMutation({
+    mutationFn: () => cancelTherapyPlanSignup(id!),
+    onSuccess: () => {
+      setSignupError(null);
+      queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
+    },
+    onError: (err: any) => {
+      setSignupError(err?.response?.data?.message ?? t('common.errors.generic', 'An error occurred'));
+    },
   });
 
   if (isLoading) return <div className="flex justify-center py-16"><Spinner /></div>;
@@ -66,9 +98,20 @@ export const TherapyPlanDetail = () => {
 
   const isOwner = user?.role === 'THERAPIST' && therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
+  const isClient = user?.role === 'CLIENT';
   const canEdit = isAdmin || (isOwner && (plan.status === 'DRAFT' || plan.status === 'REJECTED'));
   const canSubmit = isOwner && (plan.status === 'DRAFT' || plan.status === 'REJECTED');
   const canArchive = (isOwner || isAdmin) && plan.status === 'PUBLISHED';
+
+  const isNonPersonal = plan.type !== 'PERSONAL_CONSULT';
+  const myParticipation = plan.participants?.find((p) => p.userId === user?.id);
+  const isEnrolled = myParticipation?.status === 'SIGNED_UP';
+  const canSignUp = isClient && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled;
+  const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && isEnrolled;
+
+  const priceDisplay = plan.price != null
+    ? `¥${Number(plan.price).toFixed(2)}`
+    : null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -110,44 +153,103 @@ export const TherapyPlanDetail = () => {
                 {t(`common.planStatus.${plan.status}`)}
               </Badge>
             )}
+            {isEnrolled && (
+              <Badge variant="success">
+                <CheckCircle2 className="h-3 w-3 inline mr-1" />
+                {t('therapyPlans.detail.enrolled')}
+              </Badge>
+            )}
           </div>
           <h1 className="text-2xl font-bold text-stone-900">{plan.title}</h1>
+          {plan.slogan && (
+            <p className="text-stone-500 mt-1 italic">{plan.slogan}</p>
+          )}
         </div>
 
         {/* Actions */}
-        {(canEdit || canSubmit || canArchive) && (
-          <div className="flex flex-wrap gap-2 flex-shrink-0">
-            {canEdit && (
+        <div className="flex flex-wrap gap-2 flex-shrink-0">
+          {canEdit && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate(`/therapy-plans/${plan.id}/edit`)}
+            >
+              {t('therapyPlans.detail.edit')}
+            </Button>
+          )}
+          {canSubmit && (
+            <Button
+              size="sm"
+              loading={submitMutation.isPending}
+              onClick={() => submitMutation.mutate()}
+            >
+              {t('therapyPlans.detail.submitForReview')}
+            </Button>
+          )}
+          {canArchive && (
+            <Button
+              size="sm"
+              variant="outline"
+              loading={archiveMutation.isPending}
+              onClick={() => archiveMutation.mutate()}
+            >
+              {t('therapyPlans.detail.archive')}
+            </Button>
+          )}
+          {plan.status === 'PUBLISHED' && (
+            <a
+              href={getTherapyPlanIcsUrl(plan.id)}
+              download={`${plan.title}.ics`}
+              className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-teal-400 hover:text-teal-700 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {t('therapyPlans.detail.exportIcs', 'Add to My Calendar (Export)')}
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Sign-up panel */}
+      {(canSignUp || canCancelSignup) && (
+        <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 mb-6 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-teal-800">
+              {isEnrolled
+                ? t('therapyPlans.detail.enrolled')
+                : t('therapyPlans.detail.signUp')}
+            </p>
+            {priceDisplay && (
+              <p className="text-2xl font-bold text-teal-700 mt-0.5">{priceDisplay}</p>
+            )}
+            {signupError && (
+              <p className="text-sm text-rose-600 mt-1">{signupError}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {canSignUp && (
               <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate(`/therapy-plans/${plan.id}/edit`)}
+                loading={signupMutation.isPending}
+                disabled={signupMutation.isPending}
+                onClick={() => signupMutation.mutate()}
               >
-                {t('therapyPlans.detail.edit')}
+                {priceDisplay
+                  ? `${t('therapyPlans.detail.signUp')} · ${priceDisplay}`
+                  : t('therapyPlans.detail.signUp')}
               </Button>
             )}
-            {canSubmit && (
+            {canCancelSignup && (
               <Button
-                size="sm"
-                loading={submitMutation.isPending}
-                onClick={() => submitMutation.mutate()}
-              >
-                {t('therapyPlans.detail.submitForReview')}
-              </Button>
-            )}
-            {canArchive && (
-              <Button
-                size="sm"
                 variant="outline"
-                loading={archiveMutation.isPending}
-                onClick={() => archiveMutation.mutate()}
+                loading={cancelSignupMutation.isPending}
+                disabled={cancelSignupMutation.isPending}
+                onClick={() => cancelSignupMutation.mutate()}
               >
-                {t('therapyPlans.detail.archive')}
+                {t('common.cancel', 'Cancel')}
               </Button>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Rejection notice */}
       {plan.status === 'REJECTED' && plan.rejectionReason && (
@@ -165,25 +267,32 @@ export const TherapyPlanDetail = () => {
         <p className="text-stone-700 whitespace-pre-wrap">{plan.introduction}</p>
       </section>
 
-      {/* Details grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="flex items-start gap-3 bg-stone-50 rounded-lg p-4">
-          <Calendar className="h-5 w-5 text-teal-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs text-stone-500 font-medium uppercase tracking-wide mb-0.5">
-              {t('therapyPlans.detail.startTime')}
-            </p>
-            <p className="text-sm text-stone-800">
-              {new Date(plan.startTime).toLocaleString()}
-            </p>
-            {plan.endTime && (
-              <p className="text-xs text-stone-500 mt-0.5">
-                {t('therapyPlans.detail.endTime')}: {new Date(plan.endTime).toLocaleString()}
+      {/* Schedule — PlanSchedule if events exist, else single date card */}
+      {plan.events && plan.events.length > 0 ? (
+        <PlanSchedule mode="view" events={plan.events} planType={plan.type} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div className="flex items-start gap-3 bg-stone-50 rounded-lg p-4">
+            <Calendar className="h-5 w-5 text-teal-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs text-stone-500 font-medium uppercase tracking-wide mb-0.5">
+                {t('therapyPlans.detail.startTime')}
               </p>
-            )}
+              <p className="text-sm text-stone-800">
+                {new Date(plan.startTime).toLocaleString()}
+              </p>
+              {plan.endTime && (
+                <p className="text-xs text-stone-500 mt-0.5">
+                  {t('therapyPlans.detail.endTime')}: {new Date(plan.endTime).toLocaleString()}
+                </p>
+              )}
+            </div>
           </div>
         </div>
+      )}
 
+      {/* Details grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="flex items-start gap-3 bg-stone-50 rounded-lg p-4">
           <MapPin className="h-5 w-5 text-teal-600 flex-shrink-0 mt-0.5" />
           <div>
@@ -201,7 +310,11 @@ export const TherapyPlanDetail = () => {
               <p className="text-xs text-stone-500 font-medium uppercase tracking-wide mb-0.5">
                 {t('therapyPlans.detail.maxParticipants')}
               </p>
-              <p className="text-sm text-stone-800">{plan.maxParticipants}</p>
+              <p className="text-sm text-stone-800">
+                {plan._count?.participants != null
+                  ? `${plan._count.participants} / ${plan.maxParticipants}`
+                  : plan.maxParticipants}
+              </p>
             </div>
           </div>
         )}

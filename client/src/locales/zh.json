@@ -22,9 +22,12 @@
     "status": {
       "PENDING": "待付款",
       "CONFIRMED": "已确认",
+      "IN_PROGRESS": "进行中",
       "CANCELLED": "已取消",
       "COMPLETED": "已完成"
     },
+    "previous": "上一页",
+    "next": "下一页",
     "role": {
       "CLIENT": "来访者",
       "THERAPIST": "治疗师",
@@ -56,6 +59,11 @@
       "PENDING_REVIEW": "待审核",
       "PUBLISHED": "已发布",
       "REJECTED": "已拒绝",
+      "SIGN_UP_CLOSED": "报名已截止",
+      "IN_PROGRESS": "进行中",
+      "FINISHED": "已完成",
+      "IN_GALLERY": "展示中",
+      "CANCELLED": "已取消",
       "ARCHIVED": "已归档"
     },
     "artSalonSubType": {
@@ -74,6 +82,7 @@
   "nav": {
     "findTherapist": "寻找治疗师",
     "therapyPlans": "疗愈计划",
+    "gallery": "往期画廊",
     "signIn": "登录",
     "getStarted": "立即开始",
     "dashboard": "控制台",
@@ -276,7 +285,14 @@
     "step1": {
       "title": "选择日期与时间",
       "loadingSlots": "加载时段中…",
-      "noSlots": "当日暂无可用时段，请选择其他日期。"
+      "noSlots": "当日暂无可用时段，请选择其他日期。",
+      "duration": "时长",
+      "at": "於",
+      "bookThis": "立即预约 →",
+      "searchingQuickPick": "正在查找最近可用时段…",
+      "chooseDifferent": "选择其他时间",
+      "preview": "预约预览",
+      "yourAppointment": "您的预约"
     },
     "step2": {
       "title": "疗程形式",
@@ -483,7 +499,30 @@
       "edit": "编辑",
       "submitForReview": "提交审核",
       "archive": "归档",
-      "rejectedBanner": "此计划已被拒绝"
+      "rejectedBanner": "此计划已被拒绝",
+      "pendingBanner": "此计划正在审核中，暂不可编辑。",
+      "publishedBanner": "此计划已发布，暂不可编辑。",
+      "exportIcs": "添加到日历（导出）",
+      "closeSignup": "截止报名",
+      "startSession": "开始活动",
+      "finishSession": "结束活动",
+      "moveToGallery": "移至画廊",
+      "cancelPlan": "取消计划",
+      "signUp": "立即报名",
+      "enrolled": "已报名",
+      "acceptanceDeadline": "接受截止时间"
+    },
+    "schedule": {
+      "title": "日程安排",
+      "addEvent": "添加时间段",
+      "event": "活动",
+      "eventTitle": "标签",
+      "eventTitlePlaceholder": "如：上午场次",
+      "empty": "暂无日程活动，请在上方添加。",
+      "available": "可预约",
+      "unavailable": "不可预约",
+      "numDays": "天数",
+      "setStartFirst": "请先在上方设置计划开始日期，以自动生成日程。"
     },
     "form": {
       "createTitle": "创建疗愈计划",
@@ -499,7 +538,9 @@
       "introduction": "简介",
       "introPlaceholder": "描述参与者可以期待什么...",
       "startTime": "开始日期与时间",
-      "endTime": "结束日期与时间（可选）",
+      "duration": "时长",
+      "durationPlaceholder": "如：60",
+      "endTime": "结束日期与时间",
       "location": "地点",
       "locationPlaceholder": "如：中央艺术大楼3号工作室",
       "maxParticipants": "最大参与人数（可选）",
@@ -513,16 +554,43 @@
       "errorSave": "保存计划失败。",
       "errorUpload": "计划已保存，但海报上传失败。",
       "rejectedNotice": "此计划已被拒绝",
-      "maxParticipantsGroupError": "团体咨询最多允许12名参与者。",
+      "maxParticipantsGroupError": "需在1–12之间",
       "introductionPlaceholder": "描述参与者可以期待什么...",
-      "endTimeOptional": "结束日期与时间（可选）",
+      "endTimeOptional": "（可选）",
       "contactInfoPlaceholder": "如：+86 138-0000-0000 或 email@example.com",
       "posterSection": "海报",
       "defaultPosters": "默认海报",
       "uploadCustom": "上传自定义图片",
       "posterHint": "选择默认海报或上传您自己的图片（最大5MB，推荐800×450）。",
-      "submitError": "提交计划审核失败。"
+      "submitError": "提交计划审核失败。",
+      "titleMinLength": "标题至少需要5个字符",
+      "titleMaxLength": "标题最多100个字符",
+      "introMinLength": "简介至少需要20个字符",
+      "sloganMaxLengthError": "最多60个字符",
+      "endTimeAfterStart": "结束时间必须晚于开始时间",
+      "maxParticipantsMin": "至少需要1人",
+      "maxParticipantsError": "需在1–100之间",
+      "price": "每人价格（元）",
+      "pricePlaceholder": "如：200",
+      "slogan": "标语",
+      "sloganPlaceholder": "简短有吸引力的副标题（如：逃离都市，拥抱自然）"
+    },
+    "templates": {
+      "loadTemplate": "从模板加载",
+      "saveAsTemplate": "保存为模板",
+      "myTemplates": "我的模板",
+      "publicTemplates": "公共模板",
+      "noTemplates": "暂无模板。",
+      "templateName": "模板名称",
+      "makePublic": "与所有治疗师共享",
+      "saved": "模板已保存。",
+      "useTemplate": "使用",
+      "confirmDelete": "确定删除此模板？"
     }
+  },
+  "gallery": {
+    "title": "往期画廊",
+    "subtitle": "已完成的疗愈活动"
   },
   "messages": {
     "inbox": "消息",
@@ -541,7 +609,14 @@
       "PLAN_SUBMITTED": "计划已提交审核",
       "PLAN_APPROVED": "计划已批准",
       "PLAN_REJECTED": "计划已拒绝",
-      "MANUAL": "直接消息"
+      "MANUAL": "直接消息",
+      "APPOINTMENT_DEADLINE_WARNING": "预约截止时间临近",
+      "APPOINTMENT_AUTO_CANCELLED": "预约已自动取消",
+      "PLAN_SIGNUP": "新报名通知",
+      "PLAN_SIGNUP_CANCELLED": "报名已取消",
+      "PLAN_STARTED": "计划已开始",
+      "PLAN_FINISHED": "计划已完成",
+      "PLAN_CANCELLED_BY_THERAPIST": "计划已取消"
     }
   },
   "profile": {

@@ -18,6 +18,7 @@ import { adminRouter } from './routes/admin.routes';
 import { profileRouter } from './routes/profile.routes';
 import { formRouter } from './routes/form.routes';
 import { therapyPlanRouter } from './routes/therapyPlan.routes';
+import { therapyPlanTemplateRouter } from './routes/therapyPlanTemplate.routes';
 import { messageRouter } from './routes/message.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 
@@ -59,6 +60,7 @@ api.use('/admin', adminRouter);
 api.use('/profile', profileRouter);
 api.use('/forms', formRouter);
 api.use('/therapy-plans', therapyPlanRouter);
+api.use('/therapy-plan-templates', therapyPlanTemplateRouter);
 api.use('/messages', messageRouter);
 
 // Exchange rate proxy — avoids CORS issues calling cn.apihz.cn from the browser

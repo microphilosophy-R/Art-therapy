@@ -123,6 +123,11 @@ export type TherapyPlanStatus =
   | 'PENDING_REVIEW'
   | 'PUBLISHED'
   | 'REJECTED'
+  | 'SIGN_UP_CLOSED'
+  | 'IN_PROGRESS'
+  | 'FINISHED'
+  | 'IN_GALLERY'
+  | 'CANCELLED'
   | 'ARCHIVED';
 
 export type ArtSalonSubType =
@@ -139,12 +144,25 @@ export type MessageTrigger =
   | 'PLAN_REJECTED'
   | 'MANUAL';
 
+export type ParticipantStatus = 'SIGNED_UP' | 'CANCELLED';
+
 export interface TherapyPlanParticipant {
   id: string;
   userId: string;
   user?: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatarUrl'>;
   planId: string;
+  status: ParticipantStatus;
   enrolledAt: string;
+}
+
+export interface TherapyPlanEvent {
+  id: string;
+  planId: string;
+  startTime: string;
+  endTime?: string | null;
+  title?: string | null;
+  isAvailable: boolean;
+  order: number;
 }
 
 export interface TherapyPlan {
@@ -165,11 +183,13 @@ export interface TherapyPlan {
   sessionMedium?: SessionMedium | null;
   defaultPosterId?: number | null;
   posterUrl?: string | null;
+  price?: number | string | null;
   rejectionReason?: string | null;
   submittedAt?: string | null;
   reviewedAt?: string | null;
   publishedAt?: string | null;
   participants?: TherapyPlanParticipant[];
+  events?: TherapyPlanEvent[];
   _count?: {
     participants: number;
   };
@@ -197,4 +217,15 @@ export interface TherapyPlanFilters {
   timeFilter?: 'upcoming' | 'past';
   page?: number;
   limit?: number;
+}
+
+export interface TherapyPlanTemplate {
+  id: string;
+  createdById: string;
+  createdBy?: Pick<User, 'id' | 'firstName' | 'lastName'>;
+  type: TherapyPlanType;
+  name: string;
+  isPublic: boolean;
+  data: Record<string, unknown>;
+  createdAt: string;
 }

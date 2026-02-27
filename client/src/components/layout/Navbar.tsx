@@ -78,6 +78,15 @@ export const Navbar = () => {
             >
               {t('nav.therapyPlans')}
             </Link>
+            <Link
+              to="/gallery"
+              className={`px-3 py-2 text-sm rounded-lg transition-colors ${isActive('/gallery')
+                  ? 'bg-teal-50 text-teal-700 font-medium'
+                  : 'text-stone-600 hover:bg-stone-100'
+                }`}
+            >
+              {t('nav.gallery', 'Gallery')}
+            </Link>
 
             <LanguageSwitcher />
 
@@ -185,6 +194,13 @@ export const Navbar = () => {
               className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
             >
               {t('nav.therapyPlans')}
+            </Link>
+            <Link
+              to="/gallery"
+              onClick={() => setMobileOpen(false)}
+              className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
+            >
+              {t('nav.gallery', 'Gallery')}
             </Link>
             <div className="px-1">
               <LanguageSwitcher />

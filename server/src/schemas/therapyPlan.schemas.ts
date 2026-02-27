@@ -9,7 +9,10 @@ const ART_SALON_SUBTYPES = [
   'BOARD_GAMES',
   'CULTURAL_CONVERSATION',
 ] as const;
-const PLAN_STATUSES = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED', 'ARCHIVED'] as const;
+const PLAN_STATUSES = [
+  'DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED',
+  'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY', 'CANCELLED', 'ARCHIVED',
+] as const;
 
 export const createTherapyPlanSchema = z
   .object({
@@ -26,6 +29,7 @@ export const createTherapyPlanSchema = z
     sessionMedium: z.enum(['IN_PERSON', 'VIDEO']).optional().nullable(),
     defaultPosterId: z.number().int().min(1).max(6).optional().nullable(),
     posterUrl: z.string().url().optional().nullable(),
+    price: z.number().min(0).optional().nullable(),
   })
   .refine((d) => !(d.defaultPosterId && d.posterUrl), {
     message: 'Provide either defaultPosterId or posterUrl, not both',
@@ -58,6 +62,7 @@ export const updateTherapyPlanSchema = z
     sessionMedium: z.enum(['IN_PERSON', 'VIDEO']).optional().nullable(),
     defaultPosterId: z.number().int().min(1).max(6).optional().nullable(),
     posterUrl: z.string().url().optional().nullable(),
+    price: z.number().min(0).optional().nullable(),
   });
 
 export const reviewTherapyPlanSchema = z
@@ -82,3 +87,20 @@ export type CreateTherapyPlanInput = z.infer<typeof createTherapyPlanSchema>;
 export type UpdateTherapyPlanInput = z.infer<typeof updateTherapyPlanSchema>;
 export type ReviewTherapyPlanInput = z.infer<typeof reviewTherapyPlanSchema>;
 export type ListTherapyPlansQuery = z.infer<typeof listTherapyPlansSchema>;
+
+export const upsertPlanEventsSchema = z.object({
+  events: z
+    .array(
+      z.object({
+        startTime: z.string().datetime(),
+        endTime: z.string().datetime().nullable().optional(),
+        title: z.string().max(100).nullable().optional(),
+        isAvailable: z.boolean().default(true),
+        order: z.number().int().min(0).default(0),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
+export type UpsertPlanEventsInput = z.infer<typeof upsertPlanEventsSchema>;

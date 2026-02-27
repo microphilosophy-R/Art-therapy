@@ -20,6 +20,7 @@ import { TherapyPlansDirectory } from './pages/therapy-plans/TherapyPlansDirecto
 import { TherapyPlanDetail } from './pages/therapy-plans/TherapyPlanDetail';
 import { CreateTherapyPlan } from './pages/therapy-plans/CreateTherapyPlan';
 import { EditTherapyPlan } from './pages/therapy-plans/EditTherapyPlan';
+import { Gallery } from './pages/Gallery';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({
@@ -93,6 +94,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Gallery */}
+          <Route path="/gallery" element={<Gallery />} />
 
           {/* Therapy Plans */}
           <Route path="/therapy-plans" element={<TherapyPlansDirectory />} />

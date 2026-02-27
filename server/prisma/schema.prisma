@@ -16,6 +16,7 @@ enum Role {
 enum AppointmentStatus {
   PENDING
   CONFIRMED
+  IN_PROGRESS
   CANCELLED
   COMPLETED
 }
@@ -76,7 +77,17 @@ enum TherapyPlanStatus {
   PENDING_REVIEW
   PUBLISHED
   REJECTED
+  SIGN_UP_CLOSED
+  IN_PROGRESS
+  FINISHED
+  IN_GALLERY
+  CANCELLED
   ARCHIVED
+}
+
+enum ParticipantStatus {
+  SIGNED_UP
+  CANCELLED
 }
 
 enum ArtSalonSubType {
@@ -93,6 +104,13 @@ enum MessageTrigger {
   PLAN_APPROVED
   PLAN_REJECTED
   MANUAL
+  APPOINTMENT_DEADLINE_WARNING
+  APPOINTMENT_AUTO_CANCELLED
+  PLAN_SIGNUP
+  PLAN_SIGNUP_CANCELLED
+  PLAN_STARTED
+  PLAN_FINISHED
+  PLAN_CANCELLED_BY_THERAPIST
 }
 
 model User {
@@ -119,6 +137,7 @@ model User {
   sentMessages         Message[]         @relation("MessageSender")
   receivedMessages     Message[]         @relation("MessageRecipient")
   therapyPlanParticipations TherapyPlanParticipant[] @relation("UserParticipations")
+  templates                 TherapyPlanTemplate[]    @relation("UserTemplates")
 }
 
 model TherapistProfile {
@@ -321,6 +340,7 @@ model TherapyPlan {
   location        String
   maxParticipants Int?
   contactInfo     String
+  price           Decimal?          @db.Decimal(10, 2)  // per-seat price for Group/Art/Retreat
 
   // Type-specific fields
   artSalonSubType ArtSalonSubType? // only for ART_SALON
@@ -338,6 +358,7 @@ model TherapyPlan {
 
   messages        Message[]
   participants    TherapyPlanParticipant[] @relation("PlanParticipants")
+  events          TherapyPlanEvent[]       @relation("PlanEvents")
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -347,15 +368,68 @@ model TherapyPlan {
   @@index([therapistId])
 }
 
+model TherapyPlanEvent {
+  id          String      @id @default(cuid())
+  planId      String
+  plan        TherapyPlan @relation("PlanEvents", fields: [planId], references: [id], onDelete: Cascade)
+  startTime   DateTime
+  endTime     DateTime?
+  title       String?
+  isAvailable Boolean     @default(true)
+  order       Int         @default(0)
+
+  @@index([planId])
+}
+
+model TherapyPlanTemplate {
+  id          String          @id @default(cuid())
+  createdById String
+  createdBy   User            @relation("UserTemplates", fields: [createdById], references: [id], onDelete: Cascade)
+  type        TherapyPlanType
+  name        String          @db.VarChar(100)
+  isPublic    Boolean         @default(false)
+  data        Json
+  createdAt   DateTime        @default(now())
+
+  @@index([createdById])
+  @@index([type, isPublic])
+}
+
 model TherapyPlanParticipant {
-  id            String      @id @default(cuid())
+  id            String            @id @default(cuid())
   userId        String
-  user          User        @relation("UserParticipations", fields: [userId], references: [id], onDelete: Cascade)
+  user          User              @relation("UserParticipations", fields: [userId], references: [id], onDelete: Cascade)
   planId        String
-  plan          TherapyPlan @relation("PlanParticipants", fields: [planId], references: [id], onDelete: Cascade)
-  enrolledAt    DateTime    @default(now())
+  plan          TherapyPlan       @relation("PlanParticipants", fields: [planId], references: [id], onDelete: Cascade)
+  status        ParticipantStatus @default(SIGNED_UP)
+  enrolledAt    DateTime          @default(now())
+  payment       PlanPayment?
 
   @@unique([userId, planId])
+  @@index([planId])
+}
+
+model PlanPayment {
+  id              String                 @id @default(cuid())
+  participantId   String                 @unique
+  participant     TherapyPlanParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  provider              PaymentProvider @default(ALIPAY)
+  externalOrderId       String?
+  externalTradeNo       String?
+  stripePaymentIntentId String?
+
+  amount                Int
+  currency              String        @default("cny")
+  platformFeeAmount     Int
+  therapistPayoutAmount Int
+
+  status       PaymentStatus @default(PENDING)
+  refundedAt   DateTime?
+  refundAmount Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Message {

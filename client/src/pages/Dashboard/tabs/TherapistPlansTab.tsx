@@ -16,11 +16,11 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
-  DRAFT:          'outline',
+  DRAFT: 'outline',
   PENDING_REVIEW: 'warning',
-  PUBLISHED:      'success',
-  REJECTED:       'danger',
-  ARCHIVED:       'default',
+  PUBLISHED: 'success',
+  REJECTED: 'danger',
+  ARCHIVED: 'default',
 };
 
 export const TherapistPlansTab = () => {
@@ -125,7 +125,7 @@ export const TherapistPlansTab = () => {
                     </Button>
                     <Button
                       size="sm"
-                      isLoading={submitMutation.isPending}
+                      loading={submitMutation.isPending}
                       onClick={() => submitMutation.mutate(plan.id)}
                     >
                       {t('therapyPlans.detail.submitForReview')}
@@ -151,7 +151,7 @@ export const TherapistPlansTab = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    isLoading={archiveMutation.isPending}
+                    loading={archiveMutation.isPending}
                     onClick={() => archiveMutation.mutate(plan.id)}
                   >
                     {t('therapyPlans.detail.archive')}

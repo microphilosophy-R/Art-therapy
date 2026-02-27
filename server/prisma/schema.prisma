@@ -118,6 +118,7 @@ model User {
   sentForms            ClientForm[]      @relation("FormSender")
   sentMessages         Message[]         @relation("MessageSender")
   receivedMessages     Message[]         @relation("MessageRecipient")
+  therapyPlanParticipations TherapyPlanParticipant[] @relation("UserParticipations")
 }
 
 model TherapistProfile {
@@ -313,6 +314,7 @@ model TherapyPlan {
   status          TherapyPlanStatus @default(DRAFT)
 
   title           String
+  slogan          String?
   introduction    String
   startTime       DateTime
   endTime         DateTime?
@@ -335,6 +337,7 @@ model TherapyPlan {
   publishedAt     DateTime?
 
   messages        Message[]
+  participants    TherapyPlanParticipant[] @relation("PlanParticipants")
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -342,6 +345,17 @@ model TherapyPlan {
   @@index([status])
   @@index([type])
   @@index([therapistId])
+}
+
+model TherapyPlanParticipant {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation("UserParticipations", fields: [userId], references: [id], onDelete: Cascade)
+  planId        String
+  plan          TherapyPlan @relation("PlanParticipants", fields: [planId], references: [id], onDelete: Cascade)
+  enrolledAt    DateTime    @default(now())
+
+  @@unique([userId, planId])
 }
 
 model Message {

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { uploadPoster } from '../services/upload.service';
 import {
   notifyAdminsOnPlanSubmitted,
@@ -27,7 +28,24 @@ const THERAPIST_PLAN_INCLUDE = {
       },
     },
   },
-} as const;
+  participants: {
+    take: 4,
+    orderBy: { enrolledAt: Prisma.SortOrder.asc },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+        },
+      },
+    },
+  },
+  _count: {
+    select: { participants: true },
+  },
+} satisfies Prisma.TherapyPlanInclude;
 
 // ─── Create ──────────────────────────────────────────────────────────────────
 
@@ -43,20 +61,21 @@ export const createPlan = async (req: Request, res: Response) => {
 
   const plan = await prisma.therapyPlan.create({
     data: {
-      therapistId:     therapistProfile.id,
-      type:            body.type,
-      title:           body.title,
-      introduction:    body.introduction,
-      startTime:       new Date(body.startTime),
-      endTime:         body.endTime ? new Date(body.endTime) : null,
-      location:        body.location,
+      therapistId: therapistProfile.id,
+      type: body.type,
+      title: body.title,
+      slogan: body.slogan ?? null,
+      introduction: body.introduction,
+      startTime: new Date(body.startTime),
+      endTime: body.endTime ? new Date(body.endTime) : null,
+      location: body.location,
       maxParticipants: body.maxParticipants ?? null,
-      contactInfo:     body.contactInfo,
+      contactInfo: body.contactInfo,
       artSalonSubType: body.artSalonSubType ?? null,
-      sessionMedium:   body.sessionMedium ?? null,
+      sessionMedium: body.sessionMedium ?? null,
       defaultPosterId: body.posterUrl ? null : (body.defaultPosterId ?? 1),
-      posterUrl:       body.posterUrl ?? null,
-      status:          'DRAFT',
+      posterUrl: body.posterUrl ?? null,
+      status: 'DRAFT',
     },
     include: THERAPIST_PLAN_INCLUDE,
   });
@@ -67,11 +86,11 @@ export const createPlan = async (req: Request, res: Response) => {
 // ─── List ─────────────────────────────────────────────────────────────────────
 
 export const listPlans = async (req: Request, res: Response) => {
-  const query  = req.query as unknown as ListTherapyPlansQuery;
-  const page   = Number(query.page)  || 1;
-  const limit  = Number(query.limit) || 12;
-  const skip   = (page - 1) * limit;
-  const user   = req.user;
+  const query = req.query as unknown as ListTherapyPlansQuery;
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 12;
+  const skip = (page - 1) * limit;
+  const user = req.user;
 
   let where: any = {};
 
@@ -89,6 +108,19 @@ export const listPlans = async (req: Request, res: Response) => {
   }
 
   if (query.type) where.type = query.type;
+
+  const now = new Date();
+  if (query.timeFilter === 'past') {
+    where.OR = [
+      { endTime: { lt: now } },
+      { AND: [{ endTime: null }, { startTime: { lt: now } }] },
+    ];
+  } else if (query.timeFilter === 'upcoming') {
+    where.OR = [
+      { endTime: { gte: now } },
+      { AND: [{ endTime: null }, { startTime: { gte: now } }] },
+    ];
+  }
 
   const [plans, total] = await Promise.all([
     prisma.therapyPlan.findMany({
@@ -163,18 +195,19 @@ export const updatePlan = async (req: Request, res: Response) => {
   const updated = await prisma.therapyPlan.update({
     where: { id },
     data: {
-      ...(body.type            !== undefined ? { type: body.type }                       : {}),
-      ...(body.title           !== undefined ? { title: body.title }                     : {}),
-      ...(body.introduction    !== undefined ? { introduction: body.introduction }        : {}),
-      ...(body.startTime       !== undefined ? { startTime: new Date(body.startTime) }   : {}),
-      ...(body.endTime         !== undefined ? { endTime: body.endTime ? new Date(body.endTime) : null } : {}),
-      ...(body.location        !== undefined ? { location: body.location }               : {}),
+      ...(body.type !== undefined ? { type: body.type } : {}),
+      ...(body.title !== undefined ? { title: body.title } : {}),
+      ...(body.slogan !== undefined ? { slogan: body.slogan } : {}),
+      ...(body.introduction !== undefined ? { introduction: body.introduction } : {}),
+      ...(body.startTime !== undefined ? { startTime: new Date(body.startTime) } : {}),
+      ...(body.endTime !== undefined ? { endTime: body.endTime ? new Date(body.endTime) : null } : {}),
+      ...(body.location !== undefined ? { location: body.location } : {}),
       ...(body.maxParticipants !== undefined ? { maxParticipants: body.maxParticipants } : {}),
-      ...(body.contactInfo     !== undefined ? { contactInfo: body.contactInfo }         : {}),
+      ...(body.contactInfo !== undefined ? { contactInfo: body.contactInfo } : {}),
       ...(body.artSalonSubType !== undefined ? { artSalonSubType: body.artSalonSubType } : {}),
-      ...(body.sessionMedium   !== undefined ? { sessionMedium: body.sessionMedium }     : {}),
+      ...(body.sessionMedium !== undefined ? { sessionMedium: body.sessionMedium } : {}),
       ...(body.defaultPosterId !== undefined ? { defaultPosterId: body.defaultPosterId, posterUrl: null } : {}),
-      ...(body.posterUrl       !== undefined ? { posterUrl: body.posterUrl, defaultPosterId: null }       : {}),
+      ...(body.posterUrl !== undefined ? { posterUrl: body.posterUrl, defaultPosterId: null } : {}),
     },
     include: THERAPIST_PLAN_INCLUDE,
   });
@@ -230,9 +263,9 @@ export const reviewPlan = async (req: Request, res: Response) => {
     const updated = await prisma.therapyPlan.update({
       where: { id },
       data: {
-        status:      'PUBLISHED',
+        status: 'PUBLISHED',
         publishedAt: new Date(),
-        reviewedAt:  new Date(),
+        reviewedAt: new Date(),
         rejectionReason: null,
       },
       include: THERAPIST_PLAN_INCLUDE,
@@ -246,9 +279,9 @@ export const reviewPlan = async (req: Request, res: Response) => {
   const updated = await prisma.therapyPlan.update({
     where: { id },
     data: {
-      status:          'REJECTED',
+      status: 'REJECTED',
       rejectionReason: body.rejectionReason!,
-      reviewedAt:      new Date(),
+      reviewedAt: new Date(),
     },
     include: THERAPIST_PLAN_INCLUDE,
   });

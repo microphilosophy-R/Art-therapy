@@ -45,6 +45,12 @@
       "ART_SALON": "Art Salon",
       "WELLNESS_RETREAT": "Wellness Retreat"
     },
+    "planSlogan": {
+      "PERSONAL_CONSULT": "Dedicated Time for You",
+      "GROUP_CONSULT": "Shared Growth",
+      "ART_SALON": "Express & Connect",
+      "WELLNESS_RETREAT": "Hoping for an adventure at wild"
+    },
     "planStatus": {
       "DRAFT": "Draft",
       "PENDING_REVIEW": "Pending Review",
@@ -101,9 +107,18 @@
       "title": "How It Works",
       "subtitle": "Your path to healing in three simple steps",
       "step": "Step {{n}}",
-      "browse": { "title": "Browse Therapists", "desc": "Explore certified art therapists filtered by specialty, location, and price." },
-      "book":   { "title": "Book a Session",    "desc": "Choose your preferred date, time, and format — video or in-person." },
-      "heal":   { "title": "Begin Healing",     "desc": "Connect with your therapist and start your creative healing journey." }
+      "browse": {
+        "title": "Browse Therapists",
+        "desc": "Explore certified art therapists filtered by specialty, location, and price."
+      },
+      "book": {
+        "title": "Book a Session",
+        "desc": "Choose your preferred date, time, and format — video or in-person."
+      },
+      "heal": {
+        "title": "Begin Healing",
+        "desc": "Connect with your therapist and start your creative healing journey."
+      }
     },
     "featured": {
       "title": "Featured Therapists",
@@ -120,13 +135,45 @@
         "My therapist created a safe space where creativity became my path to healing.",
         "Booking was so easy and the sessions have transformed my relationship with anxiety."
       ],
-      "names": ["Sarah M.", "James T.", "Aisha K."]
+      "names": [
+        "Sarah M.",
+        "James T.",
+        "Aisha K."
+      ]
     },
     "ctaBanner": {
       "title": "Ready to Start Your Journey?",
       "subtitle": "Join hundreds of people who have found healing through art therapy.",
       "findTherapist": "Find a Therapist",
       "createAccount": "Create Account"
+    },
+    "viewAll": "View all",
+    "viewAllProviders": "View all providers",
+    "sections": {
+      "featuredPlans": {
+        "title": "Featured Plans",
+        "subtitle": "Discover our latest and most popular therapy plans."
+      },
+      "salons": {
+        "title": "Art Salons",
+        "subtitle": "Single-day open sessions focused on mindfulness and being present."
+      },
+      "retreats": {
+        "title": "Wellness Retreats",
+        "subtitle": "Immersive multi-day experiences integrating art therapy and nature."
+      },
+      "groups": {
+        "title": "Group Consultations",
+        "subtitle": "Supportive small group sessions guided by licensed professionals."
+      },
+      "personal": {
+        "title": "Personal Consultations",
+        "subtitle": "Connect 1-on-1 with our featured therapists."
+      },
+      "gallery": {
+        "title": "Gallery",
+        "subtitle": "View past successful salons and wellness retreats."
+      }
     }
   },
   "auth": {

@@ -23,7 +23,8 @@
       "Bash(findstr:*)",
       "Bash(wmic process where \"ProcessId=27968\" get Name,CommandLine)",
       "Bash(powershell -ExecutionPolicy Bypass -File:*)",
-      "Bash(del \"c:\\\\art therapy app\\\\make_posters.ps1\")"
+      "Bash(del \"c:\\\\art therapy app\\\\make_posters.ps1\")",
+      "Bash(ls \"c:\\\\art therapy app\\\\.claude\"\" 2>/dev/null || echo \"no .claude dir \")"
     ]
   }
 }

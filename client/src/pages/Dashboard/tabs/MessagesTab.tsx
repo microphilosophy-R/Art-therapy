@@ -89,7 +89,7 @@ export const MessagesTab = () => {
             <Button
               size="sm"
               variant="outline"
-              isLoading={markAllMutation.isPending}
+              loading={markAllMutation.isPending}
               onClick={() => markAllMutation.mutate()}
             >
               {t('messages.markAllRead')}
@@ -132,7 +132,7 @@ export const MessagesTab = () => {
               {composeError && <p className="text-xs text-rose-500">{composeError}</p>}
               <Button
                 size="sm"
-                isLoading={sendMutation.isPending}
+                loading={sendMutation.isPending}
                 onClick={handleSend}
               >
                 {t('messages.send')}

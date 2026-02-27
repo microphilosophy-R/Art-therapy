@@ -13,20 +13,20 @@ import { Select } from '../../../components/ui/Select';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
-  DRAFT:          'outline',
+  DRAFT: 'outline',
   PENDING_REVIEW: 'warning',
-  PUBLISHED:      'success',
-  REJECTED:       'danger',
-  ARCHIVED:       'default',
+  PUBLISHED: 'success',
+  REJECTED: 'danger',
+  ARCHIVED: 'default',
 };
 
 const STATUS_FILTER_OPTIONS: { value: TherapyPlanStatus | ''; label: string }[] = [
   { value: 'PENDING_REVIEW', label: 'Pending Review' },
-  { value: 'PUBLISHED',      label: 'Published' },
-  { value: 'REJECTED',       label: 'Rejected' },
-  { value: 'DRAFT',          label: 'Draft' },
-  { value: 'ARCHIVED',       label: 'Archived' },
-  { value: '',               label: 'All' },
+  { value: 'PUBLISHED', label: 'Published' },
+  { value: 'REJECTED', label: 'Rejected' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'ARCHIVED', label: 'Archived' },
+  { value: '', label: 'All' },
 ];
 
 export const AdminPlansTab = () => {
@@ -138,7 +138,7 @@ export const AdminPlansTab = () => {
                     <>
                       <Button
                         size="sm"
-                        isLoading={reviewMutation.isPending}
+                        loading={reviewMutation.isPending && rejectingPlanId === plan.id}
                         onClick={() => handleApprove(plan.id)}
                         className="bg-teal-600 hover:bg-teal-700"
                       >
@@ -178,8 +178,8 @@ export const AdminPlansTab = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-rose-600 border-rose-300"
-                      isLoading={reviewMutation.isPending}
+                      className="w-full text-rose-700 border-rose-200 hover:bg-rose-50"
+                      loading={reviewMutation.isPending && rejectingPlanId === plan.id && reviewMutation.variables?.action === 'REJECT'}
                       onClick={() => handleRejectSubmit(plan.id)}
                     >
                       {t('dashboard.admin.confirmReject')}

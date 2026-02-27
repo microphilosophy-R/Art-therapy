@@ -9,24 +9,25 @@ import type {
 } from '../types';
 
 export interface CreateTherapyPlanPayload {
-  type:            TherapyPlanType;
-  title:           string;
-  introduction:    string;
-  startTime:       string;
-  endTime?:        string;
-  location:        string;
+  type: TherapyPlanType;
+  title: string;
+  slogan?: string;
+  introduction: string;
+  startTime: string;
+  endTime?: string;
+  location: string;
   maxParticipants?: number | null;
-  contactInfo:     string;
+  contactInfo: string;
   artSalonSubType?: ArtSalonSubType | null;
-  sessionMedium?:  SessionMedium | null;
+  sessionMedium?: SessionMedium | null;
   defaultPosterId?: number | null;
-  posterUrl?:      string | null;
+  posterUrl?: string | null;
 }
 
 export type UpdateTherapyPlanPayload = Partial<CreateTherapyPlanPayload>;
 
 export interface ReviewTherapyPlanPayload {
-  action:          'APPROVE' | 'REJECT';
+  action: 'APPROVE' | 'REJECT';
   rejectionReason?: string;
 }
 

@@ -11,25 +11,28 @@ export const CreateTherapyPlan = () => {
   const [error, setError] = useState<string | null>(null);
 
   const createMutation = useMutation({ mutationFn: createTherapyPlan });
-  const posterMutation = useMutation({ mutationFn: ({ id, file }: { id: string; file: File }) =>
-    uploadTherapyPlanPoster(id, file) });
+  const posterMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      uploadTherapyPlanPoster(id, file)
+  });
 
   const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null) => {
     setError(null);
     try {
       const plan = await createMutation.mutateAsync({
-        type:            values.type,
-        title:           values.title,
-        introduction:    values.introduction,
-        startTime:       new Date(values.startTime).toISOString(),
-        endTime:         values.endTime ? new Date(values.endTime).toISOString() : undefined,
-        location:        values.location,
+        type: values.type,
+        title: values.title,
+        slogan: values.slogan || undefined,
+        introduction: values.introduction,
+        startTime: new Date(values.startTime).toISOString(),
+        endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
+        location: values.location,
         maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
-        contactInfo:     values.contactInfo,
+        contactInfo: values.contactInfo,
         artSalonSubType: (values.artSalonSubType || null) as any,
-        sessionMedium:   (values.sessionMedium || null) as any,
+        sessionMedium: (values.sessionMedium || null) as any,
         defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
-        posterUrl:       null,
+        posterUrl: null,
       });
 
       // Upload custom poster if selected

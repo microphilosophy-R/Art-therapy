@@ -4,41 +4,91 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Heart, Shield, Clock, Star, Users } from 'lucide-react';
 import { getTherapists } from '../api/therapists';
+import { listTherapyPlans } from '../api/therapyPlans';
 import { TherapistCard } from '../components/therapists/TherapistCard';
+import { TherapyPlanCard } from '../components/therapyPlans/TherapyPlanCard';
 import { Button } from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Spinner';
-
-const HOW_IT_WORKS_ICONS = [Users, Clock, Heart];
 
 export const Home = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
+  const { data: featuredPlans, isLoading: isFeaturedLoading } = useQuery({
+    queryKey: ['therapy-plans', 'featured'],
+    queryFn: () => listTherapyPlans({ limit: 4, timeFilter: 'upcoming' }),
+  });
+
+  const { data: salons, isLoading: isSalonsLoading } = useQuery({
+    queryKey: ['therapy-plans', 'salons'],
+    queryFn: () => listTherapyPlans({ type: 'ART_SALON', limit: 4, timeFilter: 'upcoming' }),
+  });
+
+  const { data: retreats, isLoading: isRetreatsLoading } = useQuery({
+    queryKey: ['therapy-plans', 'retreats'],
+    queryFn: () => listTherapyPlans({ type: 'WELLNESS_RETREAT', limit: 4, timeFilter: 'upcoming' }),
+  });
+
+  const { data: groups, isLoading: isGroupsLoading } = useQuery({
+    queryKey: ['therapy-plans', 'groups'],
+    queryFn: () => listTherapyPlans({ type: 'GROUP_CONSULT', limit: 4, timeFilter: 'upcoming' }),
+  });
+
+  const { data: therapists, isLoading: isTherapistsLoading } = useQuery({
     queryKey: ['therapists', 'featured'],
-    queryFn: () => getTherapists({ limit: 3 }),
+    queryFn: () => getTherapists({ limit: 4 }),
+  });
+
+  const { data: gallery, isLoading: isGalleryLoading } = useQuery({
+    queryKey: ['therapy-plans', 'gallery'],
+    queryFn: () => listTherapyPlans({ timeFilter: 'past', limit: 4 }),
   });
 
   const quotes = t('home.testimonials.quotes', { returnObjects: true }) as string[];
   const names = t('home.testimonials.names', { returnObjects: true }) as string[];
 
-  const howItWorksSteps = [
-    {
-      icon: HOW_IT_WORKS_ICONS[0],
-      title: t('home.howItWorks.browse.title'),
-      desc: t('home.howItWorks.browse.desc'),
-    },
-    {
-      icon: HOW_IT_WORKS_ICONS[1],
-      title: t('home.howItWorks.book.title'),
-      desc: t('home.howItWorks.book.desc'),
-    },
-    {
-      icon: HOW_IT_WORKS_ICONS[2],
-      title: t('home.howItWorks.heal.title'),
-      desc: t('home.howItWorks.heal.desc'),
-    },
-  ];
+  const renderPlanSection = (
+    title: string,
+    subtitle: string,
+    data: any[] | undefined,
+    isLoading: boolean,
+    emptyMessage: string,
+    bgColor: string = "bg-white",
+  ) => (
+    <section className={`py-20 ${bgColor}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <h2 className="text-3xl font-bold text-stone-900">{title}</h2>
+            <p className="text-stone-500 mt-1">{subtitle}</p>
+          </div>
+          <Link
+            to="/therapy-plans"
+            className="text-sm font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
+          >
+            {t('home.viewAll', 'View all')} <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        {isLoading ? (
+          <PageLoader />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(data ?? []).map((plan) => (
+              <div key={plan.id}>
+                <TherapyPlanCard plan={plan} perspective="public" />
+              </div>
+            ))}
+            {(!data || data.length === 0) && (
+              <div className="col-span-full text-center py-12 text-stone-400">
+                <Heart className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p>{emptyMessage}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
 
   return (
     <div className="bg-stone-50">
@@ -92,68 +142,88 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-stone-900">{t('home.howItWorks.title')}</h2>
-            <p className="text-stone-500 mt-2">{t('home.howItWorks.subtitle')}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {howItWorksSteps.map((step, i) => (
-              <div key={i} className="text-center">
-                <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-teal-50 text-teal-600 mb-4">
-                  <step.icon className="h-7 w-7" />
-                </div>
-                <div className="text-xs font-semibold text-teal-600 uppercase tracking-wide mb-1">
-                  {t('home.howItWorks.step', { n: i + 1 })}
-                </div>
-                <h3 className="text-lg font-semibold text-stone-900 mb-2">{step.title}</h3>
-                <p className="text-stone-500 text-sm leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Featured Plans */}
+      {renderPlanSection(
+        t('home.sections.featuredPlans.title', 'Featured Plans'),
+        t('home.sections.featuredPlans.subtitle', 'Discover our latest and most popular therapy plans.'),
+        featuredPlans?.data,
+        isFeaturedLoading,
+        "No featured plans available at the moment.",
+        "bg-stone-50"
+      )}
 
-      {/* Featured therapists */}
+      {/* Salons */}
+      {renderPlanSection(
+        t('home.sections.salons.title', 'Art Salons'),
+        t('home.sections.salons.subtitle', 'Single-day open sessions focused on mindfulness and being present.'),
+        salons?.data,
+        isSalonsLoading,
+        "No upcoming salons.",
+        "bg-white"
+      )}
+
+      {/* Wellness Retreats */}
+      {renderPlanSection(
+        t('home.sections.retreats.title', 'Wellness Retreats'),
+        t('home.sections.retreats.subtitle', 'Immersive multi-day experiences integrating art therapy and nature.'),
+        retreats?.data,
+        isRetreatsLoading,
+        "No upcoming retreats.",
+        "bg-stone-50"
+      )}
+
+      {/* Group Consultations */}
+      {renderPlanSection(
+        t('home.sections.groups.title', 'Group Consultations'),
+        t('home.sections.groups.subtitle', 'Supportive small group sessions guided by licensed professionals.'),
+        groups?.data,
+        isGroupsLoading,
+        "No upcoming group consults.",
+        "bg-white"
+      )}
+
+      {/* Personal Consultations (Therapists) */}
       <section className="py-20 bg-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <h2 className="text-3xl font-bold text-stone-900">{t('home.featured.title')}</h2>
-              <p className="text-stone-500 mt-1">{t('home.featured.subtitle')}</p>
+              <h2 className="text-3xl font-bold text-stone-900">{t('home.sections.personal.title', 'Personal Consultations')}</h2>
+              <p className="text-stone-500 mt-1">{t('home.sections.personal.subtitle', 'Connect 1-on-1 with our featured therapists.')}</p>
             </div>
             <Link
               to="/therapists"
               className="text-sm font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
             >
-              {t('home.featured.viewAll')} <ArrowRight className="h-4 w-4" />
+              {t('home.viewAllProviders', 'View all providers')} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          {isLoading ? (
+          {isTherapistsLoading ? (
             <PageLoader />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(data?.data ?? []).map((therapist) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {(therapists?.data ?? []).map((therapist) => (
                 <TherapistCard key={therapist.id} therapist={therapist} />
               ))}
-              {(!data?.data || data.data.length === 0) && (
-                <div className="col-span-3 text-center py-12 text-stone-400">
+              {(!therapists?.data || therapists.data.length === 0) && (
+                <div className="col-span-full text-center py-12 text-stone-400">
                   <Heart className="h-10 w-10 mx-auto mb-3 opacity-30" />
                   <p>{t('home.featured.empty')}</p>
-                  <Link
-                    to="/therapists"
-                    className="mt-2 inline-block text-sm text-teal-600 hover:underline"
-                  >
-                    {t('home.featured.browseDirectory')}
-                  </Link>
                 </div>
               )}
             </div>
           )}
         </div>
       </section>
+
+      {/* Gallery (Past Plans) */}
+      {renderPlanSection(
+        t('home.sections.gallery.title', 'Gallery'),
+        t('home.sections.gallery.subtitle', 'View past successful salons and wellness retreats.'),
+        gallery?.data,
+        isGalleryLoading,
+        "No past plans in the gallery yet.",
+        "bg-white"
+      )}
 
       {/* Testimonials */}
       <section className="py-20 bg-white">

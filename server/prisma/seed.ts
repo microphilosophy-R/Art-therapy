@@ -1,5 +1,6 @@
+/// <reference types="node" />
 import 'dotenv/config';
-import { PrismaClient, Role, SessionMedium, AppointmentStatus } from '@prisma/client';
+import { PrismaClient, Role, SessionMedium, AppointmentStatus, TherapyPlanType, ArtSalonSubType, TherapyPlanStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -300,6 +301,87 @@ async function main() {
 
   console.log('✓ Appointments created');
 
+  // ─── Therapy Plans & Participants ─────────────────────────────────────────
+
+  const planPersonal = await prisma.therapyPlan.create({
+    data: {
+      therapistId: profile1.id,
+      type: TherapyPlanType.PERSONAL_CONSULT,
+      status: TherapyPlanStatus.PUBLISHED,
+      title: 'Individual Anxiety Management',
+      introduction: 'A 1-on-1 personalized art therapy session focused on managing anxiety through guided drawing and reflection.',
+      startTime: nextWeek,
+      location: '123 Healing Arts Blvd, Suite 200',
+      contactInfo: 'sarah.chen@arttherapy.dev',
+      sessionMedium: SessionMedium.VIDEO,
+      publishedAt: new Date(),
+    }
+  });
+
+  const planGroup = await prisma.therapyPlan.create({
+    data: {
+      therapistId: profile2.id,
+      type: TherapyPlanType.GROUP_CONSULT,
+      status: TherapyPlanStatus.PUBLISHED,
+      title: 'Grief & Loss Group Therapy',
+      introduction: 'Join a small, supportive group of individuals navigating loss. We will use collage and sculpture to process grief together.',
+      startTime: nextWeek2,
+      location: 'Online via Zoom',
+      maxParticipants: 8,
+      contactInfo: 'marcus.webb@arttherapy.dev',
+      publishedAt: new Date(),
+    }
+  });
+
+  const planSalon = await prisma.therapyPlan.create({
+    data: {
+      therapistId: profile3.id,
+      type: TherapyPlanType.ART_SALON,
+      status: TherapyPlanStatus.PUBLISHED,
+      title: 'Mindful Painting Salon',
+      introduction: 'A single-day open painting session focused on mindfulness and being present in the moment. Open to all skill levels.',
+      startTime: nextWeek,
+      location: 'Community Art Center, Room B',
+      maxParticipants: 15,
+      contactInfo: 'priya.patel@arttherapy.dev',
+      artSalonSubType: ArtSalonSubType.PAINTING,
+      publishedAt: new Date(),
+      participants: {
+        create: [
+          { userId: client1.id },
+          { userId: client2.id },
+        ]
+      }
+    }
+  });
+
+  const retreatStart = new Date(nextWeek.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const retreatEnd = new Date(retreatStart.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days later
+
+  const planRetreat = await prisma.therapyPlan.create({
+    data: {
+      therapistId: profile1.id,
+      type: TherapyPlanType.WELLNESS_RETREAT,
+      status: TherapyPlanStatus.PUBLISHED,
+      title: 'Weekend Reconnect Retreat',
+      introduction: 'Escape the city for a 3-day immersive wellness retreat integrating daily art therapy, nature walks, and group reflection.',
+      startTime: retreatStart,
+      endTime: retreatEnd,
+      location: 'Mountain View Lodge',
+      maxParticipants: 12,
+      contactInfo: 'retreats@arttherapy.dev',
+      publishedAt: new Date(),
+      participants: {
+        create: [
+          { userId: client1.id },
+          { userId: client2.id },
+        ]
+      }
+    }
+  });
+
+  console.log('✓ Therapy plans and participants created');
+
   console.log('\n✅ Seed complete!\n');
   console.log('Test accounts (all use password: password123)');
   console.log('─────────────────────────────────────────────');
@@ -312,8 +394,11 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error('Seed failed:', e);
-    process.exit(1);
+  .then(async () => {
+    await prisma.$disconnect();
   })
-  .finally(() => prisma.$disconnect());
+  .catch(async (e) => {
+    console.error('Seed failed:', e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

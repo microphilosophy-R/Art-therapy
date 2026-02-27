@@ -9,31 +9,33 @@ import { Select } from '../../components/ui/Select';
 import { PosterSelector, type PosterValue } from '../../components/therapyPlans/PosterSelector';
 
 export interface TherapyPlanFormValues {
-  type:            TherapyPlanType;
-  title:           string;
-  introduction:    string;
-  startTime:       string;
-  endTime:         string;
-  location:        string;
+  type: TherapyPlanType;
+  title: string;
+  slogan: string;
+  introduction: string;
+  startTime: string;
+  endTime: string;
+  location: string;
   maxParticipants: string;
-  contactInfo:     string;
+  contactInfo: string;
   artSalonSubType: ArtSalonSubType | '';
-  sessionMedium:   SessionMedium | '';
-  poster:          PosterValue;
+  sessionMedium: SessionMedium | '';
+  poster: PosterValue;
 }
 
 const defaultValues: TherapyPlanFormValues = {
-  type:            'PERSONAL_CONSULT',
-  title:           '',
-  introduction:    '',
-  startTime:       '',
-  endTime:         '',
-  location:        '',
+  type: 'PERSONAL_CONSULT',
+  title: '',
+  slogan: '',
+  introduction: '',
+  startTime: '',
+  endTime: '',
+  location: '',
   maxParticipants: '',
-  contactInfo:     '',
+  contactInfo: '',
   artSalonSubType: '',
-  sessionMedium:   '',
-  poster:          { type: 'default', id: 1 },
+  sessionMedium: '',
+  poster: { type: 'default', id: 1 },
 };
 
 const toDatetimeLocal = (iso?: string | null): string => {
@@ -42,17 +44,18 @@ const toDatetimeLocal = (iso?: string | null): string => {
 };
 
 export const planToFormValues = (plan: TherapyPlan): TherapyPlanFormValues => ({
-  type:            plan.type,
-  title:           plan.title,
-  introduction:    plan.introduction,
-  startTime:       toDatetimeLocal(plan.startTime),
-  endTime:         toDatetimeLocal(plan.endTime),
-  location:        plan.location,
+  type: plan.type,
+  title: plan.title,
+  slogan: plan.slogan || '',
+  introduction: plan.introduction,
+  startTime: toDatetimeLocal(plan.startTime),
+  endTime: toDatetimeLocal(plan.endTime),
+  location: plan.location,
   maxParticipants: plan.maxParticipants != null ? String(plan.maxParticipants) : '',
-  contactInfo:     plan.contactInfo,
+  contactInfo: plan.contactInfo,
   artSalonSubType: plan.artSalonSubType ?? '',
-  sessionMedium:   plan.sessionMedium ?? '',
-  poster:          plan.posterUrl
+  sessionMedium: plan.sessionMedium ?? '',
+  poster: plan.posterUrl
     ? { type: 'custom', url: plan.posterUrl }
     : { type: 'default', id: plan.defaultPosterId ?? 1 },
 });
@@ -90,11 +93,12 @@ export const TherapyPlanForm = ({
 
   const validate = (): boolean => {
     const errs: Partial<Record<keyof TherapyPlanFormValues, string>> = {};
-    if (!values.title.trim())        errs.title        = t('common.errors.required');
+    if (!values.title.trim()) errs.title = t('common.errors.required');
+    if (values.slogan && values.slogan.length > 60) errs.slogan = t('therapyPlans.form.sloganMaxLengthError', 'Maximum 60 characters');
     if (!values.introduction.trim()) errs.introduction = t('common.errors.required');
-    if (!values.startTime)           errs.startTime    = t('common.errors.required');
-    if (!values.location.trim())     errs.location     = t('common.errors.required');
-    if (!values.contactInfo.trim())  errs.contactInfo  = t('common.errors.required');
+    if (!values.startTime) errs.startTime = t('common.errors.required');
+    if (!values.location.trim()) errs.location = t('common.errors.required');
+    if (!values.contactInfo.trim()) errs.contactInfo = t('common.errors.required');
     if (values.type === 'ART_SALON' && !values.artSalonSubType) {
       errs.artSalonSubType = t('common.errors.required');
     }
@@ -119,23 +123,23 @@ export const TherapyPlanForm = ({
 
   const planTypeOptions = [
     { value: 'PERSONAL_CONSULT', label: t('common.planType.PERSONAL_CONSULT') },
-    { value: 'GROUP_CONSULT',    label: t('common.planType.GROUP_CONSULT') },
-    { value: 'ART_SALON',        label: t('common.planType.ART_SALON') },
+    { value: 'GROUP_CONSULT', label: t('common.planType.GROUP_CONSULT') },
+    { value: 'ART_SALON', label: t('common.planType.ART_SALON') },
     { value: 'WELLNESS_RETREAT', label: t('common.planType.WELLNESS_RETREAT') },
   ];
 
   const artSalonOptions = [
-    { value: 'CALLIGRAPHY',           label: t('common.artSalonSubType.CALLIGRAPHY') },
-    { value: 'PAINTING',              label: t('common.artSalonSubType.PAINTING') },
-    { value: 'DRAMA',                 label: t('common.artSalonSubType.DRAMA') },
-    { value: 'YOGA',                  label: t('common.artSalonSubType.YOGA') },
-    { value: 'BOARD_GAMES',           label: t('common.artSalonSubType.BOARD_GAMES') },
+    { value: 'CALLIGRAPHY', label: t('common.artSalonSubType.CALLIGRAPHY') },
+    { value: 'PAINTING', label: t('common.artSalonSubType.PAINTING') },
+    { value: 'DRAMA', label: t('common.artSalonSubType.DRAMA') },
+    { value: 'YOGA', label: t('common.artSalonSubType.YOGA') },
+    { value: 'BOARD_GAMES', label: t('common.artSalonSubType.BOARD_GAMES') },
     { value: 'CULTURAL_CONVERSATION', label: t('common.artSalonSubType.CULTURAL_CONVERSATION') },
   ];
 
   const mediumOptions = [
     { value: 'IN_PERSON', label: t('common.medium.IN_PERSON') },
-    { value: 'VIDEO',     label: t('common.medium.VIDEO') },
+    { value: 'VIDEO', label: t('common.medium.VIDEO') },
   ];
 
   return (
@@ -201,14 +205,22 @@ export const TherapyPlanForm = ({
         />
       )}
 
-      {/* Core fields */}
       <Input
         label={t('therapyPlans.form.title')}
-        placeholder={t('therapyPlans.form.titlePlaceholder')}
+        placeholder={t('therapyPlans.form.titlePlaceholder', 'e.g. Intro to Creative Healing')}
         value={values.title}
         onChange={(e) => set('title', e.target.value)}
         error={errors.title}
         maxLength={200}
+      />
+
+      <Input
+        label={t('therapyPlans.form.slogan', 'Slogan')}
+        placeholder={t('therapyPlans.form.sloganPlaceholder', 'A brief, catchy subtitle (e.g. Escape to Nature)')}
+        value={values.slogan}
+        onChange={(e) => set('slogan', e.target.value)}
+        error={errors.slogan}
+        maxLength={60}
       />
 
       <Textarea
@@ -270,8 +282,11 @@ export const TherapyPlanForm = ({
 
       {/* Submit */}
       <div className="flex justify-end pt-2">
-        <Button type="submit" isLoading={isLoading} disabled={isLoading}>
-          {submitLabel}
+        <Button
+          type="submit"
+          loading={isLoading}
+          disabled={isLoading}
+        >  {submitLabel}
         </Button>
       </div>
     </form>

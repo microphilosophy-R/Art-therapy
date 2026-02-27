@@ -15,11 +15,11 @@ import { Spinner } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
-  DRAFT:          'outline',
+  DRAFT: 'outline',
   PENDING_REVIEW: 'warning',
-  PUBLISHED:      'success',
-  REJECTED:       'danger',
-  ARCHIVED:       'default',
+  PUBLISHED: 'success',
+  REJECTED: 'danger',
+  ARCHIVED: 'default',
 };
 
 export const EditTherapyPlan = () => {
@@ -64,18 +64,19 @@ export const EditTherapyPlan = () => {
     try {
       await updateMutation.mutateAsync({
         payload: {
-          type:            values.type,
-          title:           values.title,
-          introduction:    values.introduction,
-          startTime:       new Date(values.startTime).toISOString(),
-          endTime:         values.endTime ? new Date(values.endTime).toISOString() : null,
-          location:        values.location,
+          type: values.type,
+          title: values.title,
+          slogan: values.slogan || null,
+          introduction: values.introduction,
+          startTime: new Date(values.startTime).toISOString(),
+          endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+          location: values.location,
           maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
-          contactInfo:     values.contactInfo,
+          contactInfo: values.contactInfo,
           artSalonSubType: (values.artSalonSubType || null) as any,
-          sessionMedium:   (values.sessionMedium || null) as any,
+          sessionMedium: (values.sessionMedium || null) as any,
           defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
-          posterUrl:       values.poster?.type === 'custom' && !posterFile ? values.poster.url : null,
+          posterUrl: values.poster?.type === 'custom' && !posterFile ? values.poster.url : null,
         },
       });
 
@@ -102,7 +103,7 @@ export const EditTherapyPlan = () => {
   const canEdit =
     user?.role === 'ADMIN' ||
     ((plan.status === 'DRAFT' || plan.status === 'REJECTED') &&
-     plan.therapist?.userId === user?.id);
+      plan.therapist?.userId === user?.id);
 
   const canSubmit =
     user?.role === 'THERAPIST' &&
@@ -154,7 +155,7 @@ export const EditTherapyPlan = () => {
           )}
           <Button
             onClick={handleSubmitForReview}
-            isLoading={submitMutation.isPending}
+            loading={submitMutation.isPending}
             disabled={submitMutation.isPending}
           >
             {t('therapyPlans.detail.submitForReview')}

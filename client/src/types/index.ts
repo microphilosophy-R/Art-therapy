@@ -139,48 +139,62 @@ export type MessageTrigger =
   | 'PLAN_REJECTED'
   | 'MANUAL';
 
+export interface TherapyPlanParticipant {
+  id: string;
+  userId: string;
+  user?: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatarUrl'>;
+  planId: string;
+  enrolledAt: string;
+}
+
 export interface TherapyPlan {
-  id:              string;
-  therapistId:     string;
-  therapist?:      TherapistProfile;
-  type:            TherapyPlanType;
-  status:          TherapyPlanStatus;
-  title:           string;
-  introduction:    string;
-  startTime:       string;
-  endTime?:        string | null;
-  location:        string;
+  id: string;
+  therapistId: string;
+  therapist?: TherapistProfile;
+  type: TherapyPlanType;
+  status: TherapyPlanStatus;
+  title: string;
+  slogan?: string;
+  introduction: string;
+  startTime: string;
+  endTime?: string | null;
+  location: string;
   maxParticipants?: number | null;
-  contactInfo:     string;
+  contactInfo: string;
   artSalonSubType?: ArtSalonSubType | null;
-  sessionMedium?:  SessionMedium | null;
+  sessionMedium?: SessionMedium | null;
   defaultPosterId?: number | null;
-  posterUrl?:      string | null;
+  posterUrl?: string | null;
   rejectionReason?: string | null;
-  submittedAt?:    string | null;
-  reviewedAt?:     string | null;
-  publishedAt?:    string | null;
-  createdAt:       string;
-  updatedAt:       string;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  publishedAt?: string | null;
+  participants?: TherapyPlanParticipant[];
+  _count?: {
+    participants: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Message {
-  id:          string;
-  senderId?:   string | null;
-  sender?:     Pick<User, 'id' | 'firstName' | 'lastName'> | null;
+  id: string;
+  senderId?: string | null;
+  sender?: Pick<User, 'id' | 'firstName' | 'lastName'> | null;
   recipientId: string;
-  body:        string;
-  trigger:     MessageTrigger;
-  isRead:      boolean;
-  readAt?:     string | null;
-  planId?:     string | null;
-  plan?:       Pick<TherapyPlan, 'id' | 'title' | 'type' | 'status'> | null;
-  createdAt:   string;
+  body: string;
+  trigger: MessageTrigger;
+  isRead: boolean;
+  readAt?: string | null;
+  planId?: string | null;
+  plan?: Pick<TherapyPlan, 'id' | 'title' | 'type' | 'status'> | null;
+  createdAt: string;
 }
 
 export interface TherapyPlanFilters {
-  type?:   TherapyPlanType | '';
+  type?: TherapyPlanType | '';
   status?: TherapyPlanStatus | '';
-  page?:   number;
-  limit?:  number;
+  timeFilter?: 'upcoming' | 'past';
+  page?: number;
+  limit?: number;
 }

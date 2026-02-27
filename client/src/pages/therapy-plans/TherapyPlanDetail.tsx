@@ -18,11 +18,11 @@ import { Spinner } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
-  DRAFT:          'outline',
+  DRAFT: 'outline',
   PENDING_REVIEW: 'warning',
-  PUBLISHED:      'success',
-  REJECTED:       'danger',
-  ARCHIVED:       'default',
+  PUBLISHED: 'success',
+  REJECTED: 'danger',
+  ARCHIVED: 'default',
 };
 
 export const TherapyPlanDetail = () => {
@@ -129,7 +129,7 @@ export const TherapyPlanDetail = () => {
             {canSubmit && (
               <Button
                 size="sm"
-                isLoading={submitMutation.isPending}
+                loading={submitMutation.isPending}
                 onClick={() => submitMutation.mutate()}
               >
                 {t('therapyPlans.detail.submitForReview')}
@@ -139,7 +139,7 @@ export const TherapyPlanDetail = () => {
               <Button
                 size="sm"
                 variant="outline"
-                isLoading={archiveMutation.isPending}
+                loading={archiveMutation.isPending}
                 onClick={() => archiveMutation.mutate()}
               >
                 {t('therapyPlans.detail.archive')}

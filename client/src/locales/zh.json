@@ -45,6 +45,12 @@
       "ART_SALON": "艺术沙龙",
       "WELLNESS_RETREAT": "身心疗愈营"
     },
+    "planSlogan": {
+      "PERSONAL_CONSULT": "专注您的时光",
+      "GROUP_CONSULT": "共同成长",
+      "ART_SALON": "表达与连接",
+      "WELLNESS_RETREAT": "期待狂野的自然冒险"
+    },
     "planStatus": {
       "DRAFT": "草稿",
       "PENDING_REVIEW": "待审核",
@@ -86,7 +92,9 @@
     }
   },
   "home": {
-    "badge": "以创意疗愈心灵",
+    "viewAll": "查看全部",
+    "backToPlan": "返回计划",
+    "badge": "开启内心的治愈之旅",
     "title": "开启艺术",
     "titleSpan": "疗愈之旅",
     "subtitle": "与认证艺术治疗师建立连接，通过创意表达探索疗愈之路。支持线上及线下预约。",
@@ -101,9 +109,18 @@
       "title": "如何使用",
       "subtitle": "三步开启疗愈之路",
       "step": "第 {{n}} 步",
-      "browse": { "title": "浏览治疗师", "desc": "按专业方向、地区和价格筛选认证艺术治疗师。" },
-      "book":   { "title": "预约疗程",   "desc": "选择您偏好的日期、时间及形式——视频或线下均可。" },
-      "heal":   { "title": "开始疗愈",   "desc": "与您的治疗师建立连接，开启创意疗愈之旅。" }
+      "browse": {
+        "title": "浏览治疗师",
+        "desc": "按专业方向、地区和价格筛选认证艺术治疗师。"
+      },
+      "book": {
+        "title": "预约疗程",
+        "desc": "选择您偏好的日期、时间及形式——视频或线下均可。"
+      },
+      "heal": {
+        "title": "开始疗愈",
+        "desc": "与您的治疗师建立连接，开启创意疗愈之旅。"
+      }
     },
     "featured": {
       "title": "精选治疗师",
@@ -120,13 +137,44 @@
         "我的治疗师创造了一个安全的空间，让创意成为我疗愈的路径。",
         "预约非常便捷，疗程改变了我与焦虑的关系。"
       ],
-      "names": ["Sarah M.", "James T.", "Aisha K."]
+      "names": [
+        "Sarah M.",
+        "James T.",
+        "Aisha K."
+      ]
     },
     "ctaBanner": {
-      "title": "准备好开始您的旅程了吗？",
-      "subtitle": "加入数百位通过艺术疗愈找到内心平静的人。",
+      "title": "准备好开始您的艺术疗愈之旅了吗？",
+      "subtitle": "立即加入我们的社区，寻找最适合您的治疗师，探索自我表达的无限可能。",
       "findTherapist": "寻找治疗师",
-      "createAccount": "创建账户"
+      "createAccount": "创建账号"
+    },
+    "viewAllProviders": "查看所有治疗师",
+    "sections": {
+      "featuredPlans": {
+        "title": "精选计划",
+        "subtitle": "探索最新、最受欢迎的疗愈计划。"
+      },
+      "salons": {
+        "title": "艺术沙龙",
+        "subtitle": "专注于正念与活在当下的单日开放式活动。"
+      },
+      "retreats": {
+        "title": "身心疗愈营",
+        "subtitle": "融合艺术疗愈与自然的多日沉浸式体验。"
+      },
+      "groups": {
+        "title": "团体咨询",
+        "subtitle": "由持证专业人士指导的互助小组疗程。"
+      },
+      "personal": {
+        "title": "个人咨询",
+        "subtitle": "与我们的精选治疗师进行一对一交流。"
+      },
+      "gallery": {
+        "title": "往期画廊",
+        "subtitle": "回顾过去成功的沙龙与疗愈营。"
+      }
     }
   },
   "auth": {
@@ -643,14 +691,32 @@
     "acceptedNote": "您可在账户设置中查阅或更新您的授权。",
     "acceptFull": "我接受隐私政策与服务条款",
     "consentLabel": "点击以下按钮，即表示您已阅读并理解本条款。",
-    "s1": { "title": "1. 隐私实践声明（HIPAA）" },
-    "s2": { "title": "2. 保密限制" },
-    "s3": { "title": "3. 治疗知情同意" },
-    "s4": { "title": "4. 远程医疗与视频疗程同意" },
-    "s5": { "title": "5. 数据收集、存储与您的权利" },
-    "s6": { "title": "6. 支付数据与 PCI DSS" },
-    "s7": { "title": "7. 数据泄露通知" },
-    "s8": { "title": "8. 未成年人与特殊群体" },
-    "s9": { "title": "9. 联系方式与投诉" }
+    "s1": {
+      "title": "1. 隐私实践声明（HIPAA）"
+    },
+    "s2": {
+      "title": "2. 保密限制"
+    },
+    "s3": {
+      "title": "3. 治疗知情同意"
+    },
+    "s4": {
+      "title": "4. 远程医疗与视频疗程同意"
+    },
+    "s5": {
+      "title": "5. 数据收集、存储与您的权利"
+    },
+    "s6": {
+      "title": "6. 支付数据与 PCI DSS"
+    },
+    "s7": {
+      "title": "7. 数据泄露通知"
+    },
+    "s8": {
+      "title": "8. 未成年人与特殊群体"
+    },
+    "s9": {
+      "title": "9. 联系方式与投诉"
+    }
   }
 }

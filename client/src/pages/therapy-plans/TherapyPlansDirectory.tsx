@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { listTherapyPlans } from '../../api/therapyPlans';
 import type { TherapyPlanType } from '../../types';
 import { TherapyPlanCard } from '../../components/therapyPlans/TherapyPlanCard';
 import { Spinner } from '../../components/ui/Spinner';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../utils/cn';
+import { useAuthStore } from '../../store/authStore';
 
 const TYPES: (TherapyPlanType | '')[] = ['', 'PERSONAL_CONSULT', 'GROUP_CONSULT', 'ART_SALON', 'WELLNESS_RETREAT'];
 
@@ -20,8 +23,12 @@ const typeFilterKey: Record<TherapyPlanType | '', string> = {
 
 export const TherapyPlansDirectory = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [selectedType, setSelectedType] = useState<TherapyPlanType | ''>('');
   const [page, setPage] = useState(1);
+
+  const isTherapist = user?.role === 'THERAPIST';
 
   const { data, isLoading } = useQuery({
     queryKey: ['therapy-plans', { type: selectedType, page }],
@@ -41,22 +48,34 @@ export const TherapyPlansDirectory = () => {
         <p className="mt-2 text-stone-500">{t('therapyPlans.directory.subtitle')}</p>
       </div>
 
-      {/* Type filter tabs */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {TYPES.map((type) => (
-          <button
-            key={type}
-            onClick={() => handleTypeChange(type)}
-            className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500',
-              selectedType === type
-                ? 'bg-teal-600 text-white shadow-sm'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            )}
+      {/* Type filter tabs + New Plan button */}
+      <div className="flex flex-wrap items-center gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 flex-1">
+          {TYPES.map((type) => (
+            <button
+              key={type}
+              onClick={() => handleTypeChange(type)}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500',
+                selectedType === type
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+              )}
+            >
+              {t(typeFilterKey[type])}
+            </button>
+          ))}
+        </div>
+        {isTherapist && (
+          <Button
+            size="sm"
+            onClick={() => navigate('/therapy-plans/create')}
+            className="flex items-center gap-1.5 flex-shrink-0"
           >
-            {t(typeFilterKey[type])}
-          </button>
-        ))}
+            <Plus className="h-4 w-4" />
+            {t('therapyPlans.directory.newPlan')}
+          </Button>
+        )}
       </div>
 
       {/* Plans grid */}
@@ -73,7 +92,12 @@ export const TherapyPlansDirectory = () => {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {data.data.map((plan) => (
-              <TherapyPlanCard key={plan.id} plan={plan} perspective="public" />
+              <TherapyPlanCard
+                key={plan.id}
+                plan={plan}
+                perspective={isTherapist && plan.therapist?.userId === user?.id ? 'therapist' : 'public'}
+                editable={isTherapist && plan.therapist?.userId === user?.id}
+              />
             ))}
           </div>
 

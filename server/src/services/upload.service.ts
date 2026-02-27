@@ -52,3 +52,61 @@ export const uploadPoster = async (fileBuffer: Buffer, planId: string): Promise<
       .end(fileBuffer);
   });
 };
+
+export const uploadVideo = async (fileBuffer: Buffer, planId: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          resource_type: 'video',
+          folder: 'plan-videos',
+          public_id: planId,
+          overwrite: true,
+          quality: 'auto',
+        },
+        (error, result) => {
+          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          resolve(result.secure_url);
+        }
+      )
+      .end(fileBuffer);
+  });
+};
+
+export const uploadPlanImage = async (fileBuffer: Buffer, imageId: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          resource_type: 'image',
+          folder: 'plan-images',
+          public_id: `plan-image-${imageId}`,
+          overwrite: true,
+        },
+        (error, result) => {
+          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          resolve(result.secure_url);
+        }
+      )
+      .end(fileBuffer);
+  });
+};
+
+export const uploadPdf = async (fileBuffer: Buffer, planId: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          resource_type: 'raw',
+          folder: 'plan-pdfs',
+          public_id: `plan-pdf-${planId}`,
+          overwrite: true,
+        },
+        (error, result) => {
+          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          resolve(result.secure_url);
+        }
+      )
+      .end(fileBuffer);
+  });
+};

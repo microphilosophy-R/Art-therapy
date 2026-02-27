@@ -165,6 +165,12 @@ export interface TherapyPlanEvent {
   order: number;
 }
 
+export interface TherapyPlanImage {
+  id: string;
+  url: string;
+  order: number;
+}
+
 export interface TherapyPlan {
   id: string;
   therapistId: string;
@@ -183,7 +189,11 @@ export interface TherapyPlan {
   sessionMedium?: SessionMedium | null;
   defaultPosterId?: number | null;
   posterUrl?: string | null;
+  videoUrl?: string | null;
   price?: number | string | null;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  images?: TherapyPlanImage[];
   rejectionReason?: string | null;
   submittedAt?: string | null;
   reviewedAt?: string | null;

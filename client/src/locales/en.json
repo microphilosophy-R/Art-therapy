@@ -480,6 +480,7 @@
       "filterGroup": "Group",
       "filterSalon": "Art Salon",
       "filterRetreat": "Retreat",
+      "newPlan": "New Plan",
       "noPlans": "No published plans yet.",
       "noPlansHint": "Check back later for upcoming sessions and events.",
       "loadMore": "Load more",
@@ -509,7 +510,8 @@
       "cancelPlan": "Cancel Plan",
       "signUp": "Sign Up",
       "enrolled": "Enrolled",
-      "acceptanceDeadline": "Acceptance deadline"
+      "acceptanceDeadline": "Acceptance deadline",
+      "downloadAttachment": "Download attachment"
     },
     "schedule": {
       "title": "Schedule",
@@ -560,7 +562,10 @@
       "posterSection": "Poster",
       "defaultPosters": "Default posters",
       "uploadCustom": "Upload custom image",
-      "posterHint": "Choose a default poster or upload your own (max 5 MB, recommended 800×450).",
+      "posterHint": "Choose a default poster or upload your own (max 10 MB, recommended 800×450).",
+      "videoSection": "Promo Video (optional)",
+      "uploadVideo": "Upload video",
+      "videoHint": "mp4 / mov / webm · max 100 MB",
       "submitError": "Failed to submit plan for review.",
       "titleMinLength": "Title must be at least 5 characters",
       "titleMaxLength": "Title must be at most 100 characters",
@@ -572,7 +577,13 @@
       "price": "Price per seat (CNY)",
       "pricePlaceholder": "e.g. 200",
       "slogan": "Slogan",
-      "sloganPlaceholder": "A brief, catchy subtitle (e.g. Escape to Nature)"
+      "sloganPlaceholder": "A brief, catchy subtitle (e.g. Escape to Nature)",
+      "gallerySection": "Gallery Images (up to 9)",
+      "addImage": "Add image",
+      "galleryHint": "Save the plan first to add gallery images",
+      "attachmentSection": "Supplementary PDF (optional)",
+      "uploadAttachment": "Upload PDF",
+      "attachmentHint": "pdf · max 20 MB"
     },
     "templates": {
       "loadTemplate": "Load from Template",
@@ -649,7 +660,11 @@
       "phone": "Phone (optional)",
       "phonePlaceholder": "+1 555-000-0000",
       "saveSuccess": "Profile updated successfully.",
-      "saveError": "Failed to update profile."
+      "saveError": "Failed to update profile.",
+      "changeAvatar": "Change avatar",
+      "avatarSuccess": "Avatar updated",
+      "avatarError": "Failed to upload avatar",
+      "avatarHint": "jpg / png / webp · max 5 MB"
     },
     "security": {
       "title": "Change Password",

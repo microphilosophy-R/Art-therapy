@@ -84,11 +84,31 @@ export const archiveTherapyPlan = async (id: string): Promise<TherapyPlan> => {
 export const uploadTherapyPlanPoster = async (
   id: string,
   file: File,
+  onUploadProgress?: (percent: number) => void,
 ): Promise<{ posterUrl: string }> => {
   const formData = new FormData();
   formData.append('poster', file);
   const { data } = await api.post(`/therapy-plans/${id}/poster`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onUploadProgress
+      ? (e) => onUploadProgress(Math.round((e.loaded * 100) / (e.total ?? 1)))
+      : undefined,
+  });
+  return data;
+};
+
+export const uploadTherapyPlanVideo = async (
+  id: string,
+  file: File,
+  onUploadProgress?: (percent: number) => void,
+): Promise<{ videoUrl: string }> => {
+  const formData = new FormData();
+  formData.append('video', file);
+  const { data } = await api.post(`/therapy-plans/${id}/video`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onUploadProgress
+      ? (e) => onUploadProgress(Math.round((e.loaded * 100) / (e.total ?? 1)))
+      : undefined,
   });
   return data;
 };
@@ -113,6 +133,46 @@ export const upsertTherapyPlanEvents = async (
 export const getTherapyPlanIcsUrl = (id: string): string => {
   const base = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1';
   return `${base}/therapy-plans/${id}/ics`;
+};
+
+// ─── Gallery images ────────────────────────────────────────────────────────────
+
+export const addTherapyPlanImage = async (
+  id: string,
+  file: File,
+  onUploadProgress?: (percent: number) => void,
+): Promise<{ image: { id: string; url: string; order: number } }> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const { data } = await api.post(`/therapy-plans/${id}/images`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onUploadProgress
+      ? (e) => onUploadProgress(Math.round((e.loaded * 100) / (e.total ?? 1)))
+      : undefined,
+  });
+  return data;
+};
+
+export const deleteTherapyPlanImage = async (id: string, imageId: string): Promise<void> => {
+  await api.delete(`/therapy-plans/${id}/images/${imageId}`);
+};
+
+export const reorderTherapyPlanImages = async (id: string, order: string[]): Promise<void> => {
+  await api.patch(`/therapy-plans/${id}/images/order`, { order });
+};
+
+// ─── PDF attachment ────────────────────────────────────────────────────────────
+
+export const uploadTherapyPlanAttachment = async (
+  id: string,
+  file: File,
+): Promise<{ attachmentUrl: string; attachmentName: string }> => {
+  const formData = new FormData();
+  formData.append('attachment', file);
+  const { data } = await api.post(`/therapy-plans/${id}/attachment`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
 };
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────

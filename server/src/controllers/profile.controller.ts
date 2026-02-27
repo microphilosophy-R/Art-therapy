@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
+import { uploadAvatar as uploadAvatarToCloud } from '../services/upload.service';
 import type { UpdateProfileInput, UpdatePasswordInput } from '../schemas/user.schemas';
 
 export const getProfile = async (req: Request, res: Response) => {
@@ -76,4 +77,11 @@ export const acceptPrivacy = async (req: Request, res: Response) => {
     select: { id: true, privacyConsentAt: true },
   });
   res.json(user);
+};
+
+export const uploadAvatar = async (req: Request, res: Response) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  const avatarUrl = await uploadAvatarToCloud(req.file.buffer, req.user!.id);
+  await prisma.user.update({ where: { id: req.user!.id }, data: { avatarUrl } });
+  res.json({ avatarUrl });
 };

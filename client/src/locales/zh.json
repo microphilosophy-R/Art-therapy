@@ -481,6 +481,7 @@
       "filterGroup": "团体",
       "filterSalon": "艺术沙龙",
       "filterRetreat": "疗愈营",
+      "newPlan": "新建计划",
       "noPlans": "暂无已发布的计划。",
       "noPlansHint": "请稍后再来查看即将开展的活动。",
       "loadMore": "加载更多",
@@ -510,7 +511,8 @@
       "cancelPlan": "取消计划",
       "signUp": "立即报名",
       "enrolled": "已报名",
-      "acceptanceDeadline": "接受截止时间"
+      "acceptanceDeadline": "接受截止时间",
+      "downloadAttachment": "下载附件"
     },
     "schedule": {
       "title": "日程安排",
@@ -561,7 +563,10 @@
       "posterSection": "海报",
       "defaultPosters": "默认海报",
       "uploadCustom": "上传自定义图片",
-      "posterHint": "选择默认海报或上传您自己的图片（最大5MB，推荐800×450）。",
+      "posterHint": "选择默认海报或上传您自己的图片（最大10MB，推荐800×450）。",
+      "videoSection": "宣传视频（可选）",
+      "uploadVideo": "上传视频",
+      "videoHint": "mp4 / mov / webm · 最大 100 MB",
       "submitError": "提交计划审核失败。",
       "titleMinLength": "标题至少需要5个字符",
       "titleMaxLength": "标题最多100个字符",
@@ -573,7 +578,13 @@
       "price": "每人价格（元）",
       "pricePlaceholder": "如：200",
       "slogan": "标语",
-      "sloganPlaceholder": "简短有吸引力的副标题（如：逃离都市，拥抱自然）"
+      "sloganPlaceholder": "简短有吸引力的副标题（如：逃离都市，拥抱自然）",
+      "gallerySection": "图片库（最多9张）",
+      "addImage": "添加图片",
+      "galleryHint": "请先保存计划，再添加图片",
+      "attachmentSection": "补充材料（可选）",
+      "uploadAttachment": "上传PDF",
+      "attachmentHint": "pdf · 最大 20 MB"
     },
     "templates": {
       "loadTemplate": "从模板加载",
@@ -650,7 +661,11 @@
       "phone": "电话（可选）",
       "phonePlaceholder": "+86 138-0000-0000",
       "saveSuccess": "个人资料已更新。",
-      "saveError": "更新失败，请重试。"
+      "saveError": "更新失败，请重试。",
+      "changeAvatar": "更换头像",
+      "avatarSuccess": "头像已更新",
+      "avatarError": "头像上传失败",
+      "avatarHint": "jpg / png / webp · 最大 5 MB"
     },
     "security": {
       "title": "修改密码",

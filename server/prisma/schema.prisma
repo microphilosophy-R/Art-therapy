@@ -349,6 +349,11 @@ model TherapyPlan {
   // Poster — one of these two is set, never both
   defaultPosterId Int?             // 1–6 (static file /posters/default-N.jpg)
   posterUrl       String?          // Cloudinary URL for custom upload
+  videoUrl        String?          // Cloudinary video URL for intro/promo video
+
+  // Supplementary attachment
+  attachmentUrl   String?          // Cloudinary URL for PDF attachment
+  attachmentName  String?          // Original filename shown to client
 
   // Review workflow
   rejectionReason String?
@@ -359,6 +364,7 @@ model TherapyPlan {
   messages        Message[]
   participants    TherapyPlanParticipant[] @relation("PlanParticipants")
   events          TherapyPlanEvent[]       @relation("PlanEvents")
+  images          TherapyPlanImage[]       @relation("PlanImages")
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -377,6 +383,17 @@ model TherapyPlanEvent {
   title       String?
   isAvailable Boolean     @default(true)
   order       Int         @default(0)
+
+  @@index([planId])
+}
+
+model TherapyPlanImage {
+  id        String      @id @default(cuid())
+  planId    String
+  plan      TherapyPlan @relation("PlanImages", fields: [planId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
 
   @@index([planId])
 }

@@ -1,16 +1,17 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Clock, Users, Calendar } from 'lucide-react';
+import { MapPin, Users, Calendar, Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TherapyPlan } from '../../types';
 import { getPosterUrl } from '../../utils/therapyPlanUtils';
-import { Card, CardContent } from '../ui/Card';
+import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Avatar } from '../ui/Avatar';
 
 interface TherapyPlanCardProps {
   plan: TherapyPlan;
   perspective?: 'public' | 'therapist' | 'admin';
+  /** When true, show glowing teal border + top-left edit mark */
+  editable?: boolean;
 }
 
 const planTypeColors: Record<string, string> = {
@@ -28,11 +29,9 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
   ARCHIVED: 'default',
 };
 
-export const TherapyPlanCard = ({ plan, perspective = 'public' }: TherapyPlanCardProps) => {
+export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false }: TherapyPlanCardProps) => {
   const { t } = useTranslation();
   const posterUrl = getPosterUrl(plan);
-  const therapist = plan.therapist;
-  const user = therapist?.user;
 
   // Render logic based on type
   const isPersonal = plan.type === 'PERSONAL_CONSULT';
@@ -47,18 +46,43 @@ export const TherapyPlanCard = ({ plan, perspective = 'public' }: TherapyPlanCar
   const sloganString = plan.slogan || t(`common.planSlogan.${plan.type}`);
 
   return (
-    <Card className="group relative overflow-hidden h-[360px] flex flex-col hover:shadow-xl transition-shadow duration-300 rounded-2xl">
+    <Card
+      className={[
+        'group relative overflow-hidden h-[360px] flex flex-col hover:shadow-xl transition-all duration-300 rounded-2xl',
+        editable
+          ? 'ring-2 ring-teal-400 shadow-[0_0_14px_3px_rgba(45,212,191,0.45)] hover:shadow-[0_0_22px_6px_rgba(45,212,191,0.60)]'
+          : '',
+      ].join(' ')}
+    >
       {/* Background Poster */}
       <div className="absolute inset-0 bg-stone-800">
         <img
           src={posterUrl}
           alt={plan.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-60"
-          onError={(e) => { (e.target as HTMLImageElement).src = '/posters/default-1.jpg'; }}
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            if (!img.dataset.fallback) {
+              img.dataset.fallback = '1';
+              img.src = '/posters/default-1.jpg';
+            }
+          }}
         />
-        {/* Gradients to ensure text readability but less depressive */}
+        {/* Gradients to ensure text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-teal-950/80 via-teal-900/30 to-transparent"></div>
       </div>
+
+      {/* Top-left editable mark */}
+      {editable && (
+        <Link
+          to={`/therapy-plans/${plan.id}/edit`}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute top-3 left-3 z-30 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-teal-500/90 text-white backdrop-blur-sm shadow-md hover:bg-teal-400 transition-colors"
+        >
+          <Pencil className="h-3 w-3" />
+          {t('common.edit', 'Edit')}
+        </Link>
+      )}
 
       <Link
         to={`/therapy-plans/${plan.id}`}

@@ -41,3 +41,12 @@ export const acceptPrivacy = async (): Promise<{ id: string; privacyConsentAt: s
   const { data } = await api.post('/profile/privacy-consent', { accepted: true });
   return data;
 };
+
+export const uploadAvatar = async (file: File): Promise<{ avatarUrl: string }> => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  const { data } = await api.post('/profile/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+};

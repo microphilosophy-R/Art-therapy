@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload } from 'lucide-react';
+import { validateFile } from '../../utils/fileValidation';
 
 const DEFAULT_POSTER_COUNT = 6;
 
@@ -25,6 +26,7 @@ export const PosterSelector = ({
 }: PosterSelectorProps) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   const selectedDefaultId =
     value?.type === 'default' ? value.id : null;
@@ -34,6 +36,13 @@ export const PosterSelector = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const error = validateFile(file, { maxMb: 10, accept: ['jpg', 'jpeg', 'png', 'webp', 'gif'] });
+    if (error) {
+      setFileError(error);
+      e.target.value = '';
+      return;
+    }
+    setFileError(null);
     const previewUrl = URL.createObjectURL(file);
     onChange({ type: 'custom', url: previewUrl });
     onFileSelected?.(file);
@@ -112,6 +121,9 @@ export const PosterSelector = ({
           </div>
         )}
         <p className="mt-1.5 text-xs text-stone-400">{t('therapyPlans.form.posterHint')}</p>
+        {fileError && (
+          <p className="mt-1 text-xs text-rose-600">{fileError}</p>
+        )}
       </div>
     </div>
   );

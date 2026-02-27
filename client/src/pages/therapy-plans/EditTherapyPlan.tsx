@@ -6,6 +6,10 @@ import {
   getTherapyPlan,
   updateTherapyPlan,
   uploadTherapyPlanPoster,
+  uploadTherapyPlanVideo,
+  addTherapyPlanImage,
+  deleteTherapyPlanImage,
+  uploadTherapyPlanAttachment,
   submitTherapyPlanForReview,
   upsertTherapyPlanEvents,
   closeTherapyPlanSignup,
@@ -74,6 +78,25 @@ export const EditTherapyPlan = () => {
     mutationFn: (file: File) => uploadTherapyPlanPoster(id!, file),
   });
 
+  const videoMutation = useMutation({
+    mutationFn: (file: File) => uploadTherapyPlanVideo(id!, file),
+  });
+
+  const addImageMutation = useMutation({
+    mutationFn: (file: File) => addTherapyPlanImage(id!, file),
+    onSuccess: invalidate,
+  });
+
+  const deleteImageMutation = useMutation({
+    mutationFn: (imageId: string) => deleteTherapyPlanImage(id!, imageId),
+    onSuccess: invalidate,
+  });
+
+  const attachmentMutation = useMutation({
+    mutationFn: (file: File) => uploadTherapyPlanAttachment(id!, file),
+    onSuccess: invalidate,
+  });
+
   const submitMutation = useMutation({
     mutationFn: () => submitTherapyPlanForReview(id!),
     onSuccess: () => { invalidate(); setSubmitSuccess(true); },
@@ -107,7 +130,7 @@ export const EditTherapyPlan = () => {
     }
   };
 
-  const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null) => {
+  const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => {
     setSaveError(null);
     try {
       await updateMutation.mutateAsync({
@@ -131,6 +154,10 @@ export const EditTherapyPlan = () => {
 
       if (posterFile) {
         await posterMutation.mutateAsync(posterFile);
+      }
+
+      if (videoFile) {
+        await videoMutation.mutateAsync(videoFile);
       }
 
       if (values.events.length > 0) {
@@ -168,7 +195,7 @@ export const EditTherapyPlan = () => {
   const isNonPersonal = plan.type !== 'PERSONAL_CONSULT';
   const activeStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
 
-  const isSaving = updateMutation.isPending || posterMutation.isPending;
+  const isSaving = updateMutation.isPending || posterMutation.isPending || videoMutation.isPending || attachmentMutation.isPending;
   const isLifecycleBusy =
     closeSignupMutation.isPending || startMutation.isPending ||
     finishMutation.isPending || toGalleryMutation.isPending || cancelPlanMutation.isPending;
@@ -262,6 +289,13 @@ export const EditTherapyPlan = () => {
           isLoading={isSaving}
           error={saveError}
           rejectionReason={plan.status === 'REJECTED' ? plan.rejectionReason : null}
+          existingVideoUrl={plan.videoUrl}
+          existingAttachmentUrl={plan.attachmentUrl}
+          existingAttachmentName={plan.attachmentName}
+          galleryImages={plan.images ?? []}
+          onAddGalleryImage={(file) => addImageMutation.mutate(file)}
+          onDeleteGalleryImage={(imageId) => deleteImageMutation.mutate(imageId)}
+          onAttachmentFileChange={(file) => { if (file) attachmentMutation.mutate(file); }}
           secondaryAction={canSubmit ? (
             <>
               {submitError && (

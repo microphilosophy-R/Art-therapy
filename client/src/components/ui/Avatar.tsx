@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { cn } from '../../utils/cn';
 import { getInitials } from '../../utils/formatters';
 
@@ -19,6 +19,7 @@ const sizeMap = {
 
 export const Avatar = ({ src, firstName, lastName, size = 'md', className }: AvatarProps) => {
   const initials = getInitials(firstName, lastName);
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <div
       className={cn(
@@ -28,8 +29,13 @@ export const Avatar = ({ src, firstName, lastName, size = 'md', className }: Ava
         className
       )}
     >
-      {src ? (
-        <img src={src} alt={`${firstName} ${lastName}`} className="h-full w-full object-cover" />
+      {src && !imgFailed ? (
+        <img
+          src={src}
+          alt={`${firstName} ${lastName}`}
+          className="h-full w-full object-cover"
+          onError={() => setImgFailed(true)}
+        />
       ) : (
         initials
       )}

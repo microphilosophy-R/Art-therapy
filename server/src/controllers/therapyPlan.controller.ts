@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
-import { uploadPoster } from '../services/upload.service';
+import { uploadPoster, uploadVideo, uploadPlanImage, uploadPdf } from '../services/upload.service';
 import {
   notifyAdminsOnPlanSubmitted,
   notifyAllClientsOnPlanPublished,
@@ -53,6 +53,9 @@ const THERAPIST_PLAN_INCLUDE = {
     select: { participants: true },
   },
   events: {
+    orderBy: { order: Prisma.SortOrder.asc },
+  },
+  images: {
     orderBy: { order: Prisma.SortOrder.asc },
   },
 } satisfies Prisma.TherapyPlanInclude;
@@ -467,6 +470,147 @@ export const uploadPlanPoster = async (req: Request, res: Response) => {
   });
 
   res.json({ posterUrl });
+};
+
+// ─── Upload plan video ────────────────────────────────────────────────────────
+
+export const uploadPlanVideo = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user!;
+  const file = (req as any).file as Express.Multer.File | undefined;
+
+  if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+  const plan = await prisma.therapyPlan.findUnique({
+    where: { id },
+    include: { therapist: true },
+  });
+  if (!plan) return res.status(404).json({ message: 'Plan not found' });
+  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const videoUrl = await uploadVideo(file.buffer, id);
+
+  await prisma.therapyPlan.update({
+    where: { id },
+    data: { videoUrl },
+  });
+
+  res.json({ videoUrl });
+};
+
+// ─── Gallery image management ─────────────────────────────────────────────────
+
+export const addPlanImage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user!;
+  const file = (req as any).file as Express.Multer.File | undefined;
+
+  if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+  const plan = await prisma.therapyPlan.findUnique({
+    where: { id },
+    include: { therapist: true, images: true },
+  });
+  if (!plan) return res.status(404).json({ message: 'Plan not found' });
+  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+  if (plan.images.length >= 9) {
+    return res.status(400).json({ message: 'Maximum of 9 gallery images allowed' });
+  }
+
+  // Create a placeholder record to get the ID for the Cloudinary public_id
+  const imageRecord = await prisma.therapyPlanImage.create({
+    data: { planId: id, url: '', order: plan.images.length },
+  });
+
+  const url = await uploadPlanImage(file.buffer, imageRecord.id);
+
+  const updated = await prisma.therapyPlanImage.update({
+    where: { id: imageRecord.id },
+    data: { url },
+  });
+
+  res.status(201).json({ image: updated });
+};
+
+export const deletePlanImage = async (req: Request, res: Response) => {
+  const { id, imageId } = req.params;
+  const user = req.user!;
+
+  const image = await prisma.therapyPlanImage.findUnique({
+    where: { id: imageId },
+    include: { plan: { include: { therapist: true } } },
+  });
+  if (!image || image.planId !== id) return res.status(404).json({ message: 'Image not found' });
+  if (user.role === 'THERAPIST' && image.plan.therapist.userId !== user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  await prisma.therapyPlanImage.delete({ where: { id: imageId } });
+
+  res.status(204).send();
+};
+
+export const reorderPlanImages = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user!;
+  const { order } = req.body as { order: string[] };
+
+  if (!Array.isArray(order)) return res.status(400).json({ message: 'order must be an array of image IDs' });
+
+  const plan = await prisma.therapyPlan.findUnique({
+    where: { id },
+    include: { therapist: true, images: true },
+  });
+  if (!plan) return res.status(404).json({ message: 'Plan not found' });
+  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const planImageIds = new Set(plan.images.map((img) => img.id));
+  if (!order.every((imgId) => planImageIds.has(imgId))) {
+    return res.status(400).json({ message: 'Invalid image IDs in order array' });
+  }
+
+  await prisma.$transaction(
+    order.map((imgId, idx) =>
+      prisma.therapyPlanImage.update({ where: { id: imgId }, data: { order: idx } })
+    )
+  );
+
+  res.status(200).json({ message: 'Order updated' });
+};
+
+// ─── Upload plan PDF attachment ───────────────────────────────────────────────
+
+export const uploadPlanPdf = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user!;
+  const file = (req as any).file as Express.Multer.File | undefined;
+
+  if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+  const plan = await prisma.therapyPlan.findUnique({
+    where: { id },
+    include: { therapist: true },
+  });
+  if (!plan) return res.status(404).json({ message: 'Plan not found' });
+  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  const attachmentUrl = await uploadPdf(file.buffer, id);
+  const attachmentName = file.originalname;
+
+  await prisma.therapyPlan.update({
+    where: { id },
+    data: { attachmentUrl, attachmentName },
+  });
+
+  res.json({ attachmentUrl, attachmentName });
 };
 
 // ─── Upsert plan events ───────────────────────────────────────────────────────

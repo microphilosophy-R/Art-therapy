@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Lock, Shield, CreditCard, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Shield, CreditCard, CheckCircle, AlertCircle, Eye, EyeOff, Camera } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { getProfile, updateProfile, updatePassword, acceptPrivacy } from '../api/profile';
+import { Avatar } from '../components/ui/Avatar';
+import { getProfile, updateProfile, updatePassword, acceptPrivacy, uploadAvatar } from '../api/profile';
 import { useAuthStore } from '../store/authStore';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { validateFile } from '../utils/fileValidation';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'Required'),
@@ -50,6 +52,8 @@ export function UserProfile() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const { updateUser } = useAuthStore();
   const qc = useQueryClient();
 
@@ -103,6 +107,28 @@ export function UserProfile() {
       showToast(t('profile.privacyTab.success'), 'success');
     },
   });
+
+  const avatarMutation = useMutation({
+    mutationFn: uploadAvatar,
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      updateUser({ avatarUrl: data.avatarUrl });
+      showToast(t('profile.personal.avatarSuccess', 'Avatar updated'), 'success');
+    },
+    onError: (e: any) => {
+      showToast(e?.response?.data?.message ?? t('profile.personal.avatarError', 'Failed to upload avatar'), 'error');
+    },
+  });
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const error = validateFile(file, { maxMb: 5, accept: ['jpg', 'jpeg', 'png', 'webp', 'gif'] });
+    if (error) { setAvatarError(error); e.target.value = ''; return; }
+    setAvatarError(null);
+    avatarMutation.mutate(file);
+    e.target.value = '';
+  };
 
   const onProfileSubmit = (data: ProfileForm) => {
     profileMutation.mutate({
@@ -178,6 +204,41 @@ export function UserProfile() {
             {activeTab === 'info' && (
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-5">
                 <h2 className="text-base font-semibold text-stone-900">{t('profile.personal.title')}</h2>
+
+                {/* Avatar */}
+                <div className="flex items-center gap-4">
+                  <div className="relative group cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
+                    <Avatar
+                      firstName={profile?.firstName ?? ''}
+                      lastName={profile?.lastName ?? ''}
+                      src={profile?.avatarUrl ?? undefined}
+                      size="xl"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={handleAvatarChange}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      loading={avatarMutation.isPending}
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
+                      {t('profile.personal.changeAvatar', 'Change avatar')}
+                    </Button>
+                    {avatarError && <p className="text-xs text-rose-600 mt-1">{avatarError}</p>}
+                    <p className="text-xs text-stone-400 mt-1">{t('profile.personal.avatarHint', 'jpg / png / webp · max 5 MB')}</p>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>

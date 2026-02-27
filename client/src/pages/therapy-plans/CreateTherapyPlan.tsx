@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
-import { createTherapyPlan, uploadTherapyPlanPoster, upsertTherapyPlanEvents } from '../../api/therapyPlans';
+import { createTherapyPlan, uploadTherapyPlanPoster, uploadTherapyPlanVideo, upsertTherapyPlanEvents } from '../../api/therapyPlans';
 import { draftsToApiPayload } from '../../components/therapyPlans/PlanSchedule';
 import { TherapyPlanForm, type TherapyPlanFormValues } from './TherapyPlanForm';
 import { Button } from '../../components/ui/Button';
@@ -23,8 +23,12 @@ export const CreateTherapyPlan = () => {
     mutationFn: ({ id, file }: { id: string; file: File }) =>
       uploadTherapyPlanPoster(id, file)
   });
+  const videoMutation = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      uploadTherapyPlanVideo(id, file)
+  });
 
-  const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null) => {
+  const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => {
     setError(null);
     try {
       const plan = await createMutation.mutateAsync({
@@ -47,6 +51,10 @@ export const CreateTherapyPlan = () => {
         await posterMutation.mutateAsync({ id: plan.id, file: posterFile });
       }
 
+      if (videoFile) {
+        await videoMutation.mutateAsync({ id: plan.id, file: videoFile });
+      }
+
       if (values.events.length > 0) {
         await upsertTherapyPlanEvents(plan.id, {
           events: draftsToApiPayload(values.events),
@@ -66,7 +74,7 @@ export const CreateTherapyPlan = () => {
     setFormKey((k) => k + 1);
   };
 
-  const isLoading = createMutation.isPending || posterMutation.isPending;
+  const isLoading = createMutation.isPending || posterMutation.isPending || videoMutation.isPending;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">

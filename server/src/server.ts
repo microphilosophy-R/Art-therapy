@@ -4,6 +4,14 @@ import { prisma } from './lib/prisma';
 import { redis } from './lib/redis';
 import { startScheduledJobs } from './services/scheduler.service';
 
+// Express 4 async route handlers do not automatically forward rejected promises
+// to the global error handler. In Node.js 15+ an unhandled rejection crashes the
+// process. Log it and keep the server alive so a single bad request doesn't take
+// down every other in-flight connection.
+process.on('unhandledRejection', (reason) => {
+  console.error('[UnhandledRejection]', reason);
+});
+
 const PORT = Number(process.env.PORT ?? 3001);
 
 async function main() {

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import {
   createPlan,
@@ -10,6 +10,11 @@ import {
   archivePlan,
   deletePlan,
   uploadPlanPoster,
+  uploadPlanVideo,
+  addPlanImage,
+  deletePlanImage,
+  reorderPlanImages,
+  uploadPlanPdf,
   upsertPlanEvents,
   exportPlanIcs,
   closeSignup,
@@ -35,12 +40,45 @@ import {
 } from '../schemas/therapyPlan.schemas';
 import { planSignupSchema } from '../schemas/planSignup.schemas';
 
-const upload = multer({
+const imageUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only image files are allowed'));
+  },
+});
+
+const videoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['video/mp4', 'video/quicktime', 'video/webm'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only mp4, mov, and webm video files are allowed'));
+  },
+});
+
+/** Surfaces multer size/type errors as structured JSON instead of crashing */
+function multerErrorHandler(err: unknown, _req: Request, res: Response, next: NextFunction) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ message: 'File too large. Please check the size limit and try again.' });
+    }
+    return res.status(400).json({ message: err.message });
+  }
+  if (err instanceof Error && (err.message.includes('Only image') || err.message.includes('Only mp4') || err.message.includes('Only PDF'))) {
+    return res.status(415).json({ message: err.message });
+  }
+  next(err);
+}
+
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf') cb(null, true);
+    else cb(new Error('Only PDF files are allowed'));
   },
 });
 
@@ -86,8 +124,40 @@ therapyPlanRouter.post(
   '/:id/poster',
   authenticate,
   authorize('THERAPIST', 'ADMIN'),
-  upload.single('poster'),
+  imageUpload.single('poster'),
+  multerErrorHandler,
   uploadPlanPoster,
+);
+
+therapyPlanRouter.post(
+  '/:id/video',
+  authenticate,
+  authorize('THERAPIST', 'ADMIN'),
+  videoUpload.single('video'),
+  multerErrorHandler,
+  uploadPlanVideo,
+);
+
+// ─── Gallery images (Therapist or Admin) ──────────────────────────────────────
+therapyPlanRouter.post(
+  '/:id/images',
+  authenticate,
+  authorize('THERAPIST', 'ADMIN'),
+  imageUpload.single('image'),
+  multerErrorHandler,
+  addPlanImage,
+);
+therapyPlanRouter.delete('/:id/images/:imageId', authenticate, authorize('THERAPIST', 'ADMIN'), deletePlanImage);
+therapyPlanRouter.patch('/:id/images/order', authenticate, authorize('THERAPIST', 'ADMIN'), reorderPlanImages);
+
+// ─── PDF attachment (Therapist or Admin) ──────────────────────────────────────
+therapyPlanRouter.post(
+  '/:id/attachment',
+  authenticate,
+  authorize('THERAPIST', 'ADMIN'),
+  pdfUpload.single('attachment'),
+  multerErrorHandler,
+  uploadPlanPdf,
 );
 
 // ─── Therapist or Admin (events) ─────────────────────────────────────────────

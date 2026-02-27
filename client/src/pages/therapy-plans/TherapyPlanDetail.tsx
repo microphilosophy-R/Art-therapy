@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  MapPin, Calendar, Users, Phone, ChevronLeft, Video, Download, CheckCircle2,
+  MapPin, Calendar, Users, Phone, ChevronLeft, Video, Download, CheckCircle2, FileText,
 } from 'lucide-react';
 import {
   getTherapyPlan,
@@ -15,6 +15,7 @@ import {
 } from '../../api/therapyPlans';
 import { PlanSchedule } from '../../components/therapyPlans/PlanSchedule';
 import { getPosterUrl } from '../../utils/therapyPlanUtils';
+import { ImageSlideshow } from '../../components/ui/ImageSlideshow';
 import { Avatar } from '../../components/ui/Avatar';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -96,6 +97,10 @@ export const TherapyPlanDetail = () => {
   const therapist = plan.therapist;
   const therapistUser = therapist?.user;
 
+  const galleryImages = plan.images?.length
+    ? plan.images.map((img) => img.url)
+    : [posterUrl];
+
   const isOwner = user?.role === 'THERAPIST' && therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
   const isClient = user?.role === 'CLIENT';
@@ -124,14 +129,19 @@ export const TherapyPlanDetail = () => {
         {t('therapyPlans.detail.back')}
       </Link>
 
-      {/* Poster */}
-      <div className="rounded-xl overflow-hidden mb-6 aspect-[16/9] bg-stone-100">
-        <img
-          src={posterUrl}
-          alt={plan.title}
-          className="w-full h-full object-cover"
-          onError={(e) => { (e.target as HTMLImageElement).src = '/posters/default-1.jpg'; }}
-        />
+      {/* Media: video (if any) + image slideshow */}
+      <div className="mb-6 space-y-3">
+        {plan.videoUrl && (
+          <div className="rounded-xl overflow-hidden aspect-[16/9] bg-black">
+            <video
+              src={plan.videoUrl}
+              controls
+              className="w-full h-full object-contain"
+              poster={posterUrl}
+            />
+          </div>
+        )}
+        <ImageSlideshow images={galleryImages} />
       </div>
 
       {/* Header row */}
@@ -266,6 +276,21 @@ export const TherapyPlanDetail = () => {
         </h2>
         <p className="text-stone-700 whitespace-pre-wrap">{plan.introduction}</p>
       </section>
+
+      {/* PDF attachment */}
+      {plan.attachmentUrl && (
+        <div className="mb-6">
+          <a
+            href={plan.attachmentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 underline"
+          >
+            <FileText className="h-4 w-4 flex-shrink-0" />
+            {plan.attachmentName ?? t('therapyPlans.detail.downloadAttachment', 'Download attachment')}
+          </a>
+        </div>
+      )}
 
       {/* Schedule — PlanSchedule if events exist, else single date card */}
       {plan.events && plan.events.length > 0 ? (

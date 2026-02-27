@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import https from 'https';
+import path from 'path';
+import fs from 'fs';
 
 import { stripeWebhookRouter } from './webhooks/stripe.webhook';
 import { alipayWebhookRouter } from './webhooks/alipay.webhook';
@@ -25,7 +27,7 @@ import { rateLimiter } from './middleware/rateLimiter';
 const app = express();
 
 // Security headers
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // CORS — allow client origin
 app.use(
@@ -34,6 +36,13 @@ app.use(
     credentials: true,
   })
 );
+
+// Serve local uploads in development
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 
 // ⚠️ Webhook routes MUST be mounted before express.json()
 // Stripe and WeChat webhooks require raw Buffer body; Alipay requires urlencoded
@@ -67,7 +76,7 @@ api.use('/messages', messageRouter);
 // Uses APIHZ_ID / APIHZ_KEY env vars; falls back to the shared public demo key (rate-limited).
 api.get('/fx', (req, res) => {
   const { from = 'CNY', to = 'USD', money = '1' } = req.query as Record<string, string>;
-  const id  = process.env.APIHZ_ID  ?? '88888888';
+  const id = process.env.APIHZ_ID ?? '88888888';
   const key = process.env.APIHZ_KEY ?? '88888888';
   const url = `https://cn.apihz.cn/api/jinrong/huilv.php?id=${id}&key=${key}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&money=${encodeURIComponent(money)}`;
   https.get(url, (upstream) => {
@@ -94,9 +103,13 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOS
 app.use((_req, res) => res.status(404).json({ message: 'Route not found' }));
 
 // Global error handler
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  try {
+    const logMsg = `[GlobalError] ${new Date().toISOString()} - ${err.message || err}\nStack: ${err.stack}\n`;
+    fs.appendFileSync(path.join(process.cwd(), 'debug.log'), logMsg);
+  } catch { }
   console.error('[Error]', err);
-  res.status(500).json({ message: 'Internal server error' });
+  res.status(err.status || 500).json({ message: err.message || 'Internal server error' });
 });
 
 export default app;

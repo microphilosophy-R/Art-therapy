@@ -1,0 +1,29 @@
+2026-02-27T14:02:00.576Z - [UploadService] uploadPlanImage: test-image-id
+2026-02-27T14:02:00.578Z - [UploadService] saveLocalFile: plan-images/plan-image-test-image-id.jpg
+2026-02-27T14:02:00.584Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-images\plan-image-test-image-id.jpg. URL: http://localhost:3001/uploads/plan-images/plan-image-test-image-id.jpg
+2026-02-27T14:08:54.503Z - [UploadService] uploadVideo: cmm4yx1700001zbs3ccpmnoj8
+2026-02-27T14:08:54.506Z - [UploadService] saveLocalFile: plan-videos/cmm4yx1700001zbs3ccpmnoj8.mp4
+2026-02-27T14:08:54.507Z - [UploadService] Creating subfolder: C:\art therapy app\server\uploads\plan-videos
+2026-02-27T14:08:54.543Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-videos\cmm4yx1700001zbs3ccpmnoj8.mp4. URL: http://localhost:3001/uploads/plan-videos/cmm4yx1700001zbs3ccpmnoj8.mp4
+2026-02-27T14:08:54.641Z - [UploadService] uploadPdf: cmm4yx1700001zbs3ccpmnoj8
+2026-02-27T14:08:54.642Z - [UploadService] saveLocalFile: plan-attachments/cmm4yx1700001zbs3ccpmnoj8.pdf
+2026-02-27T14:08:54.642Z - [UploadService] Creating subfolder: C:\art therapy app\server\uploads\plan-attachments
+2026-02-27T14:08:54.649Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-attachments\cmm4yx1700001zbs3ccpmnoj8.pdf. URL: http://localhost:3001/uploads/plan-attachments/cmm4yx1700001zbs3ccpmnoj8.pdf
+2026-02-27T14:08:54.812Z - [TherapyPlanController] addPlanImage started for plan: cmm4yx1700001zbs3ccpmnoj8
+2026-02-27T14:08:54.963Z - [TherapyPlanController] Created placeholder record: cmm4yx1mp0003zbs3ib290pqx
+2026-02-27T14:08:54.963Z - [UploadService] uploadPlanImage: cmm4yx1mp0003zbs3ib290pqx
+2026-02-27T14:08:54.967Z - [UploadService] saveLocalFile: plan-images/plan-image-cmm4yx1mp0003zbs3ib290pqx.jpg
+2026-02-27T14:08:54.969Z - [UploadService] uploadPoster: cmm4yx1700001zbs3ccpmnoj8
+2026-02-27T14:08:54.981Z - [UploadService] saveLocalFile: plan-posters/cmm4yx1700001zbs3ccpmnoj8.jpg
+2026-02-27T14:08:54.982Z - [UploadService] Creating subfolder: C:\art therapy app\server\uploads\plan-posters
+2026-02-27T14:08:54.999Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-images\plan-image-cmm4yx1mp0003zbs3ib290pqx.jpg. URL: http://localhost:3001/uploads/plan-images/plan-image-cmm4yx1mp0003zbs3ib290pqx.jpg
+2026-02-27T14:08:54.999Z - [TherapyPlanController] Upload service returned URL: http://localhost:3001/uploads/plan-images/plan-image-cmm4yx1mp0003zbs3ib290pqx.jpg
+2026-02-27T14:08:55.049Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-posters\cmm4yx1700001zbs3ccpmnoj8.jpg. URL: http://localhost:3001/uploads/plan-posters/cmm4yx1700001zbs3ccpmnoj8.jpg
+2026-02-27T14:08:55.100Z - [TherapyPlanController] Updated record cmm4yx1mp0003zbs3ib290pqx with final URL
+2026-02-27T14:17:52.899Z - [TherapyPlanController] addPlanImage started for plan: cmm4yx1700001zbs3ccpmnoj8
+2026-02-27T14:17:52.938Z - [TherapyPlanController] Created placeholder record: cmm4z8krc0005zbs3baeqx5en
+2026-02-27T14:17:52.940Z - [UploadService] uploadPlanImage: cmm4z8krc0005zbs3baeqx5en
+2026-02-27T14:17:52.941Z - [UploadService] saveLocalFile: plan-images/plan-image-cmm4z8krc0005zbs3baeqx5en.jpg
+2026-02-27T14:17:52.958Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-images\plan-image-cmm4z8krc0005zbs3baeqx5en.jpg. URL: http://localhost:3001/uploads/plan-images/plan-image-cmm4z8krc0005zbs3baeqx5en.jpg
+2026-02-27T14:17:52.959Z - [TherapyPlanController] Upload service returned URL: http://localhost:3001/uploads/plan-images/plan-image-cmm4z8krc0005zbs3baeqx5en.jpg
+2026-02-27T14:17:52.998Z - [TherapyPlanController] Updated record cmm4z8krc0005zbs3baeqx5en with final URL

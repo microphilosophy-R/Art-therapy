@@ -40,16 +40,49 @@ A full-stack web application for managing art therapy appointments, group therap
 
 Group plans (`GROUP_CONSULT`, `ART_SALON`, `WELLNESS_RETREAT`) display live participant counts. Personal consultations maintain strict privacy with no public attendee information.
 
-### Plan Status Lifecycle
+### Plan Status Lifecycle (Group Programmes)
 
-```
-DRAFT -> PENDING_REVIEW -> PUBLISHED -> SIGN_UP_CLOSED -> IN_PROGRESS -> FINISHED -> IN_GALLERY
-                        -> REJECTED
-  (any active stage)  -> CANCELLED
-                      -> ARCHIVED
+Group programmes (`GROUP_CONSULT`, `ART_SALON`, `WELLNESS_RETREAT`) follow a publicised lifecycle requiring admin oversight:
+
+```mermaid
+graph TD
+    A[DRAFT] -->|Submit| B[PENDING_REVIEW]
+    B -->|Approve| C[PUBLISHED]
+    B -->|Reject| D[REJECTED]
+    D -->|Edit & Resubmit| B
+    C -->|Auto/Manual Close| E[SIGN_UP_CLOSED]
+    E -->|Start Session| F[IN_PROGRESS]
+    F -->|Complete| G[FINISHED]
+    G -->|Archive| H[IN_GALLERY]
+    
+    C -.->|Cancel| I[CANCELLED]
+    E -.->|Cancel| I
+    F -.->|Cancel| I
 ```
 
-Admin approval is required to transition from `PENDING_REVIEW` to `PUBLISHED`. A conflict detection check runs at submission time, verifying the therapist has no overlapping confirmed appointments or active plans.
+| Status | Description | Visibility |
+|---|---|---|
+| `DRAFT` | Initial creation state. Only visible to the Therapist. | Private |
+| `PENDING_REVIEW` | Submitted for Admin approval. Conflict check is performed at this stage. | Private |
+| `PUBLISHED` | Approved and visible in the directory. Clients can now sign up and pay. | **Public** |
+| `REJECTED` | Not approved by Admin. Therapist receives feedback and can resubmit. | Private |
+| `SIGN_UP_CLOSED` | Capacity reached or deadline passed. Sign-ups are disabled. | **Public** |
+| `IN_PROGRESS` | Event is currently taking place. | **Public** |
+| `FINISHED` | Event completed. Awaiting review for the public gallery. | **Public** |
+| `IN_GALLERY` | Permanent record in the showcase gallery. No longer an active booking. | **Public** |
+
+### Personal Consultation Workflow (1-on-1)
+
+Personal consultations are private agreements between a client and a therapist, managed via the Appointment system:
+
+1. **Request**: CLIENT picks a slot from the Therapist's availability. Status becomes `PENDING`.
+2. **Deadline**: System enforces an **Acceptance Deadline** (24 hours before start). 
+   - If the Therapist doesn't Accept/Confirm in time, the appointment is auto-cancelled.
+   - Client is notified and refunded if payment was processed.
+3. **Accept**: Therapist confirms the slot. Status becomes `CONFIRMED`.
+4. **Active**: At the start time, status becomes `IN_PROGRESS`.
+5. **Completion**: Therapist marks as `COMPLETED`. Session notes are privately saved.
+6. **Visibility**: Personal consults are **never** visible in the public gallery.
 
 ---
 
@@ -266,11 +299,22 @@ art-therapy-app/
 |   |   +-- schema.prisma                # Full database schema (19 models)
 |   |   +-- seed.ts                      # Demo data seeder
 |   |   +-- migrations/                  # Auto-generated Prisma migration files
+|   +-- tests/                               # Diagnostic and verification scripts
+|   |   +-- check-conflicts.ts
+|   |   +-- check-db.ts
+|   |   +-- dump-records.ts
+|   |   +-- find-conflict.ts
+|   |   +-- get-details.ts
+|   |   +-- inspect-plan.ts
+|   |   +-- simulate-conflict.ts
+|   |   +-- test-fs.ts
+|   |   +-- test-fx.ts
+|   |   +-- test-upload.ts
+|   |   +-- verify-upload.ts
 |   +-- tsconfig.json
 |   +-- src/
 |       +-- app.ts                       # Express app setup, middleware, route mounting
 |       +-- server.ts                    # Entry point
-|       +-- test-fx.ts                   # Exchange rate API diagnostic script
 |       +-- routes/
 |       |   +-- admin.routes.ts
 |       |   +-- alipay.routes.ts

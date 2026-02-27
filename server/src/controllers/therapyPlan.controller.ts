@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { uploadPoster, uploadVideo, uploadPlanImage, uploadPdf } from '../services/upload.service';
@@ -59,6 +61,14 @@ const THERAPIST_PLAN_INCLUDE = {
     orderBy: { order: Prisma.SortOrder.asc },
   },
 } satisfies Prisma.TherapyPlanInclude;
+
+const logToFile = (msg: string) => {
+  try {
+    fs.appendFileSync(path.join(process.cwd(), 'debug.log'), `${new Date().toISOString()} - ${msg}\n`);
+  } catch (err) {
+    console.error('Failed to log to file:', err);
+  }
+};
 
 // ─── Create ──────────────────────────────────────────────────────────────────
 
@@ -301,6 +311,12 @@ const checkPlanConflicts = async (
     })),
   ];
 
+  if (conflicts.length > 0) {
+    logToFile(`[ConflictDetection] Conflicts found for therapist ${therapistId}: ${JSON.stringify(conflicts)}`);
+  } else {
+    logToFile(`[ConflictDetection] No conflicts found for therapist ${therapistId}`);
+  }
+
   return { hasConflict: conflicts.length > 0, conflicts };
 };
 
@@ -321,7 +337,6 @@ export const submitForReview = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Only DRAFT or REJECTED plans can be submitted for review' });
   }
 
-  // Schedule conflict detection
   const { hasConflict, conflicts } = await checkPlanConflicts(
     plan.therapistId,
     plan.startTime,
@@ -329,7 +344,9 @@ export const submitForReview = async (req: Request, res: Response) => {
     id,
   );
   if (hasConflict) {
-    return res.status(409).json({ message: 'Schedule conflict detected', conflicts });
+    const detail = conflicts.map(c => c.type === 'plan' ? `Plan: "${c.title}"` : `Appointment at ${new Date(c.startTime).toLocaleTimeString()}`).join(', ');
+    logToFile(`[TherapyPlanController] Submit blocked by conflict for plan ${id}: ${detail}`);
+    return res.status(409).json({ message: `Schedule conflict detected: ${detail}` });
   }
 
   const updated = await prisma.therapyPlan.update({
@@ -507,40 +524,61 @@ export const addPlanImage = async (req: Request, res: Response) => {
   const user = req.user!;
   const file = (req as any).file as Express.Multer.File | undefined;
 
-  if (!file) return res.status(400).json({ message: 'No file uploaded' });
+  logToFile(`[TherapyPlanController] addPlanImage started for plan: ${id}`);
 
-  const plan = await prisma.therapyPlan.findUnique({
-    where: { id },
-    include: { therapist: true, images: true },
-  });
-  if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
-    return res.status(403).json({ message: 'Forbidden' });
-  }
-  if (plan.images.length >= 9) {
-    return res.status(400).json({ message: 'Maximum of 9 gallery images allowed' });
+  if (!file) {
+    logToFile(`[TherapyPlanController] No file provided`);
+    return res.status(400).json({ message: 'No file uploaded' });
   }
 
-  // Create a placeholder record to get the ID for the Cloudinary public_id
-  const imageRecord = await prisma.therapyPlanImage.create({
-    data: { planId: id, url: '', order: plan.images.length },
-  });
-
-  let url: string;
   try {
-    url = await uploadPlanImage(file.buffer, imageRecord.id);
-  } catch (err) {
-    // Clean up the placeholder on upload failure
-    await prisma.therapyPlanImage.delete({ where: { id: imageRecord.id } }).catch(() => {});
-    return res.status(500).json({ message: 'Image upload failed. Please try again.' });
+    const plan = await prisma.therapyPlan.findUnique({
+      where: { id },
+      include: { therapist: true, images: true },
+    });
+    if (!plan) {
+      logToFile(`[TherapyPlanController] Plan ${id} not found`);
+      return res.status(404).json({ message: 'Plan not found' });
+    }
+    if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+      logToFile(`[TherapyPlanController] User ${user.id} Forbidden for plan ${id}`);
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    if (plan.images.length >= 9) {
+      logToFile(`[TherapyPlanController] Already have 9 images for plan ${id}`);
+      return res.status(400).json({ message: 'Maximum of 9 gallery images allowed' });
+    }
+
+    // Create a placeholder record to get the ID for the filename
+    const imageRecord = await prisma.therapyPlanImage.create({
+      data: { planId: id, url: '', order: plan.images.length },
+    });
+    logToFile(`[TherapyPlanController] Created placeholder record: ${imageRecord.id}`);
+
+    let url: string;
+    try {
+      url = await uploadPlanImage(file.buffer, imageRecord.id);
+      logToFile(`[TherapyPlanController] Upload service returned URL: ${url}`);
+    } catch (err: any) {
+      logToFile(`[TherapyPlanController] Upload service failed: ${err.message}`);
+      // Clean up the placeholder on upload failure
+      await prisma.therapyPlanImage.delete({ where: { id: imageRecord.id } }).catch((cleanupErr) => {
+        logToFile(`[TherapyPlanController] Cleanup failed: ${cleanupErr.message}`);
+      });
+      return res.status(500).json({ message: 'Image upload failed. Please try again.' });
+    }
+
+    const updated = await prisma.therapyPlanImage.update({
+      where: { id: imageRecord.id },
+      data: { url },
+    });
+    logToFile(`[TherapyPlanController] Updated record ${imageRecord.id} with final URL`);
+
+    res.status(201).json({ image: updated });
+  } catch (error: any) {
+    logToFile(`[TherapyPlanController] Global error in addPlanImage: ${error.message}`);
+    res.status(500).json({ message: 'Internal server error during upload.' });
   }
-
-  const updated = await prisma.therapyPlanImage.update({
-    where: { id: imageRecord.id },
-    data: { url },
-  });
-
-  res.status(201).json({ image: updated });
 };
 
 export const deletePlanImage = async (req: Request, res: Response) => {
@@ -711,14 +749,14 @@ export const exportPlanIcs = async (req: Request, res: Response) => {
     plan.events.length > 0
       ? plan.events
       : [
-          {
-            id: `${plan.id}-default`,
-            startTime: plan.startTime,
-            endTime: plan.endTime ?? null,
-            title: null,
-            isAvailable: true,
-          },
-        ];
+        {
+          id: `${plan.id}-default`,
+          startTime: plan.startTime,
+          endTime: plan.endTime ?? null,
+          title: null,
+          isAvailable: true,
+        },
+      ];
 
   const icsEvents: IcsEvent[] = [];
   for (const evt of sourceEvents) {
@@ -951,12 +989,12 @@ export const signUpForPlan = async (req: Request, res: Response) => {
   // Create or re-activate participant
   const participant = existing
     ? await prisma.therapyPlanParticipant.update({
-        where: { id: existing.id },
-        data: { status: 'SIGNED_UP' as any, enrolledAt: new Date() },
-      })
+      where: { id: existing.id },
+      data: { status: 'SIGNED_UP' as any, enrolledAt: new Date() },
+    })
     : await prisma.therapyPlanParticipant.create({
-        data: { userId: user.id, planId: id },
-      });
+      data: { userId: user.id, planId: id },
+    });
 
   // Create pending payment record if plan has a price
   let payment = null;

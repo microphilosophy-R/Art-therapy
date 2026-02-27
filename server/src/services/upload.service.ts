@@ -1,4 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
+import path from 'path';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -6,13 +8,59 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+const logToFile = (msg: string) => {
+  try {
+    fs.appendFileSync(path.join(process.cwd(), 'debug.log'), `${new Date().toISOString()} - ${msg}\n`);
+  } catch { }
+};
+
+const isCloudinaryConfigured = () => {
+  return (
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME !== 'placeholder' &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_KEY !== 'placeholder' &&
+    process.env.CLOUDINARY_API_SECRET &&
+    process.env.CLOUDINARY_API_SECRET !== 'placeholder'
+  );
+};
+
+const saveLocalFile = async (fileBuffer: Buffer, subfolder: string, filename: string): Promise<string> => {
+  logToFile(`[UploadService] saveLocalFile: ${subfolder}/${filename}`);
+  try {
+    const uploadsBase = path.join(process.cwd(), 'uploads');
+    const dir = path.join(uploadsBase, subfolder);
+    if (!fs.existsSync(dir)) {
+      logToFile(`[UploadService] Creating subfolder: ${dir}`);
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const filePath = path.join(dir, filename);
+    await fs.promises.writeFile(filePath, fileBuffer);
+
+    const serverUrl = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const url = `${serverUrl}/uploads/${subfolder}/${filename}`;
+    logToFile(`[UploadService] File saved locally at: ${filePath}. URL: ${url}`);
+    return url;
+  } catch (err: any) {
+    logToFile(`[UploadService] saveLocalFile failed: ${err.message}`);
+    throw err;
+  }
+};
+
 export const uploadAvatar = async (fileBuffer: Buffer, userId: string): Promise<string> => {
+  logToFile(`[UploadService] uploadAvatar: ${userId}`);
+  if (!isCloudinaryConfigured()) {
+    return saveLocalFile(fileBuffer, 'avatars', `${userId}.jpg`);
+  }
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         { folder: 'avatars', public_id: userId, overwrite: true, transformation: [{ width: 200, height: 200, crop: 'fill' }] },
         (error, result) => {
-          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          if (error || !result) {
+            logToFile(`[UploadService] Cloudinary uploadAvatar failed: ${error?.message}`);
+            return reject(error ?? new Error('Upload failed'));
+          }
           resolve(result.secure_url);
         }
       )
@@ -21,12 +69,19 @@ export const uploadAvatar = async (fileBuffer: Buffer, userId: string): Promise<
 };
 
 export const uploadArtwork = async (fileBuffer: Buffer, noteId: string): Promise<string> => {
+  logToFile(`[UploadService] uploadArtwork: ${noteId}`);
+  if (!isCloudinaryConfigured()) {
+    return saveLocalFile(fileBuffer, 'artwork', `${noteId}.jpg`);
+  }
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         { folder: 'artwork', public_id: noteId, overwrite: true },
         (error, result) => {
-          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          if (error || !result) {
+            logToFile(`[UploadService] Cloudinary uploadArtwork failed: ${error?.message}`);
+            return reject(error ?? new Error('Upload failed'));
+          }
           resolve(result.secure_url);
         }
       )
@@ -35,6 +90,10 @@ export const uploadArtwork = async (fileBuffer: Buffer, noteId: string): Promise
 };
 
 export const uploadPoster = async (fileBuffer: Buffer, planId: string): Promise<string> => {
+  logToFile(`[UploadService] uploadPoster: ${planId}`);
+  if (!isCloudinaryConfigured()) {
+    return saveLocalFile(fileBuffer, 'plan-posters', `${planId}.jpg`);
+  }
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
@@ -45,7 +104,10 @@ export const uploadPoster = async (fileBuffer: Buffer, planId: string): Promise<
           transformation: [{ width: 800, height: 450, crop: 'fill' }],
         },
         (error, result) => {
-          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          if (error || !result) {
+            logToFile(`[UploadService] Cloudinary uploadPoster failed: ${error?.message}`);
+            return reject(error ?? new Error('Upload failed'));
+          }
           resolve(result.secure_url);
         }
       )
@@ -54,6 +116,10 @@ export const uploadPoster = async (fileBuffer: Buffer, planId: string): Promise<
 };
 
 export const uploadVideo = async (fileBuffer: Buffer, planId: string): Promise<string> => {
+  logToFile(`[UploadService] uploadVideo: ${planId}`);
+  if (!isCloudinaryConfigured()) {
+    return saveLocalFile(fileBuffer, 'plan-videos', `${planId}.mp4`);
+  }
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
@@ -65,7 +131,10 @@ export const uploadVideo = async (fileBuffer: Buffer, planId: string): Promise<s
           quality: 'auto',
         },
         (error, result) => {
-          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          if (error || !result) {
+            logToFile(`[UploadService] Cloudinary uploadVideo failed: ${error?.message}`);
+            return reject(error ?? new Error('Upload failed'));
+          }
           resolve(result.secure_url);
         }
       )
@@ -74,6 +143,10 @@ export const uploadVideo = async (fileBuffer: Buffer, planId: string): Promise<s
 };
 
 export const uploadPlanImage = async (fileBuffer: Buffer, imageId: string): Promise<string> => {
+  logToFile(`[UploadService] uploadPlanImage: ${imageId}`);
+  if (!isCloudinaryConfigured()) {
+    return saveLocalFile(fileBuffer, 'plan-images', `plan-image-${imageId}.jpg`);
+  }
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
@@ -84,7 +157,10 @@ export const uploadPlanImage = async (fileBuffer: Buffer, imageId: string): Prom
           overwrite: true,
         },
         (error, result) => {
-          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          if (error || !result) {
+            logToFile(`[UploadService] Cloudinary uploadPlanImage failed: ${error?.message}`);
+            return reject(error ?? new Error('Upload failed'));
+          }
           resolve(result.secure_url);
         }
       )
@@ -93,17 +169,24 @@ export const uploadPlanImage = async (fileBuffer: Buffer, imageId: string): Prom
 };
 
 export const uploadPdf = async (fileBuffer: Buffer, planId: string): Promise<string> => {
+  logToFile(`[UploadService] uploadPdf: ${planId}`);
+  if (!isCloudinaryConfigured()) {
+    return saveLocalFile(fileBuffer, 'plan-attachments', `${planId}.pdf`);
+  }
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
           resource_type: 'raw',
-          folder: 'plan-pdfs',
+          folder: 'plan-attachments',
           public_id: `plan-pdf-${planId}`,
           overwrite: true,
         },
         (error, result) => {
-          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          if (error || !result) {
+            logToFile(`[UploadService] Cloudinary uploadPdf failed: ${error?.message}`);
+            return reject(error ?? new Error('Upload failed'));
+          }
           resolve(result.secure_url);
         }
       )

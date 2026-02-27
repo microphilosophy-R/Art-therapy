@@ -65,6 +65,7 @@ export const EditTherapyPlan = () => {
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [initialCreateValues, setInitialCreateValues] = useState<Partial<TherapyPlanFormValues> | undefined>(undefined);
   const [currentType, setCurrentType] = useState<TherapyPlanType>('PERSONAL_CONSULT');
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   // Save-as-template state
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -153,9 +154,16 @@ export const EditTherapyPlan = () => {
     setFormKey((k) => k + 1);
   };
 
-  const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => {
+  const handleSubmit = async (
+    values: TherapyPlanFormValues,
+    posterFile: File | null,
+    videoFile: File | null,
+    galleryFiles: File[],
+    attachmentFile: File | null
+  ) => {
     setSaveError(null);
     setVideoUploadPercent(0);
+    setIsFormSubmitting(true);
     try {
       let planId = id;
 
@@ -174,6 +182,7 @@ export const EditTherapyPlan = () => {
           sessionMedium: (values.sessionMedium || null) as any,
           defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
           posterUrl: null,
+          price: values.price ? parseFloat(values.price) : null,
         });
         planId = plan.id;
       } else {
@@ -197,25 +206,43 @@ export const EditTherapyPlan = () => {
         });
       }
 
+      const uploadPromises: Promise<any>[] = [];
+
       if (posterFile && planId) {
-        await uploadTherapyPlanPoster(planId, posterFile);
+        uploadPromises.push(uploadTherapyPlanPoster(planId, posterFile));
       }
 
       if (videoFile && planId) {
-        await uploadTherapyPlanVideo(planId, videoFile, (pct) => setVideoUploadPercent(pct));
+        uploadPromises.push(uploadTherapyPlanVideo(planId, videoFile, (pct) => setVideoUploadPercent(pct)));
       }
 
       if (values.events.length > 0 && planId) {
-        await upsertTherapyPlanEvents(planId, {
+        uploadPromises.push(upsertTherapyPlanEvents(planId, {
           events: draftsToApiPayload(values.events),
+        }));
+      }
+
+      if (galleryFiles.length > 0 && planId) {
+        galleryFiles.forEach(file => {
+          uploadPromises.push(addTherapyPlanImage(planId!, file));
         });
       }
 
+      if (attachmentFile && planId) {
+        uploadPromises.push(uploadTherapyPlanAttachment(planId, attachmentFile));
+      }
+
+      await Promise.all(uploadPromises);
+
       if (isCreateMode && planId) {
         navigate(`/therapy-plans/${planId}/edit`);
+      } else {
+        invalidate();
       }
     } catch (err: any) {
       setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
+    } finally {
+      setIsFormSubmitting(false);
     }
   };
 
@@ -244,7 +271,7 @@ export const EditTherapyPlan = () => {
   const isNonPersonal = isCreateMode ? currentType !== 'PERSONAL_CONSULT' : plan?.type !== 'PERSONAL_CONSULT';
   const activeStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
 
-  const isSaving = createMutation.isPending || updateMutation.isPending || posterMutation.isPending || attachmentMutation.isPending;
+  const isSaving = isFormSubmitting;
   const isLifecycleBusy =
     closeSignupMutation.isPending || startMutation.isPending ||
     finishMutation.isPending || toGalleryMutation.isPending || cancelPlanMutation.isPending;

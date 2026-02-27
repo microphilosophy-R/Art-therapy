@@ -75,7 +75,7 @@ export const planToFormValues = (plan: TherapyPlan): TherapyPlanFormValues => ({
 
 interface TherapyPlanFormProps {
   initialValues?: Partial<TherapyPlanFormValues>;
-  onSubmit: (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => Promise<void>;
+  onSubmit: (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null, galleryFiles: File[], attachmentFile: File | null) => Promise<void>;
   submitLabel: string;
   isLoading?: boolean;
   error?: string | null;
@@ -137,6 +137,7 @@ export const TherapyPlanForm = ({
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [stagedGalleryFiles, setStagedGalleryFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Partial<Record<keyof TherapyPlanFormValues, string>>>({});
   const [durationMinutes, setDurationMinutes] = useState<string>(() => {
     const s = initialValues?.startTime ?? '';
@@ -262,7 +263,7 @@ export const TherapyPlanForm = ({
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      await onSubmit(values, posterFile, videoFile);
+      await onSubmit(values, posterFile, videoFile, stagedGalleryFiles, attachmentFile);
     } finally {
       setIsSubmitting(false);
     }
@@ -414,22 +415,20 @@ export const TherapyPlanForm = ({
               <button
                 type="button"
                 onClick={() => setDurationUnit('min')}
-                className={`px-2 py-1 transition-colors ${
-                  durationUnit === 'min'
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-stone-500 hover:bg-stone-50'
-                }`}
+                className={`px-2 py-1 transition-colors ${durationUnit === 'min'
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-white text-stone-500 hover:bg-stone-50'
+                  }`}
               >
                 {t('therapyPlans.form.durationUnitMin')}
               </button>
               <button
                 type="button"
                 onClick={() => setDurationUnit('hm')}
-                className={`px-2 py-1 transition-colors border-l border-stone-200 ${
-                  durationUnit === 'hm'
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-white text-stone-500 hover:bg-stone-50'
-                }`}
+                className={`px-2 py-1 transition-colors border-l border-stone-200 ${durationUnit === 'hm'
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-white text-stone-500 hover:bg-stone-50'
+                  }`}
               >
                 {t('therapyPlans.form.durationUnitHm')}
               </button>
@@ -564,11 +563,10 @@ export const TherapyPlanForm = ({
             type="button"
             disabled={isLoading}
             onClick={() => videoInputRef.current?.click()}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-              videoFile
-                ? 'border-teal-500 text-teal-700 bg-teal-50'
-                : 'border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700'
-            }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${videoFile
+              ? 'border-teal-500 text-teal-700 bg-teal-50'
+              : 'border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700'
+              }`}
           >
             <Video className="h-4 w-4" />
             {videoFile ? `${videoFile.name} ✓` : t('therapyPlans.form.uploadVideo', 'Upload video')}
@@ -600,6 +598,7 @@ export const TherapyPlanForm = ({
           {t('therapyPlans.form.gallerySection', 'Gallery Images (up to 9)')}
         </p>
         <div className="flex flex-wrap gap-2">
+          {/* Saved images */}
           {galleryImages.map((img) => (
             <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-stone-200">
               <img src={img.url} alt="" className="w-full h-full object-cover" />
@@ -614,7 +613,28 @@ export const TherapyPlanForm = ({
               )}
             </div>
           ))}
-          {onAddGalleryImage && galleryImages.length < 9 && (
+
+          {/* Staged new images */}
+          {stagedGalleryFiles.map((file, idx) => {
+            const tempUrl = URL.createObjectURL(file);
+            return (
+              <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-teal-200">
+                <img src={tempUrl} alt="" className="w-full h-full object-cover" onLoad={() => URL.revokeObjectURL(tempUrl)} />
+                <button
+                  type="button"
+                  onClick={() => setStagedGalleryFiles(prev => prev.filter((_, i) => i !== idx))}
+                  className="absolute top-0.5 right-0.5 bg-black/50 rounded-full p-0.5 text-white hover:bg-rose-600 transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+                <div className="absolute bottom-0 left-0 right-0 bg-teal-600 text-[10px] text-white text-center py-0.5">
+                  {t('common.new', 'New')}
+                </div>
+              </div>
+            );
+          })}
+
+          {(galleryImages.length + stagedGalleryFiles.length) < 9 && (
             <>
               <input
                 ref={galleryInputRef}
@@ -628,7 +648,11 @@ export const TherapyPlanForm = ({
                   const err = validateFile(file, { maxMb: 10, accept: ['jpg', 'jpeg', 'png', 'webp', 'gif'] });
                   if (err) { setGalleryError(err); e.target.value = ''; return; }
                   setGalleryError(null);
-                  onAddGalleryImage(file);
+                  if (onAddGalleryImage) {
+                    onAddGalleryImage(file);
+                  } else {
+                    setStagedGalleryFiles(prev => [...prev, file]);
+                  }
                   e.target.value = '';
                 }}
               />
@@ -648,7 +672,7 @@ export const TherapyPlanForm = ({
         </div>
         {galleryError && <p className="mt-1 text-xs text-rose-600">{galleryError}</p>}
         {galleryUploadError && <p className="mt-1 text-xs text-rose-600">{galleryUploadError}</p>}
-        {galleryImages.length === 0 && !onAddGalleryImage && (
+        {galleryImages.length === 0 && stagedGalleryFiles.length === 0 && !onAddGalleryImage && (
           <p className="text-xs text-stone-400">{t('therapyPlans.form.galleryHint', 'Save the plan first to add gallery images')}</p>
         )}
       </div>
@@ -679,18 +703,17 @@ export const TherapyPlanForm = ({
           type="button"
           disabled={isLoading}
           onClick={() => attachmentInputRef.current?.click()}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-            attachmentFile || existingAttachmentUrl
-              ? 'border-teal-500 text-teal-700 bg-teal-50'
-              : 'border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700'
-          }`}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${attachmentFile || existingAttachmentUrl
+            ? 'border-teal-500 text-teal-700 bg-teal-50'
+            : 'border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700'
+            }`}
         >
           <FileText className="h-4 w-4" />
           {attachmentFile
             ? `${attachmentFile.name} ✓`
             : existingAttachmentName
-            ? existingAttachmentName
-            : t('therapyPlans.form.uploadAttachment', 'Upload PDF')}
+              ? existingAttachmentName
+              : t('therapyPlans.form.uploadAttachment', 'Upload PDF')}
           {attachmentFile && (
             <X
               className="h-3.5 w-3.5 ml-1 text-stone-400 hover:text-rose-500"

@@ -32,7 +32,7 @@ const STATUS_FILTER_OPTIONS: { value: TherapyPlanStatus | ''; label: string }[] 
 export const AdminPlansTab = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<TherapyPlanStatus | ''>('PENDING_REVIEW');
+  const [statusFilter, setStatusFilter] = useState<TherapyPlanStatus | ''>('');
   const [rejectingPlanId, setRejectingPlanId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectError, setRejectError] = useState<string | null>(null);
@@ -74,7 +74,9 @@ export const AdminPlansTab = () => {
           <Select
             options={STATUS_FILTER_OPTIONS.map(o => ({
               value: o.value,
-              label: t(`common.planStatus.${o.value}` as any, o.label),
+              label: o.value === ''
+                ? t('dashboard.admin.filterAll')
+                : t(`common.planStatus.${o.value}` as any, o.label),
             }))}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as TherapyPlanStatus | '')}

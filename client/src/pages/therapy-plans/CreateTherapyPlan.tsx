@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ export const CreateTherapyPlan = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [videoUploadPercent, setVideoUploadPercent] = useState(0);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [initialValues, setInitialValues] = useState<Partial<TherapyPlanFormValues> | undefined>(undefined);
   const [currentType, setCurrentType] = useState<TherapyPlanType>('PERSONAL_CONSULT');
@@ -23,13 +24,10 @@ export const CreateTherapyPlan = () => {
     mutationFn: ({ id, file }: { id: string; file: File }) =>
       uploadTherapyPlanPoster(id, file)
   });
-  const videoMutation = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      uploadTherapyPlanVideo(id, file)
-  });
 
   const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => {
     setError(null);
+    setVideoUploadPercent(0);
     try {
       const plan = await createMutation.mutateAsync({
         type: values.type,
@@ -52,7 +50,7 @@ export const CreateTherapyPlan = () => {
       }
 
       if (videoFile) {
-        await videoMutation.mutateAsync({ id: plan.id, file: videoFile });
+        await uploadTherapyPlanVideo(plan.id, videoFile, (pct) => setVideoUploadPercent(pct));
       }
 
       if (values.events.length > 0) {
@@ -74,7 +72,7 @@ export const CreateTherapyPlan = () => {
     setFormKey((k) => k + 1);
   };
 
-  const isLoading = createMutation.isPending || posterMutation.isPending || videoMutation.isPending;
+  const isLoading = createMutation.isPending || posterMutation.isPending;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -99,6 +97,7 @@ export const CreateTherapyPlan = () => {
         submitLabel={t('therapyPlans.form.saveDraft')}
         isLoading={isLoading}
         error={error}
+        videoUploadPercent={videoUploadPercent}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { useTranslation } from 'react-i18next';
 import { getTherapist, getAvailableSlots } from '../api/therapists';
 import { createAppointment } from '../api/appointments';
@@ -291,6 +292,7 @@ export const BookAppointment = () => {
                     <FullCalendar
                       plugins={[dayGridPlugin, interactionPlugin]}
                       initialView="dayGridMonth"
+                      locale={i18n.language === 'zh' ? zhCnLocale : undefined}
                       headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
                       height="auto"
                       dateClick={(info) => {
@@ -353,6 +355,7 @@ export const BookAppointment = () => {
                   <FullCalendar
                     plugins={[timeGridPlugin]}
                     initialView="timeGridDay"
+                    locale={i18n.language === 'zh' ? zhCnLocale : undefined}
                     initialDate={selectedSlot.startTime}
                     headerToolbar={false}
                     height={300}

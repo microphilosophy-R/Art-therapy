@@ -526,7 +526,14 @@ export const addPlanImage = async (req: Request, res: Response) => {
     data: { planId: id, url: '', order: plan.images.length },
   });
 
-  const url = await uploadPlanImage(file.buffer, imageRecord.id);
+  let url: string;
+  try {
+    url = await uploadPlanImage(file.buffer, imageRecord.id);
+  } catch (err) {
+    // Clean up the placeholder on upload failure
+    await prisma.therapyPlanImage.delete({ where: { id: imageRecord.id } }).catch(() => {});
+    return res.status(500).json({ message: 'Image upload failed. Please try again.' });
+  }
 
   const updated = await prisma.therapyPlanImage.update({
     where: { id: imageRecord.id },

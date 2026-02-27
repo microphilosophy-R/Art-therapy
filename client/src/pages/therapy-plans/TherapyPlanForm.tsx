@@ -83,6 +83,8 @@ interface TherapyPlanFormProps {
   rejectionReason?: string | null;
   /** Optional action rendered to the left of the submit button */
   secondaryAction?: React.ReactNode;
+  /** Video upload progress 0-100, driven by the parent */
+  videoUploadPercent?: number;
   /** Existing video URL for preview (from saved plan) */
   existingVideoUrl?: string | null;
   /** Existing attachment info */
@@ -94,6 +96,10 @@ interface TherapyPlanFormProps {
   onAddGalleryImage?: (file: File) => void;
   /** Called when user removes a gallery image */
   onDeleteGalleryImage?: (imageId: string) => void;
+  /** True while a gallery image is uploading */
+  isAddingGalleryImage?: boolean;
+  /** Error from gallery upload */
+  galleryUploadError?: string | null;
   /** Called when user selects a new PDF attachment */
   onAttachmentFileChange?: (file: File | null) => void;
 }
@@ -112,7 +118,10 @@ export const TherapyPlanForm = ({
   galleryImages = [],
   onAddGalleryImage,
   onDeleteGalleryImage,
+  isAddingGalleryImage,
+  galleryUploadError,
   onAttachmentFileChange,
+  videoUploadPercent = 0,
 }: TherapyPlanFormProps) => {
   const { t } = useTranslation();
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -125,7 +134,6 @@ export const TherapyPlanForm = ({
   const [posterFile, setPosterFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
-  const [videoUploadPercent, setVideoUploadPercent] = useState(0);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
@@ -140,6 +148,7 @@ export const TherapyPlanForm = ({
     return '';
   });
   const [durationUnit, setDurationUnit] = useState<'min' | 'hm'>('hm');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const set = <K extends keyof TherapyPlanFormValues>(key: K, val: TherapyPlanFormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: val }));
@@ -251,7 +260,12 @@ export const TherapyPlanForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    await onSubmit(values, posterFile, videoFile);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(values, posterFile, videoFile);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const planTypeOptions = [
@@ -406,7 +420,7 @@ export const TherapyPlanForm = ({
                     : 'bg-white text-stone-500 hover:bg-stone-50'
                 }`}
               >
-                min
+                {t('therapyPlans.form.durationUnitMin')}
               </button>
               <button
                 type="button"
@@ -417,7 +431,7 @@ export const TherapyPlanForm = ({
                     : 'bg-white text-stone-500 hover:bg-stone-50'
                 }`}
               >
-                h : m
+                {t('therapyPlans.form.durationUnitHm')}
               </button>
             </div>
           </div>
@@ -432,7 +446,7 @@ export const TherapyPlanForm = ({
                 onChange={(e) => handleDurationChange(e.target.value)}
                 className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
               />
-              <span className="text-stone-400 text-sm flex-shrink-0">min</span>
+              <span className="text-stone-400 text-sm flex-shrink-0">{t('therapyPlans.form.durationUnitMin')}</span>
             </div>
           ) : (
             (() => {
@@ -455,7 +469,7 @@ export const TherapyPlanForm = ({
                     }}
                     className={inputCls}
                   />
-                  <span className="text-stone-400 text-sm flex-shrink-0">h</span>
+                  <span className="text-stone-400 text-sm flex-shrink-0">{t('therapyPlans.form.durationHour')}</span>
                   <input
                     type="number"
                     min={0}
@@ -469,7 +483,7 @@ export const TherapyPlanForm = ({
                     }}
                     className={inputCls}
                   />
-                  <span className="text-stone-400 text-sm flex-shrink-0">m</span>
+                  <span className="text-stone-400 text-sm flex-shrink-0">{t('therapyPlans.form.durationMinute')}</span>
                 </div>
               );
             })()
@@ -607,7 +621,7 @@ export const TherapyPlanForm = ({
                 type="file"
                 accept="image/*"
                 className="sr-only"
-                disabled={isLoading}
+                disabled={isAddingGalleryImage}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
@@ -620,17 +634,20 @@ export const TherapyPlanForm = ({
               />
               <button
                 type="button"
-                disabled={isLoading}
+                disabled={isAddingGalleryImage}
                 onClick={() => galleryInputRef.current?.click()}
-                className="w-20 h-20 rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:border-stone-400 hover:text-stone-600 transition-colors"
+                className="w-20 h-20 rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:border-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ImagePlus className="h-5 w-5" />
-                <span className="text-xs mt-1">{t('therapyPlans.form.addImage', 'Add')}</span>
+                {isAddingGalleryImage
+                  ? <span className="text-xs text-center leading-tight">{t('common.uploading', 'Uploading…')}</span>
+                  : <><ImagePlus className="h-5 w-5" /><span className="text-xs mt-1">{t('therapyPlans.form.addImage', 'Add')}</span></>
+                }
               </button>
             </>
           )}
         </div>
         {galleryError && <p className="mt-1 text-xs text-rose-600">{galleryError}</p>}
+        {galleryUploadError && <p className="mt-1 text-xs text-rose-600">{galleryUploadError}</p>}
         {galleryImages.length === 0 && !onAddGalleryImage && (
           <p className="text-xs text-stone-400">{t('therapyPlans.form.galleryHint', 'Save the plan first to add gallery images')}</p>
         )}
@@ -692,7 +709,7 @@ export const TherapyPlanForm = ({
       {/* Submit */}
       <div className="flex items-center justify-end gap-3 pt-2">
         {secondaryAction}
-        <Button type="submit" loading={isLoading} disabled={isLoading}>
+        <Button type="submit" loading={isSubmitting || isLoading} disabled={isSubmitting || isLoading}>
           {submitLabel}
         </Button>
       </div>

@@ -23,11 +23,7 @@ import type { UserRole, AppointmentStatus } from '../../types';
 
 type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages';
 
-const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
-  { value: 'CLIENT', label: 'Client' },
-  { value: 'THERAPIST', label: 'Therapist' },
-  { value: 'ADMIN', label: 'Admin' },
-];
+const ROLE_OPTION_VALUES: UserRole[] = ['CLIENT', 'THERAPIST', 'ADMIN'];
 
 const roleBadgeVariant = (role: UserRole) => {
   if (role === 'ADMIN') return 'danger' as const;
@@ -156,8 +152,8 @@ const UsersTab = () => {
                         }
                         className="text-xs rounded-lg border border-stone-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-teal-500"
                       >
-                        {ROLE_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
+                        {ROLE_OPTION_VALUES.map((v) => (
+                          <option key={v} value={v}>{t(`common.role.${v}`)}</option>
                         ))}
                       </select>
                     </td>
@@ -252,7 +248,7 @@ const AppointmentsTab = () => {
             </button>
           ))}
         </div>
-        <span className="text-xs text-stone-400">{data?.total ?? 0} total</span>
+        <span className="text-xs text-stone-400">{t('dashboard.admin.appointmentsTotal', { total: data?.total ?? 0 })}</span>
       </div>
 
       {isLoading ? (
@@ -263,7 +259,7 @@ const AppointmentsTab = () => {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-100">
                 <tr>
-                  {['Client', 'Therapist', t('dashboard.admin.tableHeaders.dateTime'), t('dashboard.admin.tableHeaders.format'), t('dashboard.admin.tableHeaders.status'), t('dashboard.admin.tableHeaders.actions')].map((h) => (
+                  {[t('common.role.CLIENT'), t('common.role.THERAPIST'), t('dashboard.admin.tableHeaders.dateTime'), t('dashboard.admin.tableHeaders.format'), t('dashboard.admin.tableHeaders.status'), t('dashboard.admin.tableHeaders.actions')].map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
                       {h}
                     </th>
@@ -286,7 +282,7 @@ const AppointmentsTab = () => {
                     </td>
                     <td className="px-6 py-3">
                       <Badge variant={appt.medium === 'VIDEO' ? 'info' : 'default'}>
-                        {appt.medium === 'VIDEO' ? 'Video' : 'In Person'}
+                        {appt.medium === 'VIDEO' ? t('common.medium.VIDEO') : t('common.medium.IN_PERSON')}
                       </Badge>
                     </td>
                     <td className="px-6 py-3">
@@ -387,7 +383,7 @@ const RevenueTab = () => {
             </div>
             {(from || to) && (
               <Button variant="ghost" size="sm" onClick={() => { setFrom(''); setTo(''); }}>
-                Clear
+                {t('common.clear')}
               </Button>
             )}
           </div>

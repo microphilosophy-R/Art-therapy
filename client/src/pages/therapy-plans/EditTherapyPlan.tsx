@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTherapyPlan,
@@ -43,13 +44,14 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
 export const EditTherapyPlan = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [videoUploadPercent, setVideoUploadPercent] = useState(0);
 
   // Save-as-template state
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -78,13 +80,12 @@ export const EditTherapyPlan = () => {
     mutationFn: (file: File) => uploadTherapyPlanPoster(id!, file),
   });
 
-  const videoMutation = useMutation({
-    mutationFn: (file: File) => uploadTherapyPlanVideo(id!, file),
-  });
-
   const addImageMutation = useMutation({
     mutationFn: (file: File) => addTherapyPlanImage(id!, file),
-    onSuccess: invalidate,
+    onSuccess: () => { setGalleryError(null); invalidate(); },
+    onError: (err: any) => {
+      setGalleryError(err?.response?.data?.message ?? t('common.errors.generic', 'Upload failed'));
+    },
   });
 
   const deleteImageMutation = useMutation({
@@ -132,6 +133,7 @@ export const EditTherapyPlan = () => {
 
   const handleSubmit = async (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null) => {
     setSaveError(null);
+    setVideoUploadPercent(0);
     try {
       await updateMutation.mutateAsync({
         payload: {
@@ -157,7 +159,7 @@ export const EditTherapyPlan = () => {
       }
 
       if (videoFile) {
-        await videoMutation.mutateAsync(videoFile);
+        await uploadTherapyPlanVideo(id!, videoFile, (pct) => setVideoUploadPercent(pct));
       }
 
       if (values.events.length > 0) {
@@ -195,7 +197,7 @@ export const EditTherapyPlan = () => {
   const isNonPersonal = plan.type !== 'PERSONAL_CONSULT';
   const activeStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
 
-  const isSaving = updateMutation.isPending || posterMutation.isPending || videoMutation.isPending || attachmentMutation.isPending;
+  const isSaving = updateMutation.isPending || posterMutation.isPending || attachmentMutation.isPending;
   const isLifecycleBusy =
     closeSignupMutation.isPending || startMutation.isPending ||
     finishMutation.isPending || toGalleryMutation.isPending || cancelPlanMutation.isPending;
@@ -295,7 +297,10 @@ export const EditTherapyPlan = () => {
           galleryImages={plan.images ?? []}
           onAddGalleryImage={(file) => addImageMutation.mutate(file)}
           onDeleteGalleryImage={(imageId) => deleteImageMutation.mutate(imageId)}
+          isAddingGalleryImage={addImageMutation.isPending}
+          galleryUploadError={galleryError}
           onAttachmentFileChange={(file) => { if (file) attachmentMutation.mutate(file); }}
+          videoUploadPercent={videoUploadPercent}
           secondaryAction={canSubmit ? (
             <>
               {submitError && (
@@ -314,13 +319,65 @@ export const EditTherapyPlan = () => {
           ) : undefined}
         />
       ) : (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-amber-700">
-            {plan.status === 'PENDING_REVIEW'
-              ? t('therapyPlans.detail.pendingBanner')
-              : t('therapyPlans.detail.publishedBanner')}
-          </p>
-        </div>
+        <>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-amber-700">
+              {plan.status === 'PENDING_REVIEW'
+                ? t('therapyPlans.detail.pendingBanner')
+                : t('therapyPlans.detail.publishedBanner')}
+            </p>
+          </div>
+
+          {/* Gallery management is always available to the owner/admin */}
+          {(isOwner || isAdmin) && (
+            <div className="mb-6 space-y-3">
+              <p className="text-sm font-medium text-stone-700">
+                {t('therapyPlans.form.gallerySection', 'Gallery Images (up to 9)')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(plan.images ?? []).map((img) => (
+                  <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-stone-200">
+                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => deleteImageMutation.mutate(img.id)}
+                      className="absolute top-0.5 right-0.5 bg-black/50 rounded-full p-0.5 text-white hover:bg-rose-600 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {(plan.images ?? []).length < 9 && (
+                  <>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      id="gallery-upload-readonly"
+                      disabled={addImageMutation.isPending}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        addImageMutation.mutate(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    <label
+                      htmlFor="gallery-upload-readonly"
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-stone-300 flex flex-col items-center justify-center text-stone-400 hover:border-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
+                    >
+                      {addImageMutation.isPending
+                        ? <span className="text-xs text-center leading-tight">{t('common.uploading', 'Uploading…')}</span>
+                        : <span className="text-xs text-center">{t('therapyPlans.form.addImage', 'Add')}</span>
+                      }
+                    </label>
+                  </>
+                )}
+              </div>
+              {galleryError && <p className="text-xs text-rose-600">{galleryError}</p>}
+            </div>
+          )}
+        </>
       )}
 
       {/* Lifecycle actions */}

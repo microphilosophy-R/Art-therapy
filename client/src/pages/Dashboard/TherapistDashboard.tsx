@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
 import { getConnectStatus, startConnectOnboarding } from '../../api/payments';
 import { listSentForms, type ClientForm } from '../../api/forms';
@@ -29,7 +30,7 @@ const STATUS_COLORS: Record<AppointmentStatus, string> = {
 };
 
 export const TherapistDashboard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -240,6 +241,7 @@ export const TherapistDashboard = () => {
                 <FullCalendar
                   plugins={[timeGridPlugin, dayGridPlugin]}
                   initialView="timeGridWeek"
+                  locale={i18n.language === 'zh' ? zhCnLocale : undefined}
                   headerToolbar={{
                     left: 'prev,next today',
                     center: 'title',

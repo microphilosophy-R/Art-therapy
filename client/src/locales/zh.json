@@ -429,6 +429,7 @@
       "platformFees": "平台手续费",
       "totalRefunds": "总退款",
       "usersTotal": "共 {{total}} 人",
+      "appointmentsTotal": "共 {{total}} 条",
       "tableHeaders": {
         "name": "姓名",
         "email": "邮箱",
@@ -542,6 +543,10 @@
       "startTime": "开始日期与时间",
       "duration": "时长",
       "durationPlaceholder": "如：60",
+      "durationUnitMin": "分钟",
+      "durationUnitHm": "时 : 分",
+      "durationHour": "时",
+      "durationMinute": "分",
       "endTime": "结束日期与时间",
       "location": "地点",
       "locationPlaceholder": "如：中央艺术大楼3号工作室",

@@ -428,6 +428,7 @@
       "platformFees": "Platform fees",
       "totalRefunds": "Total refunds",
       "usersTotal": "{{total}} total",
+      "appointmentsTotal": "{{total}} total",
       "tableHeaders": {
         "name": "Name",
         "email": "Email",
@@ -541,6 +542,10 @@
       "startTime": "Start Date & Time",
       "duration": "Duration",
       "durationPlaceholder": "e.g. 60",
+      "durationUnitMin": "min",
+      "durationUnitHm": "h : m",
+      "durationHour": "h",
+      "durationMinute": "m",
       "endTime": "End Date & Time",
       "location": "Location",
       "locationPlaceholder": "e.g. Studio 3, Central Arts Building",

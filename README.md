@@ -28,6 +28,15 @@ This platform allows:
 - **Therapists** to manage their schedule, view upcoming sessions, and maintain client notes
 - **Admins** to oversee the platform, manage users, and view analytics
 
+### Therapy Plans
+The platform offers four distinct classes of therapy plans, visibly structured on the dynamic front page:
+1. **Personal Consultations**: 1-on-1 private sessions with featured therapists.
+2. **Group Consultations**: Small, supportive group sessions (1 vs N) guided by a professional.
+3. **Art Salons**: Single-day open sessions (N vs N) focused on mindfulness and shared creativity.
+4. **Wellness Retreats**: Immersive multi-day experiences (N vs N) with scheduled itineraries.
+
+*Note: Group plans like Salons and Retreats prominently display attendee sign-up counts, whereas Personal sessions maintain strict privacy.*
+
 ---
 
 ## Tech Stack
@@ -44,6 +53,8 @@ This platform allows:
 | **Tailwind CSS** | Utility-first styling |
 | **shadcn/ui** | Accessible, composable UI components built on Radix UI |
 | **React Hook Form + Zod** | Form management and schema validation |
+| **Framer Motion** | Declarative page scroll animations and transitions |
+| **Lucide React** | Consistent, scalable SVG icon library |
 | **FullCalendar** | Interactive appointment scheduling calendar |
 | **Axios** | HTTP client with interceptors for auth tokens |
 | **@stripe/stripe-js** | Loads Stripe.js asynchronously, provides `loadStripe()` |

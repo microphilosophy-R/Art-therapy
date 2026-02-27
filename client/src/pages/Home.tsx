@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Heart, Shield, Clock, Star, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { getTherapists } from '../api/therapists';
 import { listTherapyPlans } from '../api/therapyPlans';
 import { TherapistCard } from '../components/therapists/TherapistCard';
@@ -54,46 +55,63 @@ export const Home = () => {
     isLoading: boolean,
     emptyMessage: string,
     bgColor: string = "bg-white",
-  ) => (
-    <section className={`py-20 ${bgColor}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <h2 className="text-3xl font-bold text-stone-900">{title}</h2>
-            <p className="text-stone-500 mt-1">{subtitle}</p>
+  ) => {
+    const isEmpty = !data || data.length === 0;
+    const paddingClass = isEmpty ? "py-8" : "py-20";
+
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className={`${paddingClass} ${bgColor}`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <h2 className="text-3xl font-bold text-stone-900">{title}</h2>
+              <p className="text-stone-500 mt-1">{subtitle}</p>
+            </div>
+            <Link
+              to="/therapy-plans"
+              className="text-sm font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
+            >
+              {t('home.viewAll', 'View all')} <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <Link
-            to="/therapy-plans"
-            className="text-sm font-medium text-teal-600 hover:text-teal-700 flex items-center gap-1"
-          >
-            {t('home.viewAll', 'View all')} <ArrowRight className="h-4 w-4" />
-          </Link>
+          {isLoading ? (
+            <PageLoader />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {(data ?? []).map((plan) => (
+                <div key={plan.id}>
+                  <TherapyPlanCard plan={plan} perspective="public" />
+                </div>
+              ))}
+              {(!data || data.length === 0) && (
+                <div className="col-span-full text-center py-12 text-stone-400">
+                  <Heart className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p>{emptyMessage}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {isLoading ? (
-          <PageLoader />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(data ?? []).map((plan) => (
-              <div key={plan.id}>
-                <TherapyPlanCard plan={plan} perspective="public" />
-              </div>
-            ))}
-            {(!data || data.length === 0) && (
-              <div className="col-span-full text-center py-12 text-stone-400">
-                <Heart className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p>{emptyMessage}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </section>
-  );
+      </motion.section>
+    );
+  };
 
   return (
     <div className="bg-stone-50">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 text-white">
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 text-white"
+      >
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute top-10 left-10 h-64 w-64 rounded-full bg-white blur-3xl" />
           <div className="absolute bottom-10 right-10 h-96 w-96 rounded-full bg-teal-300 blur-3xl" />
@@ -140,7 +158,7 @@ export const Home = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Featured Plans */}
       {renderPlanSection(
@@ -183,7 +201,13 @@ export const Home = () => {
       )}
 
       {/* Personal Consultations (Therapists) */}
-      <section className="py-20 bg-stone-50">
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className={`bg-stone-50 ${(!therapists?.data || therapists.data?.length === 0) ? 'py-8' : 'py-20'}`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -204,7 +228,7 @@ export const Home = () => {
               {(therapists?.data ?? []).map((therapist) => (
                 <TherapistCard key={therapist.id} therapist={therapist} />
               ))}
-              {(!therapists?.data || therapists.data.length === 0) && (
+              {(!therapists?.data || therapists.data?.length === 0) && (
                 <div className="col-span-full text-center py-12 text-stone-400">
                   <Heart className="h-10 w-10 mx-auto mb-3 opacity-30" />
                   <p>{t('home.featured.empty')}</p>
@@ -213,7 +237,7 @@ export const Home = () => {
             </div>
           )}
         </div>
-      </section>
+      </motion.section>
 
       {/* Gallery (Past Plans) */}
       {renderPlanSection(
@@ -226,7 +250,13 @@ export const Home = () => {
       )}
 
       {/* Testimonials */}
-      <section className="py-20 bg-white">
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="py-20 bg-white"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-stone-900">{t('home.testimonials.title')}</h2>
@@ -246,10 +276,16 @@ export const Home = () => {
             ))}
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* CTA banner */}
-      <section className="py-20 bg-teal-700">
+      <motion.section
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 0.6 }}
+        className="py-20 bg-teal-700"
+      >
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">{t('home.ctaBanner.title')}</h2>
           <p className="text-teal-100 mb-8">
@@ -273,7 +309,7 @@ export const Home = () => {
             </Button>
           </div>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 };

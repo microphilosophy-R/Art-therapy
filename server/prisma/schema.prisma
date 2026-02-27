@@ -64,6 +64,37 @@ enum QuestionType {
   YES_NO
 }
 
+enum TherapyPlanType {
+  PERSONAL_CONSULT
+  GROUP_CONSULT
+  ART_SALON
+  WELLNESS_RETREAT
+}
+
+enum TherapyPlanStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum ArtSalonSubType {
+  CALLIGRAPHY
+  PAINTING
+  DRAMA
+  YOGA
+  BOARD_GAMES
+  CULTURAL_CONVERSATION
+}
+
+enum MessageTrigger {
+  PLAN_SUBMITTED
+  PLAN_APPROVED
+  PLAN_REJECTED
+  MANUAL
+}
+
 model User {
   id               String    @id @default(cuid())
   email            String    @unique
@@ -85,6 +116,8 @@ model User {
   reviews              Review[]
   receivedForms        ClientForm[]      @relation("FormRecipient")
   sentForms            ClientForm[]      @relation("FormSender")
+  sentMessages         Message[]         @relation("MessageSender")
+  receivedMessages     Message[]         @relation("MessageRecipient")
 }
 
 model TherapistProfile {
@@ -102,10 +135,11 @@ model TherapistProfile {
   stripeAccountId     String?
   stripeAccountStatus StripeAccountStatus @default(NOT_CONNECTED)
 
-  appointments Appointment[]
-  availability Availability[]
-  reviews      Review[]
-  refundPolicy RefundPolicy?
+  appointments  Appointment[]
+  availability  Availability[]
+  reviews       Review[]
+  refundPolicy  RefundPolicy?
+  therapyPlans  TherapyPlan[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -266,4 +300,67 @@ model FormAnswer {
   questionId String
   question   FormQuestion @relation(fields: [questionId], references: [id])
   value      String
+}
+
+// ─── Therapy Plan System ───────────────────────────────────────────────────────
+
+model TherapyPlan {
+  id              String            @id @default(cuid())
+  therapistId     String
+  therapist       TherapistProfile  @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  type            TherapyPlanType
+  status          TherapyPlanStatus @default(DRAFT)
+
+  title           String
+  introduction    String
+  startTime       DateTime
+  endTime         DateTime?
+  location        String
+  maxParticipants Int?
+  contactInfo     String
+
+  // Type-specific fields
+  artSalonSubType ArtSalonSubType? // only for ART_SALON
+  sessionMedium   SessionMedium?   // only for PERSONAL_CONSULT
+
+  // Poster — one of these two is set, never both
+  defaultPosterId Int?             // 1–6 (static file /posters/default-N.jpg)
+  posterUrl       String?          // Cloudinary URL for custom upload
+
+  // Review workflow
+  rejectionReason String?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  publishedAt     DateTime?
+
+  messages        Message[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([therapistId])
+}
+
+model Message {
+  id          String         @id @default(cuid())
+  senderId    String?        // null = system-generated
+  sender      User?          @relation("MessageSender",    fields: [senderId],    references: [id])
+  recipientId String
+  recipient   User           @relation("MessageRecipient", fields: [recipientId], references: [id])
+
+  body        String         // plain text + emoji, max 2000 chars
+  trigger     MessageTrigger
+  isRead      Boolean        @default(false)
+  readAt      DateTime?
+
+  planId      String?
+  plan        TherapyPlan?   @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime       @default(now())
+
+  @@index([recipientId, isRead])
+  @@index([recipientId])
 }

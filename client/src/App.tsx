@@ -16,6 +16,10 @@ import { PrivacyTerms } from './pages/PrivacyTerms';
 import { ComposeForm } from './pages/forms/ComposeForm';
 import { FillForm } from './pages/forms/FillForm';
 import { FormDetail } from './pages/forms/FormDetail';
+import { TherapyPlansDirectory } from './pages/therapy-plans/TherapyPlansDirectory';
+import { TherapyPlanDetail } from './pages/therapy-plans/TherapyPlanDetail';
+import { CreateTherapyPlan } from './pages/therapy-plans/CreateTherapyPlan';
+import { EditTherapyPlan } from './pages/therapy-plans/EditTherapyPlan';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({
@@ -86,6 +90,26 @@ export default function App() {
             element={
               <ProtectedRoute roles={['ADMIN']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Therapy Plans */}
+          <Route path="/therapy-plans" element={<TherapyPlansDirectory />} />
+          <Route path="/therapy-plans/:id" element={<TherapyPlanDetail />} />
+          <Route
+            path="/therapy-plans/create"
+            element={
+              <ProtectedRoute roles={['THERAPIST']}>
+                <CreateTherapyPlan />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/therapy-plans/:id/edit"
+            element={
+              <ProtectedRoute roles={['THERAPIST', 'ADMIN']}>
+                <EditTherapyPlan />
               </ProtectedRoute>
             }
           />

@@ -711,6 +711,45 @@ Alipay and WeChat Pay are implemented as an **independent integration**, separat
 
 **To enable:** Configure merchant accounts on [Alipay Open Platform](https://open.alipay.com) and [WeChat Pay](https://pay.weixin.qq.com), add credentials to `server/.env`, then set `ALIPAY_WECHAT_ENABLED=true` and `VITE_ALIPAY_WECHAT_ENABLED=true` and rebuild.
 
+### Currency & Exchange Rate Display
+
+All session prices are stored and processed in **Chinese Yuan (CNY ¥)**. The `sessionPrice` field on `TherapistProfile` represents yuan.
+
+**Display behavior:**
+
+- **Chinese users** (`i18n.language` starts with `zh`): prices shown as `¥500.00` only.
+- **English users**: prices shown as `¥500.00` with a live USD equivalent below — e.g. `≈ $68.50`.
+
+The USD conversion is fetched via a server-side proxy to avoid browser CORS restrictions:
+
+```
+GET /api/v1/fx?from=CNY&to=USD&money=1
+  → Backend calls cn.apihz.cn/api/jinrong/huilv.php (daily-updated free API)
+  → Returns { code: 200, rate: "0.1455..." }
+```
+
+**Key files:**
+
+| File | Purpose |
+|---|---|
+| `client/src/components/ui/PriceDisplay.tsx` | Renders `¥ amount` + optional `≈ $X.XX` for non-Chinese users |
+| `client/src/hooks/useExchangeRate.ts` | TanStack Query hook — fetches rate, caches 1 hour (API updates daily) |
+| `server/src/app.ts` → `api.get('/fx', ...)` | Backend proxy — avoids CORS when calling `cn.apihz.cn` from the browser |
+| `server/src/test-fx.ts` | Diagnostic script: `npx tsx src/test-fx.ts` (server must be running) |
+
+**Environment variables (`server/.env`):**
+
+```env
+# Exchange rate API — cn.apihz.cn (free, daily-updated)
+# Register at https://www.apihz.cn for your own key (the default demo key is shared/rate-limited).
+APIHZ_ID="88888888"
+APIHZ_KEY="88888888"
+```
+
+The default demo key (`88888888`) works out of the box but is shared across all users of the public API and is rate-limited (~326 req/min). For production, register a free account at [apihz.cn](https://www.apihz.cn) and set your own `APIHZ_ID` / `APIHZ_KEY`.
+
+> **Route ordering note:** The `/fx` handler is registered as `api.get('/fx', ...)` **inside** the `api` router, which is then mounted at `app.use('/api/v1', api)`. Registering it directly on `app` after that mount would cause a 404 because Express routes all `/api/v1/*` requests through the `api` router first.
+
 ### Webhook Events Handled
 
 All events arrive at `POST /webhooks/stripe`. Each event is deduplicated using the `WebhookEvent` table — the Stripe event ID is the primary key, so duplicate deliveries are ignored.

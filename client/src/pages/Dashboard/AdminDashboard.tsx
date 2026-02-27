@@ -9,6 +9,9 @@ import {
 import { listAdminUsers, updateUserRole, getAdminPlatformStats } from '../../api/admin';
 import { getAdminPaymentStats } from '../../api/payments';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
+import { getUnreadCount } from '../../api/messages';
+import { AdminPlansTab } from './tabs/AdminPlansTab';
+import { MessagesTab } from './tabs/MessagesTab';
 
 import { Avatar } from '../../components/ui/Avatar';
 import { Badge } from '../../components/ui/Badge';
@@ -18,7 +21,7 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
 
-type Tab = 'overview' | 'users' | 'appointments' | 'revenue';
+type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages';
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
   { value: 'CLIENT', label: 'Client' },
@@ -449,11 +452,20 @@ export const AdminDashboard = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: 'overview', label: t('dashboard.admin.overview') },
-    { id: 'users', label: t('dashboard.admin.users') },
-    { id: 'appointments', label: t('dashboard.admin.appointments') },
-    { id: 'revenue', label: t('dashboard.admin.revenue') },
+  const { data: unreadData } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: getUnreadCount,
+    refetchInterval: 30000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  const TABS: { id: Tab; label: string; badge?: number }[] = [
+    { id: 'overview',      label: t('dashboard.admin.overview') },
+    { id: 'users',         label: t('dashboard.admin.users') },
+    { id: 'appointments',  label: t('dashboard.admin.appointments') },
+    { id: 'revenue',       label: t('dashboard.admin.revenue') },
+    { id: 'plans',         label: t('dashboard.admin.plans') },
+    { id: 'messages',      label: t('dashboard.admin.messages'), badge: unreadCount },
   ];
 
   return (
@@ -470,18 +482,23 @@ export const AdminDashboard = () => {
 
         {/* Tab bar */}
         <div className="border-b border-stone-200 mb-7">
-          <nav className="flex gap-1">
+          <nav className="flex gap-1 flex-wrap">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-sm font-medium transition-colors relative ${
+                className={`px-5 py-3 text-sm font-medium transition-colors relative inline-flex items-center gap-1.5 ${
                   activeTab === tab.id
                     ? 'text-teal-700'
                     : 'text-stone-500 hover:text-stone-700'
                 }`}
               >
                 {tab.label}
+                {tab.badge != null && tab.badge > 0 && (
+                  <Badge variant="danger" className="text-xs">
+                    {tab.badge > 9 ? '9+' : tab.badge}
+                  </Badge>
+                )}
                 {activeTab === tab.id && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600 rounded-t" />
                 )}
@@ -495,6 +512,8 @@ export const AdminDashboard = () => {
         {activeTab === 'users'         && <UsersTab />}
         {activeTab === 'appointments'  && <AppointmentsTab />}
         {activeTab === 'revenue'       && <RevenueTab />}
+        {activeTab === 'plans'         && <AdminPlansTab />}
+        {activeTab === 'messages'      && <MessagesTab />}
       </div>
     </div>
   );

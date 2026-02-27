@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut, LayoutDashboard, Heart } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard, Heart, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
+import { getUnreadCount } from '../../api/messages';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
@@ -29,6 +31,14 @@ export const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const { data: unreadData } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: getUnreadCount,
+    refetchInterval: 30000,
+    enabled: isAuthenticated,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,11 +61,34 @@ export const Navbar = () => {
             >
               {t('nav.findTherapist')}
             </Link>
+            <Link
+              to="/therapy-plans"
+              className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                location.pathname.startsWith('/therapy-plans')
+                  ? 'bg-teal-50 text-teal-700 font-medium'
+                  : 'text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              {t('nav.therapyPlans')}
+            </Link>
 
             <LanguageSwitcher />
 
             {isAuthenticated && user ? (
-              <div className="relative ml-2">
+              <>
+                <Link
+                  to={dashboardPath}
+                  className="relative p-2 rounded-lg hover:bg-stone-100 transition-colors"
+                  title={t('messages.inbox')}
+                >
+                  <Bell className="h-5 w-5 text-stone-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white leading-none">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              <div className="relative ml-1">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-stone-100 transition-colors"
@@ -100,6 +133,7 @@ export const Navbar = () => {
                   </>
                 )}
               </div>
+              </>
             ) : (
               <div className="flex items-center gap-2 ml-2">
                 <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
@@ -131,6 +165,13 @@ export const Navbar = () => {
             >
               {t('nav.findTherapist')}
             </Link>
+            <Link
+              to="/therapy-plans"
+              onClick={() => setMobileOpen(false)}
+              className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
+            >
+              {t('nav.therapyPlans')}
+            </Link>
             <div className="px-1">
               <LanguageSwitcher />
             </div>
@@ -139,9 +180,14 @@ export const Navbar = () => {
                 <Link
                   to={dashboardPath}
                   onClick={() => setMobileOpen(false)}
-                  className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
+                  className="flex items-center justify-between px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 rounded-lg"
                 >
-                  {t('nav.dashboard')}
+                  <span>{t('nav.dashboard')}</span>
+                  {unreadCount > 0 && (
+                    <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <Link
                   to="/profile"

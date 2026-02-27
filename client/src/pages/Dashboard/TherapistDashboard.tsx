@@ -9,14 +9,17 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
 import { getConnectStatus, startConnectOnboarding } from '../../api/payments';
 import { listSentForms, type ClientForm } from '../../api/forms';
+import { getUnreadCount } from '../../api/messages';
 import { AppointmentCard } from '../../components/appointments/AppointmentCard';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PageLoader } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
+import { TherapistPlansTab } from './tabs/TherapistPlansTab';
+import { MessagesTab } from './tabs/MessagesTab';
 import type { AppointmentStatus } from '../../types';
 
-type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar';
+type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar' | 'plans' | 'messages';
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   PENDING: '#fbbf24',
@@ -72,6 +75,13 @@ export const TherapistDashboard = () => {
     queryFn: () => getAppointments({ limit: 100 }),
     enabled: tab === 'calendar',
   });
+
+  const { data: unreadData } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: getUnreadCount,
+    refetchInterval: 30000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
 
   const appointments = data?.data ?? [];
 
@@ -151,7 +161,7 @@ export const TherapistDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
             <div className="flex gap-1 flex-wrap">
-              {(['pending', 'upcoming', 'past', 'forms', 'calendar'] as Tab[]).map((tabKey) => (
+              {(['pending', 'upcoming', 'past', 'forms', 'calendar', 'plans', 'messages'] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
@@ -169,6 +179,10 @@ export const TherapistDashboard = () => {
                     ? t('dashboard.therapist.pending')
                     : tabKey === 'upcoming'
                     ? t('dashboard.therapist.upcoming')
+                    : tabKey === 'plans'
+                    ? t('dashboard.therapist.plans')
+                    : tabKey === 'messages'
+                    ? t('dashboard.therapist.messages')
                     : t('dashboard.therapist.past')}
                   {tabKey === 'pending' && data?.total ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
@@ -180,13 +194,22 @@ export const TherapistDashboard = () => {
                       {formsData!.total}
                     </Badge>
                   ) : null}
+                  {tabKey === 'messages' && unreadCount > 0 ? (
+                    <Badge variant="danger" className="ml-1.5 text-xs">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Badge>
+                  ) : null}
                 </button>
               ))}
             </div>
           </div>
 
           <div className={tab === 'calendar' ? 'p-4' : 'p-6'}>
-            {tab === 'calendar' ? (
+            {tab === 'plans' ? (
+              <TherapistPlansTab />
+            ) : tab === 'messages' ? (
+              <MessagesTab />
+            ) : tab === 'calendar' ? (
               <div>
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
                   {(Object.entries(STATUS_COLORS) as [AppointmentStatus, string][]).map(([status, color]) => (

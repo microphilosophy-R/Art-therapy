@@ -4,14 +4,16 @@ import { Calendar, Clock, Heart, FileText, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAppointments, cancelAppointment } from '../../api/appointments';
 import { listReceivedForms, type ClientForm } from '../../api/forms';
+import { getUnreadCount } from '../../api/messages';
 import { AppointmentCard } from '../../components/appointments/AppointmentCard';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PageLoader } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 import { Link } from 'react-router-dom';
+import { MessagesTab } from './tabs/MessagesTab';
 
-type Tab = 'upcoming' | 'past' | 'forms';
+type Tab = 'upcoming' | 'past' | 'forms' | 'messages';
 
 export const ClientDashboard = () => {
   const { t } = useTranslation();
@@ -37,6 +39,13 @@ export const ClientDashboard = () => {
     mutationFn: cancelAppointment,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
   });
+
+  const { data: unreadData } = useQuery({
+    queryKey: ['unread-count'],
+    queryFn: getUnreadCount,
+    refetchInterval: 30000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
 
   const pendingForms = formsData?.data.filter((f: ClientForm) => f.status === 'SENT') ?? [];
   const appointments = data?.data ?? [];
@@ -100,8 +109,8 @@ export const ClientDashboard = () => {
         {/* Tabs + content */}
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
-            <div className="flex gap-1">
-              {(['upcoming', 'past', 'forms'] as Tab[]).map((tabKey) => (
+            <div className="flex gap-1 flex-wrap">
+              {(['upcoming', 'past', 'forms', 'messages'] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
@@ -115,9 +124,16 @@ export const ClientDashboard = () => {
                     ? t('dashboard.client.forms')
                     : tabKey === 'upcoming'
                     ? t('dashboard.client.upcoming')
+                    : tabKey === 'messages'
+                    ? t('dashboard.client.messages')
                     : t('dashboard.client.past')}
                   {tabKey === 'forms' && pendingForms.length > 0 && (
                     <Badge variant="warning" className="ml-1.5 text-xs">{pendingForms.length}</Badge>
+                  )}
+                  {tabKey === 'messages' && unreadCount > 0 && (
+                    <Badge variant="danger" className="ml-1.5 text-xs">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Badge>
                   )}
                 </button>
               ))}
@@ -130,7 +146,9 @@ export const ClientDashboard = () => {
           </div>
 
           <div className="p-6">
-            {tab === 'forms' ? (
+            {tab === 'messages' ? (
+              <MessagesTab />
+            ) : tab === 'forms' ? (
               (formsData?.data ?? []).length === 0 ? (
                 <div className="text-center py-12 text-stone-400">
                   <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />

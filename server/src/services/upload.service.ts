@@ -33,3 +33,22 @@ export const uploadArtwork = async (fileBuffer: Buffer, noteId: string): Promise
       .end(fileBuffer);
   });
 };
+
+export const uploadPoster = async (fileBuffer: Buffer, planId: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          folder: 'plan-posters',
+          public_id: planId,
+          overwrite: true,
+          transformation: [{ width: 800, height: 450, crop: 'fill' }],
+        },
+        (error, result) => {
+          if (error || !result) return reject(error ?? new Error('Upload failed'));
+          resolve(result.secure_url);
+        }
+      )
+      .end(fileBuffer);
+  });
+};

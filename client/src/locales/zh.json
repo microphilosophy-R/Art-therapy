@@ -34,10 +34,40 @@
       "required": "此字段为必填项",
       "invalidEmail": "请输入有效的邮箱地址",
       "tryAgain": "出现错误，请重试。"
+    },
+    "select": "请选择...",
+    "submitted": "已提交",
+    "confirmDelete": "确定要删除吗？",
+    "delete": "删除",
+    "planType": {
+      "PERSONAL_CONSULT": "个人咨询",
+      "GROUP_CONSULT": "团体咨询",
+      "ART_SALON": "艺术沙龙",
+      "WELLNESS_RETREAT": "身心疗愈营"
+    },
+    "planStatus": {
+      "DRAFT": "草稿",
+      "PENDING_REVIEW": "待审核",
+      "PUBLISHED": "已发布",
+      "REJECTED": "已拒绝",
+      "ARCHIVED": "已归档"
+    },
+    "artSalonSubType": {
+      "CALLIGRAPHY": "书法",
+      "PAINTING": "绘画",
+      "DRAMA": "戏剧",
+      "YOGA": "瑜伽",
+      "BOARD_GAMES": "桌游",
+      "CULTURAL_CONVERSATION": "文化交流"
+    },
+    "medium": {
+      "VIDEO": "视频",
+      "IN_PERSON": "线下"
     }
   },
   "nav": {
     "findTherapist": "寻找治疗师",
+    "therapyPlans": "疗愈计划",
     "signIn": "登录",
     "getStarted": "立即开始",
     "dashboard": "控制台",
@@ -280,7 +310,8 @@
       "awaitingResponse": "待您填写",
       "submitted": "已提交",
       "fillOut": "填写",
-      "completed": "已完成"
+      "completed": "已完成",
+      "messages": "消息"
     },
     "therapist": {
       "welcome": "欢迎回来，{{name}}",
@@ -307,7 +338,18 @@
         "confirmed": "已确认",
         "cancelled": "已取消",
         "completed": "已完成"
-      }
+      },
+      "plans": "疗愈计划",
+      "messages": "消息",
+      "noPlans": "暂无计划。",
+      "createFirstPlan": "创建第一个计划",
+      "createPlan": "创建计划",
+      "newPlan": "新建计划",
+      "planStatus": "状态：{{status}}",
+      "editPlan": "编辑",
+      "submitPlan": "提交审核",
+      "archivePlan": "归档",
+      "deletePlan": "删除"
     },
     "admin": {
       "title": "管理员控制台",
@@ -351,7 +393,107 @@
       "therapistPayouts": "治疗师收款",
       "paidBookings": "已付费预约",
       "refundsIssued": "已退款",
-      "cancelBtn": "取消"
+      "cancelBtn": "取消",
+      "plans": "疗愈计划",
+      "messages": "消息",
+      "pendingReview": "待审核",
+      "allPlans": "全部计划",
+      "approvePlan": "批准",
+      "rejectPlan": "拒绝",
+      "rejectionReason": "拒绝原因",
+      "rejectionReasonPlaceholder": "请说明拒绝此计划的原因...",
+      "confirmReject": "确认拒绝",
+      "noPlans": "未找到计划。",
+      "noPlansInQueue": "此队列中暂无计划。"
+    }
+  },
+  "therapyPlans": {
+    "directory": {
+      "title": "疗愈计划",
+      "subtitle": "探索团体疗程、艺术沙龙、身心疗愈营等更多活动。",
+      "all": "全部",
+      "filterAll": "全部",
+      "filterPersonal": "个人",
+      "filterGroup": "团体",
+      "filterSalon": "艺术沙龙",
+      "filterRetreat": "疗愈营",
+      "noPlans": "暂无已发布的计划。",
+      "noPlansHint": "请稍后再来查看即将开展的活动。",
+      "loadMore": "加载更多",
+      "participants_one": "{{count}} 人",
+      "participants_other": "{{count}} 人"
+    },
+    "detail": {
+      "back": "返回计划列表",
+      "notFound": "计划不存在。",
+      "introduction": "简介",
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "location": "地点",
+      "maxParticipants": "最大参与人数",
+      "contactInfo": "联系方式",
+      "edit": "编辑",
+      "submitForReview": "提交审核",
+      "archive": "归档",
+      "rejectedBanner": "此计划已被拒绝"
+    },
+    "form": {
+      "createTitle": "创建疗愈计划",
+      "editTitle": "编辑疗愈计划",
+      "type": "计划类型",
+      "selectType": "请选择类型...",
+      "artSalonSubType": "艺术沙龙子类型",
+      "selectSubType": "请选择子类型...",
+      "sessionMedium": "疗程形式",
+      "selectMedium": "请选择形式...",
+      "title": "标题",
+      "titlePlaceholder": "如：周末水彩疗愈工作坊",
+      "introduction": "简介",
+      "introPlaceholder": "描述参与者可以期待什么...",
+      "startTime": "开始日期与时间",
+      "endTime": "结束日期与时间（可选）",
+      "location": "地点",
+      "locationPlaceholder": "如：中央艺术大楼3号工作室",
+      "maxParticipants": "最大参与人数（可选）",
+      "maxParticipantsPlaceholder": "如：8",
+      "contactInfo": "联系信息",
+      "contactPlaceholder": "如：+86 138-0000-0000 或 email@example.com",
+      "poster": "海报",
+      "saveDraft": "保存草稿",
+      "saveChanges": "保存更改",
+      "saving": "保存中...",
+      "errorSave": "保存计划失败。",
+      "errorUpload": "计划已保存，但海报上传失败。",
+      "rejectedNotice": "此计划已被拒绝",
+      "maxParticipantsGroupError": "团体咨询最多允许12名参与者。",
+      "introductionPlaceholder": "描述参与者可以期待什么...",
+      "endTimeOptional": "结束日期与时间（可选）",
+      "contactInfoPlaceholder": "如：+86 138-0000-0000 或 email@example.com",
+      "posterSection": "海报",
+      "defaultPosters": "默认海报",
+      "uploadCustom": "上传自定义图片",
+      "posterHint": "选择默认海报或上传您自己的图片（最大5MB，推荐800×450）。",
+      "submitError": "提交计划审核失败。"
+    }
+  },
+  "messages": {
+    "inbox": "消息",
+    "noMessages": "暂无消息。",
+    "markAllRead": "全部标为已读",
+    "compose": "发送消息",
+    "composeTitle": "发送消息",
+    "recipient": "收件人ID",
+    "recipientPlaceholder": "用户ID...",
+    "body": "消息内容",
+    "bodyPlaceholder": "输入您的消息...（最多2000字）",
+    "send": "发送",
+    "sending": "发送中...",
+    "planLink": "查看计划",
+    "trigger": {
+      "PLAN_SUBMITTED": "计划已提交审核",
+      "PLAN_APPROVED": "计划已批准",
+      "PLAN_REJECTED": "计划已拒绝",
+      "MANUAL": "直接消息"
     }
   },
   "profile": {

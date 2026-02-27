@@ -14,7 +14,16 @@
       "Bash(xargs:*)",
       "Bash(npm install:*)",
       "Bash(cmd /c \"mkdir \"\"c:\\\\art therapy app\\\\client\\\\src\\\\locales\"\" 2>nul & echo done\")",
-      "Bash(node --input-type=module:*)"
+      "Bash(node --input-type=module:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:developer.aliyun.com)",
+      "WebFetch(domain:www.exchangerate-api.com)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(wmic process where \"ProcessId=27968\" get Name,CommandLine)",
+      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
+      "Bash(del \"c:\\\\art therapy app\\\\make_posters.ps1\")"
     ]
   }
 }

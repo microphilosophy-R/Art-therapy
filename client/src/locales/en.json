@@ -34,10 +34,40 @@
       "required": "This field is required",
       "invalidEmail": "Enter a valid email",
       "tryAgain": "Something went wrong. Please try again."
+    },
+    "select": "Select...",
+    "submitted": "Submitted",
+    "confirmDelete": "Are you sure you want to delete this?",
+    "delete": "Delete",
+    "planType": {
+      "PERSONAL_CONSULT": "Personal Consult",
+      "GROUP_CONSULT": "Group Consult",
+      "ART_SALON": "Art Salon",
+      "WELLNESS_RETREAT": "Wellness Retreat"
+    },
+    "planStatus": {
+      "DRAFT": "Draft",
+      "PENDING_REVIEW": "Pending Review",
+      "PUBLISHED": "Published",
+      "REJECTED": "Rejected",
+      "ARCHIVED": "Archived"
+    },
+    "artSalonSubType": {
+      "CALLIGRAPHY": "Calligraphy",
+      "PAINTING": "Painting",
+      "DRAMA": "Drama",
+      "YOGA": "Yoga",
+      "BOARD_GAMES": "Board Games",
+      "CULTURAL_CONVERSATION": "Cultural Conversation"
+    },
+    "medium": {
+      "VIDEO": "Video",
+      "IN_PERSON": "In Person"
     }
   },
   "nav": {
     "findTherapist": "Find a Therapist",
+    "therapyPlans": "Therapy Plans",
     "signIn": "Sign in",
     "getStarted": "Get started",
     "dashboard": "Dashboard",
@@ -280,7 +310,8 @@
       "awaitingResponse": "Awaiting your response",
       "submitted": "Submitted",
       "fillOut": "Fill out",
-      "completed": "Completed"
+      "completed": "Completed",
+      "messages": "Messages"
     },
     "therapist": {
       "welcome": "Welcome back, {{name}}",
@@ -307,7 +338,18 @@
         "confirmed": "Confirmed",
         "cancelled": "Cancelled",
         "completed": "Completed"
-      }
+      },
+      "plans": "Plans",
+      "messages": "Messages",
+      "noPlans": "No plans yet.",
+      "createFirstPlan": "Create your first plan",
+      "createPlan": "Create Plan",
+      "newPlan": "New Plan",
+      "planStatus": "Status: {{status}}",
+      "editPlan": "Edit",
+      "submitPlan": "Submit for Review",
+      "archivePlan": "Archive",
+      "deletePlan": "Delete"
     },
     "admin": {
       "title": "Admin Dashboard",
@@ -351,7 +393,107 @@
       "therapistPayouts": "Therapist Payouts",
       "paidBookings": "Paid bookings",
       "refundsIssued": "Refunds issued",
-      "cancelBtn": "Cancel"
+      "cancelBtn": "Cancel",
+      "plans": "Plans",
+      "messages": "Messages",
+      "pendingReview": "Pending Review",
+      "allPlans": "All Plans",
+      "approvePlan": "Approve",
+      "rejectPlan": "Reject",
+      "rejectionReason": "Rejection reason",
+      "rejectionReasonPlaceholder": "Explain why this plan is being rejected...",
+      "confirmReject": "Confirm Reject",
+      "noPlans": "No plans found.",
+      "noPlansInQueue": "No plans in this queue."
+    }
+  },
+  "therapyPlans": {
+    "directory": {
+      "title": "Therapy Plans",
+      "subtitle": "Discover group sessions, art salons, wellness retreats and more.",
+      "all": "All",
+      "filterAll": "All",
+      "filterPersonal": "Personal",
+      "filterGroup": "Group",
+      "filterSalon": "Art Salon",
+      "filterRetreat": "Retreat",
+      "noPlans": "No published plans yet.",
+      "noPlansHint": "Check back later for upcoming sessions and events.",
+      "loadMore": "Load more",
+      "participants_one": "{{count}} participant",
+      "participants_other": "{{count}} participants"
+    },
+    "detail": {
+      "back": "Back to Plans",
+      "notFound": "Plan not found.",
+      "introduction": "Introduction",
+      "startTime": "Start Time",
+      "endTime": "End time",
+      "location": "Location",
+      "maxParticipants": "Max Participants",
+      "contactInfo": "Contact",
+      "edit": "Edit",
+      "submitForReview": "Submit for Review",
+      "archive": "Archive",
+      "rejectedBanner": "This plan was rejected"
+    },
+    "form": {
+      "createTitle": "Create Therapy Plan",
+      "editTitle": "Edit Therapy Plan",
+      "type": "Plan Type",
+      "selectType": "Select a type...",
+      "artSalonSubType": "Art Salon Sub-type",
+      "selectSubType": "Select sub-type...",
+      "sessionMedium": "Session Medium",
+      "selectMedium": "Select medium...",
+      "title": "Title",
+      "titlePlaceholder": "e.g. Weekend Watercolour Healing",
+      "introduction": "Introduction",
+      "introPlaceholder": "Describe what participants can expect...",
+      "startTime": "Start Date & Time",
+      "endTime": "End Date & Time (optional)",
+      "location": "Location",
+      "locationPlaceholder": "e.g. Studio 3, Central Arts Building",
+      "maxParticipants": "Max Participants (optional)",
+      "maxParticipantsPlaceholder": "e.g. 8",
+      "contactInfo": "Contact Information",
+      "contactPlaceholder": "e.g. +1 555-000-0000 or email@example.com",
+      "poster": "Poster",
+      "saveDraft": "Save Draft",
+      "saveChanges": "Save Changes",
+      "saving": "Saving...",
+      "errorSave": "Failed to save plan.",
+      "errorUpload": "Plan saved but poster upload failed.",
+      "rejectedNotice": "This plan was rejected",
+      "maxParticipantsGroupError": "Group consults allow a maximum of 12 participants.",
+      "introductionPlaceholder": "Describe what participants can expect...",
+      "endTimeOptional": "End Date & Time (optional)",
+      "contactInfoPlaceholder": "e.g. +1 555-000-0000 or email@example.com",
+      "posterSection": "Poster",
+      "defaultPosters": "Default posters",
+      "uploadCustom": "Upload custom image",
+      "posterHint": "Choose a default poster or upload your own (max 5 MB, recommended 800×450).",
+      "submitError": "Failed to submit plan for review."
+    }
+  },
+  "messages": {
+    "inbox": "Messages",
+    "noMessages": "No messages yet.",
+    "markAllRead": "Mark all as read",
+    "compose": "Compose",
+    "composeTitle": "Send Message",
+    "recipient": "Recipient ID",
+    "recipientPlaceholder": "User ID...",
+    "body": "Message",
+    "bodyPlaceholder": "Type your message... (max 2000 characters)",
+    "send": "Send",
+    "sending": "Sending...",
+    "planLink": "View plan",
+    "trigger": {
+      "PLAN_SUBMITTED": "Plan submitted for review",
+      "PLAN_APPROVED": "Plan approved",
+      "PLAN_REJECTED": "Plan rejected",
+      "MANUAL": "Direct message"
     }
   },
   "profile": {

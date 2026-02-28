@@ -13,9 +13,8 @@ import {
   signUpForTherapyPlan,
   cancelTherapyPlanSignup,
 } from '../../api/therapyPlans';
-import { AlipayPaymentForm } from '../../components/payments/AlipayPaymentForm';
-import { WechatPaymentForm } from '../../components/payments/WechatPaymentForm';
-import { PaymentMethodSelector, type PaymentMethod } from '../../components/payments/PaymentMethodSelector';
+import { StandardPaymentWorkflow } from '../../components/payments/StandardPaymentWorkflow';
+import { type PaymentMethod } from '../../components/payments/PaymentMethodSelector';
 import { PlanSchedule } from '../../components/therapyPlans/PlanSchedule';
 import { getPosterUrl } from '../../utils/therapyPlanUtils';
 import { ImageSlideshow } from '../../components/ui/ImageSlideshow';
@@ -241,112 +240,93 @@ export const TherapyPlanDetail = () => {
         </div>
       </div>
 
-      {/* Sign-up panel */}
+      {/* Sign-up panel / Workflow */}
       {(canSignUp || canCancelSignup) && (
-        <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 mb-6">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <div>
-              <p className="text-sm font-semibold text-teal-800">
-                {isEnrolled
-                  ? t('therapyPlans.detail.enrolled')
-                  : isPendingPayment
-                    ? t('payment.waitingForPayment', 'Waiting for Payment')
-                    : t('therapyPlans.detail.signUp')}
-              </p>
-              {priceDisplay && !isEnrolled && !isPendingPayment && (
-                <p className="text-2xl font-bold text-teal-700 mt-0.5">{priceDisplay}</p>
-              )}
-              {signupError && (
-                <p className="text-sm text-rose-600 mt-1">{signupError}</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {canSignUp && !isCheckingOut && !signupResult && (
-                <Button
-                  onClick={() => {
-                    if (!user) {
-                      navigate('/login', { state: { from: `/therapy-plans/${id}` } });
-                      return;
-                    }
-                    if (priceDisplay) {
-                      setIsCheckingOut(true);
-                    } else {
-                      signupMutation.mutate();
-                    }
-                  }}
-                >
-                  {priceDisplay
-                    ? `${t('therapyPlans.detail.signUp')} · ${priceDisplay}`
-                    : t('therapyPlans.detail.signUp')}
-                </Button>
-              )}
-              {(canCancelSignup || isPendingPayment) && (
-                <Button
-                  variant="outline"
-                  loading={cancelSignupMutation.isPending}
-                  disabled={cancelSignupMutation.isPending}
-                  onClick={() => {
-                    setSignupResult(null);
-                    setIsCheckingOut(false);
-                    cancelSignupMutation.mutate();
-                  }}
-                >
-                  {t('common.cancel', 'Cancel')}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {isCheckingOut && priceDisplay && !signupResult && (
-            <div className="border-t border-teal-200 pt-4 mt-2">
-              <PaymentMethodSelector
-                alipayWechatEnabled={true}
-                selectedMethod={paymentMethod}
-                onSelect={setPaymentMethod}
-                isZh={i18n.language.startsWith('zh')}
-              />
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setIsCheckingOut(false)} disabled={signupMutation.isPending}>
-                  {t('common.cancel', 'Cancel')}
-                </Button>
-                <Button
-                  loading={signupMutation.isPending}
-                  disabled={signupMutation.isPending || !paymentMethod}
-                  onClick={() => signupMutation.mutate()}
-                >
-                  {t('payment.confirmAndPay', 'Confirm Payment')}
-                </Button>
+        <div className="mb-6">
+          {isCheckingOut && priceDisplay ? (
+            <StandardPaymentWorkflow
+              type={plan.type as any}
+              data={{
+                title: plan.title,
+                price: Number(plan.price),
+                startTime: plan.startTime,
+                endTime: plan.endTime || undefined,
+                location: plan.location || undefined,
+                therapistName: therapistUser ? `${therapistUser.firstName} ${therapistUser.lastName}` : '',
+                therapistAvatar: therapistUser?.avatarUrl || undefined,
+                participantId: signupResult?.participantId || myParticipation?.id || undefined,
+              }}
+              onComplete={async (method: PaymentMethod) => {
+                if (!signupResult?.participantId && !myParticipation?.id) {
+                  const res = await signupMutation.mutateAsync();
+                  return { participantId: res.participant.id };
+                }
+                return { participantId: signupResult?.participantId || myParticipation?.id };
+              }}
+              onCancel={() => {
+                setIsCheckingOut(false);
+                setSignupResult(null);
+              }}
+            />
+          ) : (
+            <div className="bg-teal-50 border border-teal-200 rounded-xl p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-teal-800">
+                    {isEnrolled
+                      ? t('therapyPlans.detail.enrolled')
+                      : isPendingPayment
+                        ? t('payment.waitingForPayment', 'Waiting for Payment')
+                        : t('therapyPlans.detail.signUp')}
+                  </p>
+                  {priceDisplay && !isEnrolled && !isPendingPayment && (
+                    <p className="text-2xl font-bold text-teal-700 mt-0.5">{priceDisplay}</p>
+                  )}
+                  {signupError && (
+                    <p className="text-sm text-rose-600 mt-1">{signupError}</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {canSignUp && (
+                    <Button
+                      onClick={() => {
+                        if (!user) {
+                          navigate('/login', { state: { from: `/therapy-plans/${id}` } });
+                          return;
+                        }
+                        if (priceDisplay) {
+                          setIsCheckingOut(true);
+                        } else {
+                          signupMutation.mutate();
+                        }
+                      }}
+                    >
+                      {priceDisplay
+                        ? `${t('therapyPlans.detail.signUp')} · ${priceDisplay}`
+                        : t('therapyPlans.detail.signUp')}
+                    </Button>
+                  )}
+                  {(canCancelSignup || isPendingPayment) && (
+                    <Button
+                      variant="outline"
+                      loading={cancelSignupMutation.isPending}
+                      disabled={cancelSignupMutation.isPending}
+                      onClick={() => {
+                        setSignupResult(null);
+                        setIsCheckingOut(false);
+                        cancelSignupMutation.mutate();
+                      }}
+                    >
+                      {t('common.cancel', 'Cancel')}
+                    </Button>
+                  )}
+                  {isPendingPayment && (
+                    <Button onClick={() => setIsCheckingOut(true)}>
+                      {t('payment.completeYourPayment', 'Complete Payment')}
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-
-          {(signupResult || isPendingPayment) && (
-            <div className="border-t border-teal-200 pt-4 mt-2">
-              <p className="text-sm font-medium text-stone-700 mb-4 px-1">
-                {t('payment.completeYourPayment', 'Please complete your payment to finalize registration:')}
-              </p>
-              {paymentMethod === 'alipay' && (
-                <AlipayPaymentForm
-                  participantId={signupResult?.participantId || myParticipation?.id}
-                  onSuccess={() => {
-                    setSignupResult(null);
-                    setIsCheckingOut(false);
-                    queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
-                  }}
-                  onError={setSignupError}
-                />
-              )}
-              {paymentMethod === 'wechat' && (
-                <WechatPaymentForm
-                  participantId={signupResult?.participantId || myParticipation?.id}
-                  onSuccess={() => {
-                    setSignupResult(null);
-                    setIsCheckingOut(false);
-                    queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
-                  }}
-                  onError={setSignupError}
-                />
-              )}
             </div>
           )}
         </div>

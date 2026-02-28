@@ -31,12 +31,12 @@ A full-stack web application for managing art therapy appointments, group therap
 
 ### Therapy Plan Types
 
-| Type | Description |
-|---|---|
-| `PERSONAL_CONSULT` | Private 1-on-1 session between a single client and a therapist. Booked directly through the therapist's availability calendar. |
-| `GROUP_CONSULT` | Small structured group session (one therapist, multiple clients). Requires admin approval before clients can sign up. |
-| `ART_SALON` | Open single-day event focused on shared creativity and mindfulness. Supports sub-types. Requires admin approval. |
-| `WELLNESS_RETREAT` | Immersive multi-day experience with a scheduled event itinerary. Requires admin approval. |
+| Type | Description | Sub-types / Formats |
+|---|---|---|
+| `PERSONAL_CONSULT` | Private 1-on-1 session between a single client and a therapist. | Video, In-Person |
+| `GROUP_CONSULT` | Small structured group session (one therapist, multiple clients). | — |
+| `ART_SALON` | Open single-day event focused on shared creativity and mindfulness. | Calligraphy, Painting, Drama, Yoga, Board Games, Cultural Conversation |
+| `WELLNESS_RETREAT` | Immersive multi-day experience with a scheduled event itinerary. | — |
 
 Group plans (`GROUP_CONSULT`, `ART_SALON`, `WELLNESS_RETREAT`) display live participant counts. Personal consultations maintain strict privacy with no public attendee information.
 
@@ -102,7 +102,7 @@ Personal consultations are private agreements between a client and a therapist, 
 | Radix UI primitives | — | Accessible, unstyled component primitives |
 | Framer Motion | — | Page scroll animations and transitions |
 | Lucide React | — | SVG icon library |
-| React Hook Form | — | Form state management |
+| React Hook Form | — | Form state management (Wizard workflow) |
 | Zod | — | Client-side schema validation |
 | FullCalendar | — | Interactive appointment scheduling calendar |
 | Axios | — | HTTP client with JWT Bearer token interceptors |
@@ -282,7 +282,11 @@ art-therapy-app/
 |       |       +-- CreateTherapyPlan.tsx
 |       |       +-- EditTherapyPlan.tsx
 |       |       +-- TherapyPlanDetail.tsx
-|       |       +-- TherapyPlanForm.tsx
+|       |       +-- TherapyPlanForm.tsx       # Wizard container
+|       |       +-- steps/                   # 3-step wizard components
+|       |       |   +-- Step1Metadata.tsx
+|       |       |   +-- Step2Schedule.tsx
+|       |       |   +-- Step3Imports.tsx
 |       |       +-- TherapyPlansDirectory.tsx
 |       +-- store/
 |       |   +-- authStore.ts             # Zustand auth store (persisted to localStorage)

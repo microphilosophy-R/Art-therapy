@@ -352,7 +352,24 @@
     "redirectingToAlipay": "Redirecting to Alipay…",
     "wechatScanPrompt": "Scan with WeChat to pay",
     "wechatScanHint": "Open WeChat → Scan → Complete payment",
-    "waitingForPayment": "Waiting for payment…"
+    "waitingForPayment": "Waiting for payment…",
+    "confirmAndPay": "Confirm and Pay",
+    "acknowledgement": "Service Terms Acknowledgement",
+    "tos_title": "Terms of Service",
+    "tos_item1": "By proceeding, you agree to our privacy policy and the specific terms for this service.",
+    "tos_item2": "Cancellations made less than 24 hours before the session may not be eligible for a refund.",
+    "tos_item3": "For group events, the therapist reserves the right to reschedule if minimum participation is not met.",
+    "tos_item4": "Your personal information is handled according to HIPAA and relevant privacy standards.",
+    "i_agree": "I have read and agree to the Terms of Service and Privacy Policy.",
+    "confirm_time": "Confirm Schedule",
+    "scheduled_for": "The event is scheduled for:",
+    "group_confirm_notice": "Please ensure you can attend at this specific time. Group plans have fixed schedules.",
+    "extra_info": "Additional Information",
+    "invite_friend": "Invite a Friend",
+    "invite_desc": "Coming soon: You will be able to invite a friend to this session and receive a collaborative discount.",
+    "skip_for_now": "This page will automatically skip for group sessions, art salons, and wellness retreats.",
+    "final_check": "Final Review & Payment",
+    "completeYourPayment": "Please complete your payment to finalize registration:"
   },
   "dashboard": {
     "client": {

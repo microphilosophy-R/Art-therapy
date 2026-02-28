@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 import './i18n';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

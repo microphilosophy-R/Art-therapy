@@ -43,8 +43,8 @@ export const TherapistDashboard = () => {
           tab === 'pending'
             ? ['PENDING']
             : tab === 'upcoming'
-            ? ['CONFIRMED']
-            : ['COMPLETED', 'CANCELLED'],
+              ? ['CONFIRMED']
+              : ['COMPLETED', 'CANCELLED'],
       }),
     enabled: tab !== 'calendar',
   });
@@ -179,25 +179,24 @@ export const TherapistDashboard = () => {
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    tab === tabKey
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${tab === tabKey
                       ? 'bg-teal-50 text-teal-700'
                       : 'text-stone-500 hover:bg-stone-50'
-                  }`}
+                    }`}
                 >
                   {tabKey === 'forms'
                     ? t('dashboard.therapist.forms')
                     : tabKey === 'calendar'
-                    ? t('dashboard.therapist.calendar')
-                    : tabKey === 'pending'
-                    ? t('dashboard.therapist.pending')
-                    : tabKey === 'upcoming'
-                    ? t('dashboard.therapist.upcoming')
-                    : tabKey === 'plans'
-                    ? t('dashboard.therapist.plans')
-                    : tabKey === 'messages'
-                    ? t('dashboard.therapist.messages')
-                    : t('dashboard.therapist.past')}
+                      ? t('dashboard.therapist.calendar')
+                      : tabKey === 'pending'
+                        ? t('dashboard.therapist.pending')
+                        : tabKey === 'upcoming'
+                          ? t('dashboard.therapist.upcoming')
+                          : tabKey === 'plans'
+                            ? t('dashboard.therapist.plans')
+                            : tabKey === 'messages'
+                              ? t('dashboard.therapist.messages')
+                              : t('dashboard.therapist.past')}
                   {tabKey === 'pending' && pendingCount > 0 ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
                       {pendingCount}
@@ -241,7 +240,7 @@ export const TherapistDashboard = () => {
                 <FullCalendar
                   plugins={[timeGridPlugin, dayGridPlugin]}
                   initialView="timeGridWeek"
-                  locale={i18n.language === 'zh' ? zhCnLocale : undefined}
+                  locale={i18n.language.startsWith('zh') ? zhCnLocale : undefined}
                   headerToolbar={{
                     left: 'prev,next today',
                     center: 'title',

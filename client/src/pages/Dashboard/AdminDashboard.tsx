@@ -17,6 +17,7 @@ import { Avatar } from '../../components/ui/Avatar';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
+import { DatePicker } from '../../components/ui/DatePicker';
 import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
@@ -52,12 +53,12 @@ const OverviewTab = () => {
   });
 
   const cards = [
-    { icon: Users,      label: t('dashboard.admin.totalUsers'),        value: platformStats?.userCount ?? '—',        color: 'text-purple-600 bg-purple-50' },
-    { icon: Shield,     label: t('dashboard.admin.therapists'),         value: platformStats?.therapistCount ?? '—',   color: 'text-teal-600 bg-teal-50' },
-    { icon: Calendar,   label: t('dashboard.admin.appointmentsCount'),  value: platformStats?.appointmentCount ?? '—', color: 'text-blue-600 bg-blue-50' },
-    { icon: DollarSign, label: t('dashboard.admin.grossRevenue'),       value: revenueStats ? formatCurrency(revenueStats.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
-    { icon: TrendingUp, label: t('dashboard.admin.platformFees'),       value: revenueStats ? formatCurrency(revenueStats.totalPlatformFees) : '—', color: 'text-amber-600 bg-amber-50' },
-    { icon: RotateCcw,  label: t('dashboard.admin.totalRefunds'),       value: revenueStats ? formatCurrency(revenueStats.totalRefunds) : '—',    color: 'text-rose-600 bg-rose-50' },
+    { icon: Users, label: t('dashboard.admin.totalUsers'), value: platformStats?.userCount ?? '—', color: 'text-purple-600 bg-purple-50' },
+    { icon: Shield, label: t('dashboard.admin.therapists'), value: platformStats?.therapistCount ?? '—', color: 'text-teal-600 bg-teal-50' },
+    { icon: Calendar, label: t('dashboard.admin.appointmentsCount'), value: platformStats?.appointmentCount ?? '—', color: 'text-blue-600 bg-blue-50' },
+    { icon: DollarSign, label: t('dashboard.admin.grossRevenue'), value: revenueStats ? formatCurrency(revenueStats.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
+    { icon: TrendingUp, label: t('dashboard.admin.platformFees'), value: revenueStats ? formatCurrency(revenueStats.totalPlatformFees) : '—', color: 'text-amber-600 bg-amber-50' },
+    { icon: RotateCcw, label: t('dashboard.admin.totalRefunds'), value: revenueStats ? formatCurrency(revenueStats.totalRefunds) : '—', color: 'text-rose-600 bg-rose-50' },
   ];
 
   return (
@@ -238,11 +239,10 @@ const AppointmentsTab = () => {
             <button
               key={f.value}
               onClick={() => { setStatusFilter(f.value); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === f.value
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusFilter === f.value
                   ? 'bg-teal-50 text-teal-700'
                   : 'text-stone-500 hover:bg-stone-50'
-              }`}
+                }`}
             >
               {f.label}
             </button>
@@ -350,10 +350,10 @@ const RevenueTab = () => {
   });
 
   const revenueCards = [
-    { label: t('dashboard.admin.grossRevenue'),       value: data ? formatCurrency(data.totalGrossRevenue) : '—',    color: 'text-green-600 bg-green-50' },
-    { label: t('dashboard.admin.platformFeesCard'),   value: data ? formatCurrency(data.totalPlatformFees) : '—',    color: 'text-teal-600 bg-teal-50' },
-    { label: t('dashboard.admin.therapistPayouts'),   value: data ? formatCurrency(data.totalTherapistPayouts) : '—', color: 'text-blue-600 bg-blue-50' },
-    { label: t('dashboard.admin.totalRefunds'),       value: data ? formatCurrency(data.totalRefunds) : '—',         color: 'text-rose-600 bg-rose-50' },
+    { label: t('dashboard.admin.grossRevenue'), value: data ? formatCurrency(data.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
+    { label: t('dashboard.admin.platformFeesCard'), value: data ? formatCurrency(data.totalPlatformFees) : '—', color: 'text-teal-600 bg-teal-50' },
+    { label: t('dashboard.admin.therapistPayouts'), value: data ? formatCurrency(data.totalTherapistPayouts) : '—', color: 'text-blue-600 bg-blue-50' },
+    { label: t('dashboard.admin.totalRefunds'), value: data ? formatCurrency(data.totalRefunds) : '—', color: 'text-rose-600 bg-rose-50' },
   ];
 
   return (
@@ -365,20 +365,20 @@ const RevenueTab = () => {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.from')}</label>
-              <input
-                type="date"
+              <DatePicker
                 value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="text-sm rounded-lg border border-stone-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                onChange={(val) => setFrom(val.split('T')[0])}
+                showTime={false}
+                className="h-8 !px-2"
               />
             </div>
             <div className="flex items-center gap-2">
               <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.to')}</label>
-              <input
-                type="date"
+              <DatePicker
                 value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="text-sm rounded-lg border border-stone-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                onChange={(val) => setTo(val.split('T')[0])}
+                showTime={false}
+                className="h-8 !px-2"
               />
             </div>
             {(from || to) && (
@@ -456,12 +456,12 @@ export const AdminDashboard = () => {
   const unreadCount = unreadData?.count ?? 0;
 
   const TABS: { id: Tab; label: string; badge?: number }[] = [
-    { id: 'overview',      label: t('dashboard.admin.overview') },
-    { id: 'users',         label: t('dashboard.admin.users') },
-    { id: 'appointments',  label: t('dashboard.admin.appointments') },
-    { id: 'revenue',       label: t('dashboard.admin.revenue') },
-    { id: 'plans',         label: t('dashboard.admin.plans') },
-    { id: 'messages',      label: t('dashboard.admin.messages'), badge: unreadCount },
+    { id: 'overview', label: t('dashboard.admin.overview') },
+    { id: 'users', label: t('dashboard.admin.users') },
+    { id: 'appointments', label: t('dashboard.admin.appointments') },
+    { id: 'revenue', label: t('dashboard.admin.revenue') },
+    { id: 'plans', label: t('dashboard.admin.plans') },
+    { id: 'messages', label: t('dashboard.admin.messages'), badge: unreadCount },
   ];
 
   return (
@@ -483,11 +483,10 @@ export const AdminDashboard = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-sm font-medium transition-colors relative inline-flex items-center gap-1.5 ${
-                  activeTab === tab.id
+                className={`px-5 py-3 text-sm font-medium transition-colors relative inline-flex items-center gap-1.5 ${activeTab === tab.id
                     ? 'text-teal-700'
                     : 'text-stone-500 hover:text-stone-700'
-                }`}
+                  }`}
               >
                 {tab.label}
                 {tab.badge != null && tab.badge > 0 && (
@@ -504,12 +503,12 @@ export const AdminDashboard = () => {
         </div>
 
         {/* Tab content */}
-        {activeTab === 'overview'      && <OverviewTab />}
-        {activeTab === 'users'         && <UsersTab />}
-        {activeTab === 'appointments'  && <AppointmentsTab />}
-        {activeTab === 'revenue'       && <RevenueTab />}
-        {activeTab === 'plans'         && <AdminPlansTab />}
-        {activeTab === 'messages'      && <MessagesTab />}
+        {activeTab === 'overview' && <OverviewTab />}
+        {activeTab === 'users' && <UsersTab />}
+        {activeTab === 'appointments' && <AppointmentsTab />}
+        {activeTab === 'revenue' && <RevenueTab />}
+        {activeTab === 'plans' && <AdminPlansTab />}
+        {activeTab === 'messages' && <MessagesTab />}
       </div>
     </div>
   );

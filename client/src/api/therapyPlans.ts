@@ -163,16 +163,28 @@ export const reorderTherapyPlanImages = async (id: string, order: string[]): Pro
 
 // ─── PDF attachment ────────────────────────────────────────────────────────────
 
-export const uploadTherapyPlanAttachment = async (
+export const addTherapyPlanPdf = async (
   id: string,
   file: File,
-): Promise<{ attachmentUrl: string; attachmentName: string }> => {
+  onUploadProgress?: (percent: number) => void,
+): Promise<{ pdf: { id: string; url: string; name: string; order: number } }> => {
   const formData = new FormData();
-  formData.append('attachment', file);
-  const { data } = await api.post(`/therapy-plans/${id}/attachment`, formData, {
+  formData.append('pdf', file);
+  const { data } = await api.post(`/therapy-plans/${id}/pdfs`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onUploadProgress
+      ? (e) => onUploadProgress(Math.round((e.loaded * 100) / (e.total ?? 1)))
+      : undefined,
   });
   return data;
+};
+
+export const deleteTherapyPlanPdf = async (id: string, pdfId: string): Promise<void> => {
+  await api.delete(`/therapy-plans/${id}/pdfs/${pdfId}`);
+};
+
+export const reorderTherapyPlanPdfs = async (id: string, order: string[]): Promise<void> => {
+  await api.patch(`/therapy-plans/${id}/pdfs/order`, { order });
 };
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────

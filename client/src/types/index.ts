@@ -171,6 +171,13 @@ export interface TherapyPlanImage {
   order: number;
 }
 
+export interface TherapyPlanPdf {
+  id: string;
+  url: string;
+  name: string;
+  order: number;
+}
+
 export interface TherapyPlan {
   id: string;
   therapistId: string;
@@ -191,9 +198,12 @@ export interface TherapyPlan {
   posterUrl?: string | null;
   videoUrl?: string | null;
   price?: number | string | null;
+  /** @deprecated Use pdfs array instead */
   attachmentUrl?: string | null;
+  /** @deprecated Use pdfs array instead */
   attachmentName?: string | null;
   images?: TherapyPlanImage[];
+  pdfs?: TherapyPlanPdf[];
   rejectionReason?: string | null;
   submittedAt?: string | null;
   reviewedAt?: string | null;

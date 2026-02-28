@@ -78,7 +78,7 @@ export const BookAppointment = () => {
       );
       setSelectedDuration(nearest);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [therapist?.id]);
 
   // Main browse slots query
@@ -109,7 +109,7 @@ export const BookAppointment = () => {
         setQuickPickSearchDate(advanceDate(quickPickSearchDate));
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickPickSlotsData]);
 
   // Reset quick pick when duration changes
@@ -156,16 +156,16 @@ export const BookAppointment = () => {
 
   const STEPS = paymentsEnabled
     ? [
-        { n: 1, label: t('booking.steps.dateTime') },
-        { n: 2, label: t('booking.steps.format') },
-        { n: 3, label: t('booking.steps.review') },
-        { n: 4, label: t('booking.steps.pay') },
-      ]
+      { n: 1, label: t('booking.steps.dateTime') },
+      { n: 2, label: t('booking.steps.format') },
+      { n: 3, label: t('booking.steps.review') },
+      { n: 4, label: t('booking.steps.pay') },
+    ]
     : [
-        { n: 1, label: t('booking.steps.dateTime') },
-        { n: 2, label: t('booking.steps.format') },
-        { n: 3, label: t('booking.steps.review') },
-      ];
+      { n: 1, label: t('booking.steps.dateTime') },
+      { n: 2, label: t('booking.steps.format') },
+      { n: 3, label: t('booking.steps.review') },
+    ];
 
   // Duration selector — reused in Section A and B
   const DurationSelector = ({ className = '' }: { className?: string }) => (
@@ -208,13 +208,12 @@ export const BookAppointment = () => {
             <React.Fragment key={s.n}>
               <div className="flex flex-col items-center">
                 <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    step === s.n
-                      ? 'bg-teal-600 text-white'
-                      : step > s.n
+                  className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step === s.n
+                    ? 'bg-teal-600 text-white'
+                    : step > s.n
                       ? 'bg-teal-100 text-teal-700'
                       : 'bg-stone-200 text-stone-400'
-                  }`}
+                    }`}
                 >
                   {s.n}
                 </div>
@@ -222,9 +221,8 @@ export const BookAppointment = () => {
               </div>
               {i < STEPS.length - 1 && (
                 <div
-                  className={`flex-1 h-0.5 mx-1 transition-colors ${
-                    step > s.n ? 'bg-teal-300' : 'bg-stone-200'
-                  }`}
+                  className={`flex-1 h-0.5 mx-1 transition-colors ${step > s.n ? 'bg-teal-300' : 'bg-stone-200'
+                    }`}
                 />
               )}
             </React.Fragment>
@@ -292,7 +290,7 @@ export const BookAppointment = () => {
                     <FullCalendar
                       plugins={[dayGridPlugin, interactionPlugin]}
                       initialView="dayGridMonth"
-                      locale={i18n.language === 'zh' ? zhCnLocale : undefined}
+                      locale={i18n.language.startsWith('zh') ? zhCnLocale : undefined}
                       headerToolbar={{ left: 'prev', center: 'title', right: 'next' }}
                       height="auto"
                       dateClick={(info) => {
@@ -331,11 +329,10 @@ export const BookAppointment = () => {
                           <button
                             key={slot.startTime}
                             onClick={() => setSelectedSlot(slot)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                              selectedSlot?.startTime === slot.startTime
-                                ? 'bg-teal-600 text-white border-teal-600'
-                                : 'border-stone-300 text-stone-700 hover:border-teal-400 bg-white'
-                            }`}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${selectedSlot?.startTime === slot.startTime
+                              ? 'bg-teal-600 text-white border-teal-600'
+                              : 'border-stone-300 text-stone-700 hover:border-teal-400 bg-white'
+                              }`}
                           >
                             {formatTime(slot.startTime)}
                           </button>
@@ -355,7 +352,7 @@ export const BookAppointment = () => {
                   <FullCalendar
                     plugins={[timeGridPlugin]}
                     initialView="timeGridDay"
-                    locale={i18n.language === 'zh' ? zhCnLocale : undefined}
+                    locale={i18n.language.startsWith('zh') ? zhCnLocale : undefined}
                     initialDate={selectedSlot.startTime}
                     headerToolbar={false}
                     height={300}
@@ -398,11 +395,10 @@ export const BookAppointment = () => {
                   <button
                     key={value}
                     onClick={() => setMedium(value)}
-                    className={`p-4 rounded-xl border-2 text-left transition-colors ${
-                      medium === value
-                        ? 'border-teal-600 bg-teal-50'
-                        : 'border-stone-200 hover:border-stone-300 bg-white'
-                    }`}
+                    className={`p-4 rounded-xl border-2 text-left transition-colors ${medium === value
+                      ? 'border-teal-600 bg-teal-50'
+                      : 'border-stone-200 hover:border-stone-300 bg-white'
+                      }`}
                   >
                     <Icon className={`h-5 w-5 mb-2 ${medium === value ? 'text-teal-600' : 'text-stone-400'}`} />
                     <p className="font-medium text-stone-900 text-sm">{label}</p>

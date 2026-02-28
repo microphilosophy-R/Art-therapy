@@ -27,3 +27,58 @@
 2026-02-27T14:17:52.958Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-images\plan-image-cmm4z8krc0005zbs3baeqx5en.jpg. URL: http://localhost:3001/uploads/plan-images/plan-image-cmm4z8krc0005zbs3baeqx5en.jpg
 2026-02-27T14:17:52.959Z - [TherapyPlanController] Upload service returned URL: http://localhost:3001/uploads/plan-images/plan-image-cmm4z8krc0005zbs3baeqx5en.jpg
 2026-02-27T14:17:52.998Z - [TherapyPlanController] Updated record cmm4z8krc0005zbs3baeqx5en with final URL
+2026-02-27T15:12:00.396Z - [UploadService] deleteAsset: http://localhost:3001/uploads/test-delete/test-1772205120393.txt
+2026-02-27T15:12:00.396Z - [UploadService] deleteAsset: http://localhost:3001/uploads/test-delete/test-1772205120393.txt
+2026-02-27T15:12:00.397Z - [UploadService] Local file not found for deletion: C:\art therapy app\server\uploads\test-delete\test-1772205120393.txt
+2026-02-27T15:12:00.399Z - [UploadService] Local file deleted: C:\art therapy app\server\uploads\test-delete\test-1772205120393.txt
+2026-02-27T15:14:59.933Z - [UploadService] uploadPdf: cmm51a0vg000azbs3doa5tna3
+2026-02-27T15:14:59.933Z - [UploadService] saveLocalFile: plan-attachments/cmm51a0vg000azbs3doa5tna3.pdf
+2026-02-27T15:14:59.965Z - [UploadService] uploadVideo: cmm51a0vg000azbs3doa5tna3
+2026-02-27T15:14:59.999Z - [UploadService] saveLocalFile: plan-videos/cmm51a0vg000azbs3doa5tna3.mp4
+2026-02-27T15:15:00.253Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-videos\cmm51a0vg000azbs3doa5tna3.mp4. URL: http://localhost:3001/uploads/plan-videos/cmm51a0vg000azbs3doa5tna3.mp4
+2026-02-27T15:15:00.993Z - [TherapyPlanController] addPlanImage started for plan: cmm51a0vg000azbs3doa5tna3
+2026-02-27T15:15:00.996Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-attachments\cmm51a0vg000azbs3doa5tna3.pdf. URL: http://localhost:3001/uploads/plan-attachments/cmm51a0vg000azbs3doa5tna3.pdf
+2026-02-27T15:15:01.113Z - [UploadService] uploadPoster: cmm51a0vg000azbs3doa5tna3
+2026-02-27T15:15:01.125Z - [UploadService] saveLocalFile: plan-posters/cmm51a0vg000azbs3doa5tna3.jpg
+2026-02-27T15:15:01.233Z - [TherapyPlanController] Created placeholder record: cmm51a1zr000czbs3z6bu40oy
+2026-02-27T15:15:01.233Z - [UploadService] uploadPlanImage: cmm51a1zr000czbs3z6bu40oy
+2026-02-27T15:15:01.234Z - [UploadService] saveLocalFile: plan-images/plan-image-cmm51a1zr000czbs3z6bu40oy.jpg
+2026-02-27T15:15:01.379Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-posters\cmm51a0vg000azbs3doa5tna3.jpg. URL: http://localhost:3001/uploads/plan-posters/cmm51a0vg000azbs3doa5tna3.jpg
+2026-02-27T15:15:01.485Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-images\plan-image-cmm51a1zr000czbs3z6bu40oy.jpg. URL: http://localhost:3001/uploads/plan-images/plan-image-cmm51a1zr000czbs3z6bu40oy.jpg
+2026-02-27T15:15:01.486Z - [TherapyPlanController] Upload service returned URL: http://localhost:3001/uploads/plan-images/plan-image-cmm51a1zr000czbs3z6bu40oy.jpg
+2026-02-27T15:15:01.553Z - [TherapyPlanController] Updated record cmm51a1zr000czbs3z6bu40oy with final URL
+2026-02-28T07:18:50.097Z - [UploadService] uploadVideo: cmm5zpisv0001rrvyxoczz177
+2026-02-28T07:18:50.146Z - [UploadService] saveLocalFile: plan-videos/cmm5zpisv0001rrvyxoczz177.mp4
+2026-02-28T07:18:50.256Z - [TherapyPlanController] addPlanPdf started for plan: cmm5zpisv0001rrvyxoczz177
+2026-02-28T07:18:50.423Z - [TherapyPlanController] addPlanImage started for plan: cmm5zpisv0001rrvyxoczz177
+2026-02-28T07:18:50.902Z - [UploadService] uploadPdf: cmm5zpjo30005rrvybwar7l5w
+2026-02-28T07:18:50.902Z - [UploadService] saveLocalFile: plan-attachments/cmm5zpjo30005rrvybwar7l5w.pdf
+2026-02-28T07:18:50.903Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-videos\cmm5zpisv0001rrvyxoczz177.mp4. URL: http://localhost:3001/uploads/plan-videos/cmm5zpisv0001rrvyxoczz177.mp4
+2026-02-28T07:18:50.966Z - [TherapyPlanController] Created placeholder record: cmm5zpjog0007rrvymefnzrue
+2026-02-28T07:18:51.003Z - [UploadService] uploadPlanImage: cmm5zpjog0007rrvymefnzrue
+2026-02-28T07:18:51.004Z - [UploadService] saveLocalFile: plan-images/plan-image-cmm5zpjog0007rrvymefnzrue.jpg
+2026-02-28T07:18:51.103Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-attachments\cmm5zpjo30005rrvybwar7l5w.pdf. URL: http://localhost:3001/uploads/plan-attachments/cmm5zpjo30005rrvybwar7l5w.pdf
+2026-02-28T07:18:51.174Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\plan-images\plan-image-cmm5zpjog0007rrvymefnzrue.jpg. URL: http://localhost:3001/uploads/plan-images/plan-image-cmm5zpjog0007rrvymefnzrue.jpg
+2026-02-28T07:18:51.175Z - [TherapyPlanController] Upload service returned URL: http://localhost:3001/uploads/plan-images/plan-image-cmm5zpjog0007rrvymefnzrue.jpg
+2026-02-28T07:18:51.255Z - [TherapyPlanController] Updated record cmm5zpjog0007rrvymefnzrue with final URL
+2026-02-28T07:19:51.937Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:19:51.938Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:19:53.899Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:19:53.906Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:20:04.753Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:20:04.754Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:20:05.314Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:20:05.314Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:20:05.812Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:20:05.815Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:20:06.859Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:20:06.860Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:20:07.369Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:20:07.375Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:30:32.383Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:30:32.383Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:35:05.846Z - [ConflictDetection] No conflicts found for therapist cmm5xizb2000712hovt3jb61d
+2026-02-28T07:35:07.145Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:35:07.145Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"
+2026-02-28T07:35:08.132Z - [ConflictDetection] Conflicts found for therapist cmm5xizb2000712hovt3jb61d: [{"type":"plan","id":"cmm5xizei000q12hono2edaaw","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"},{"type":"plan","id":"cmm5xw6jg000q14cpmdq9of4p","title":"Individual Anxiety Management","startTime":"2026-03-07T06:00:00.000Z"}]
+2026-02-28T07:35:08.145Z - [TherapyPlanController] Submit blocked by conflict for plan cmm5zpisv0001rrvyxoczz177: Plan: "Individual Anxiety Management", Plan: "Individual Anxiety Management"

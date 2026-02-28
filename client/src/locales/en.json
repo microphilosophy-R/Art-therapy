@@ -11,6 +11,7 @@
     "close": "Close",
     "remove": "Remove",
     "clear": "Clear",
+    "new": "New",
     "yes": "Yes",
     "no": "No",
     "optional": "optional",
@@ -19,6 +20,7 @@
     "inPerson": "In Person",
     "session": "session",
     "min": "min",
+    "dateFormat": "yyyy/mm/dd",
     "status": {
       "PENDING": "Awaiting Payment",
       "CONFIRMED": "Confirmed",
@@ -516,6 +518,9 @@
     },
     "schedule": {
       "title": "Schedule",
+      "subtitle": "Plan your daily activities and sessions.",
+      "addActivity": "Add Activity",
+      "noActivities": "No activities planned for this day.",
       "addEvent": "Add Time Slot",
       "event": "Event",
       "eventTitle": "Label",
@@ -568,10 +573,13 @@
       "defaultPosters": "Default posters",
       "uploadCustom": "Upload custom image",
       "posterHint": "Choose a default poster or upload your own (max 10 MB, recommended 800×450).",
+      "defaultPosterAlt": "Default poster {{n}}",
       "videoSection": "Promo Video (optional)",
       "uploadVideo": "Upload video",
       "videoHint": "mp4 / mov / webm · max 100 MB",
       "submitError": "Failed to submit plan for review.",
+      "submitForReview": "Submit for Review",
+      "saveAndExit": "Save and Exit",
       "titleMinLength": "Title must be at least 5 characters",
       "titleMaxLength": "Title must be at most 100 characters",
       "introMinLength": "Introduction must be at least 20 characters",
@@ -588,7 +596,21 @@
       "galleryHint": "Save the plan first to add gallery images",
       "attachmentSection": "Supplementary PDF (optional)",
       "uploadAttachment": "Upload PDF",
-      "attachmentHint": "pdf · max 20 MB"
+      "attachmentHint": "pdf · max 20 MB",
+      "pdfSection": "Supplementary PDFs (up to 6)",
+      "uploadPdf": "Add PDF",
+      "pdfHint": "pdf · max 20 MB · Save the plan first to add PDFs if editing.",
+      "step": "Step {{n}}",
+      "nextStep": "Next step",
+      "scheduleVisualizer": "Schedule Visualizer & Conflicts",
+      "scheduleVisualizerDesc": "Review your existing appointments (red) and published plans (teal) to avoid conflicts.",
+      "busyAppointment": "Appointment (Busy)",
+      "steps": {
+        "metadata": "Basic Metadata",
+        "schedule": "Schedule",
+        "imports": "Optional Imports",
+        "preview": "Preview & Submit"
+      }
     },
     "templates": {
       "loadTemplate": "Load from Template",

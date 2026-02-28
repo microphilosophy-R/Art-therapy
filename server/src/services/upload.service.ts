@@ -193,3 +193,53 @@ export const uploadPdf = async (fileBuffer: Buffer, planId: string): Promise<str
       .end(fileBuffer);
   });
 };
+
+/**
+ * Deletes an asset from storage (Cloudinary or Local) based on its URL.
+ */
+export const deleteAsset = async (url: string | null | undefined): Promise<void> => {
+  if (!url) return;
+  logToFile(`[UploadService] deleteAsset: ${url}`);
+
+  try {
+    // 1. Local storage case
+    if (url.includes('/uploads/')) {
+      const urlPath = new URL(url).pathname; // e.g., /uploads/plan-images/plan-image-xxx.jpg
+      const relativePath = urlPath.replace(/^\/uploads\//, '');
+      const filePath = path.join(process.cwd(), 'uploads', relativePath);
+
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+        logToFile(`[UploadService] Local file deleted: ${filePath}`);
+      } else {
+        logToFile(`[UploadService] Local file not found for deletion: ${filePath}`);
+      }
+      return;
+    }
+
+    // 2. Cloudinary case
+    if (url.includes('cloudinary.com') && isCloudinaryConfigured()) {
+      // Basic public_id extraction for our known folders
+      // Cloudinary URL: https://res.cloudinary.com/cloud_name/image/upload/v12345/folder/id.jpg
+      // We extract the part after /upload/v[number]/ excluding the extension
+      const parts = url.split('/');
+      const fileNameWithExt = parts.pop();
+      const folder = parts.pop();
+      if (fileNameWithExt && folder) {
+        const publicId = `${folder}/${fileNameWithExt.split('.')[0]}`;
+
+        // Determine resource type
+        let resource_type: "image" | "video" | "raw" = "image";
+        if (url.includes('/video/upload/')) resource_type = "video";
+        if (url.includes('/raw/upload/')) resource_type = "raw";
+
+        const result = await cloudinary.uploader.destroy(publicId, { resource_type });
+        logToFile(`[UploadService] Cloudinary asset deleted (${resource_type}): ${publicId}. Result: ${result.result}`);
+      }
+      return;
+    }
+  } catch (err: any) {
+    logToFile(`[UploadService] deleteAsset failed for ${url}: ${err.message}`);
+    // We don't throw here to avoid failing higher-level operations if cleanup fails
+  }
+};

@@ -11,7 +11,8 @@ import {
   uploadTherapyPlanVideo,
   addTherapyPlanImage,
   deleteTherapyPlanImage,
-  uploadTherapyPlanAttachment,
+  addTherapyPlanPdf,
+  deleteTherapyPlanPdf,
   submitTherapyPlanForReview,
   upsertTherapyPlanEvents,
   closeTherapyPlanSignup,
@@ -107,15 +108,20 @@ export const EditTherapyPlan = () => {
     onSuccess: invalidate,
   });
 
-  const attachmentMutation = useMutation({
-    mutationFn: (file: File) => uploadTherapyPlanAttachment(id!, file),
+  const addPdfMutation = useMutation({
+    mutationFn: (file: File) => addTherapyPlanPdf(id!, file),
+    onSuccess: invalidate,
+  });
+
+  const deletePdfMutation = useMutation({
+    mutationFn: (pdfId: string) => deleteTherapyPlanPdf(id!, pdfId),
     onSuccess: invalidate,
   });
 
   const createMutation = useMutation({ mutationFn: createTherapyPlan });
 
   const submitMutation = useMutation({
-    mutationFn: () => submitTherapyPlanForReview(id!),
+    mutationFn: (targetId?: string) => submitTherapyPlanForReview(targetId || id!),
     onSuccess: () => { invalidate(); setSubmitSuccess(true); },
   });
 
@@ -159,7 +165,7 @@ export const EditTherapyPlan = () => {
     posterFile: File | null,
     videoFile: File | null,
     galleryFiles: File[],
-    attachmentFile: File | null
+    pdfFiles: File[]
   ) => {
     setSaveError(null);
     setVideoUploadPercent(0);
@@ -228,16 +234,21 @@ export const EditTherapyPlan = () => {
         });
       }
 
-      if (attachmentFile && planId) {
-        uploadPromises.push(uploadTherapyPlanAttachment(planId, attachmentFile));
+      if (pdfFiles.length > 0 && planId) {
+        pdfFiles.forEach(file => {
+          uploadPromises.push(addTherapyPlanPdf(planId!, file));
+        });
       }
 
       await Promise.all(uploadPromises);
 
+      // If we are in create mode, it means the user clicked "Submit for Review" on Step 4.
+      // We must explicitly trigger the submission to change status from DRAFT to PENDING_REVIEW.
       if (isCreateMode && planId) {
-        navigate(`/therapy-plans/${planId}/edit`);
+        await submitMutation.mutateAsync(planId);
+        navigate('/dashboard/therapist');
       } else {
-        invalidate();
+        navigate('/dashboard/therapist');
       }
     } catch (err: any) {
       setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
@@ -249,7 +260,8 @@ export const EditTherapyPlan = () => {
   const handleSubmitForReview = async () => {
     setSubmitError(null);
     try {
-      await submitMutation.mutateAsync();
+      await submitMutation.mutateAsync(id);
+      navigate('/dashboard/therapist');
     } catch (err: any) {
       setSubmitError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
     }
@@ -380,20 +392,22 @@ export const EditTherapyPlan = () => {
         <TherapyPlanForm
           key={formKey}
           initialValues={isCreateMode ? initialCreateValues : (plan ? planToFormValues(plan) : undefined)}
+          isCreateMode={isCreateMode}
           onSubmit={handleSubmit}
           submitLabel={isCreateMode ? t('therapyPlans.form.saveDraft') : t('therapyPlans.form.saveChanges')}
           isLoading={isSaving}
           error={saveError}
           rejectionReason={plan?.status === 'REJECTED' ? plan.rejectionReason : null}
           existingVideoUrl={plan?.videoUrl}
-          existingAttachmentUrl={plan?.attachmentUrl}
-          existingAttachmentName={plan?.attachmentName}
           galleryImages={plan?.images ?? []}
           onAddGalleryImage={!isCreateMode ? (file) => addImageMutation.mutate(file) : undefined}
           onDeleteGalleryImage={!isCreateMode ? (imageId) => deleteImageMutation.mutate(imageId) : undefined}
           isAddingGalleryImage={addImageMutation.isPending}
           galleryUploadError={galleryError}
-          onAttachmentFileChange={!isCreateMode ? ((file) => { if (file) attachmentMutation.mutate(file); }) : undefined}
+          existingPdfs={plan?.pdfs ?? []}
+          onAddPdf={!isCreateMode ? (file) => addPdfMutation.mutate(file) : undefined}
+          onDeletePdf={!isCreateMode ? (pdfId) => deletePdfMutation.mutate(pdfId) : undefined}
+          isAddingPdf={addPdfMutation.isPending}
           videoUploadPercent={videoUploadPercent}
           secondaryAction={canSubmit ? (
             <>

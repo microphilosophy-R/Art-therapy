@@ -365,6 +365,7 @@ model TherapyPlan {
   participants    TherapyPlanParticipant[] @relation("PlanParticipants")
   events          TherapyPlanEvent[]       @relation("PlanEvents")
   images          TherapyPlanImage[]       @relation("PlanImages")
+  pdfs            TherapyPlanPdf[]         @relation("PlanPdfs")
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -392,6 +393,18 @@ model TherapyPlanImage {
   planId    String
   plan      TherapyPlan @relation("PlanImages", fields: [planId], references: [id], onDelete: Cascade)
   url       String
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@index([planId])
+}
+
+model TherapyPlanPdf {
+  id        String      @id @default(cuid())
+  planId    String
+  plan      TherapyPlan @relation("PlanPdfs", fields: [planId], references: [id], onDelete: Cascade)
+  url       String
+  name      String
   order     Int         @default(0)
   createdAt DateTime    @default(now())
 

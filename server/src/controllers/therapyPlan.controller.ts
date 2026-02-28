@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
-import { uploadPoster, uploadVideo, uploadPlanImage, uploadPdf } from '../services/upload.service';
+import { deleteAsset, uploadPoster, uploadVideo, uploadPlanImage, uploadPdf } from '../services/upload.service';
 import {
   notifyAdminsOnPlanSubmitted,
   notifyAllClientsOnPlanPublished,
@@ -58,6 +58,9 @@ const THERAPIST_PLAN_INCLUDE = {
     orderBy: { order: Prisma.SortOrder.asc },
   },
   images: {
+    orderBy: { order: Prisma.SortOrder.asc },
+  },
+  pdfs: {
     orderBy: { order: Prisma.SortOrder.asc },
   },
 } satisfies Prisma.TherapyPlanInclude;
@@ -457,6 +460,21 @@ export const deletePlan = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Only DRAFT or CANCELLED plans can be deleted' });
   }
 
+  // Cleanup all media before deleting from DB
+  await deleteAsset(plan.posterUrl);
+  await deleteAsset(plan.videoUrl);
+  await deleteAsset(plan.attachmentUrl);
+
+  const images = await prisma.therapyPlanImage.findMany({ where: { planId: id } });
+  for (const img of images) {
+    await deleteAsset(img.url);
+  }
+
+  const pdfs = await prisma.therapyPlanPdf.findMany({ where: { planId: id } });
+  for (const pdf of pdfs) {
+    await deleteAsset(pdf.url);
+  }
+
   await prisma.therapyPlan.delete({ where: { id } });
   res.status(204).send();
 };
@@ -480,11 +498,12 @@ export const uploadPlanPoster = async (req: Request, res: Response) => {
   }
 
   const posterUrl = await uploadPoster(file.buffer, id);
+  const oldUrl = plan.posterUrl;
+  await prisma.therapyPlan.update({ where: { id }, data: { posterUrl, defaultPosterId: null } });
 
-  await prisma.therapyPlan.update({
-    where: { id },
-    data: { posterUrl, defaultPosterId: null },
-  });
+  if (oldUrl && oldUrl !== posterUrl) {
+    await deleteAsset(oldUrl);
+  }
 
   res.json({ posterUrl });
 };
@@ -508,11 +527,12 @@ export const uploadPlanVideo = async (req: Request, res: Response) => {
   }
 
   const videoUrl = await uploadVideo(file.buffer, id);
+  const oldUrl = plan.videoUrl;
+  await prisma.therapyPlan.update({ where: { id }, data: { videoUrl } });
 
-  await prisma.therapyPlan.update({
-    where: { id },
-    data: { videoUrl },
-  });
+  if (oldUrl && oldUrl !== videoUrl) {
+    await deleteAsset(oldUrl);
+  }
 
   res.json({ videoUrl });
 };
@@ -594,6 +614,7 @@ export const deletePlanImage = async (req: Request, res: Response) => {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
+  await deleteAsset(image.url);
   await prisma.therapyPlanImage.delete({ where: { id: imageId } });
 
   res.status(204).send();
@@ -629,33 +650,102 @@ export const reorderPlanImages = async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Order updated' });
 };
 
-// ─── Upload plan PDF attachment ───────────────────────────────────────────────
+// ─── PDF attachment management ────────────────────────────────────────────────
 
-export const uploadPlanPdf = async (req: Request, res: Response) => {
+export const addPlanPdf = async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.user!;
   const file = (req as any).file as Express.Multer.File | undefined;
 
-  if (!file) return res.status(400).json({ message: 'No file uploaded' });
+  logToFile(`[TherapyPlanController] addPlanPdf started for plan: ${id}`);
+
+  if (!file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    const plan = await prisma.therapyPlan.findUnique({
+      where: { id },
+      include: { therapist: true, pdfs: true },
+    });
+    if (!plan) return res.status(404).json({ message: 'Plan not found' });
+    if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    if (plan.pdfs.length >= 6) {
+      return res.status(400).json({ message: 'Maximum of 6 PDF attachments allowed' });
+    }
+
+    const pdfRecord = await prisma.therapyPlanPdf.create({
+      data: { planId: id, url: '', name: file.originalname, order: plan.pdfs.length },
+    });
+
+    let url: string;
+    try {
+      url = await uploadPdf(file.buffer, pdfRecord.id);
+    } catch (err: any) {
+      await prisma.therapyPlanPdf.delete({ where: { id: pdfRecord.id } }).catch(() => { });
+      return res.status(500).json({ message: 'PDF upload failed. Please try again.' });
+    }
+
+    const updated = await prisma.therapyPlanPdf.update({
+      where: { id: pdfRecord.id },
+      data: { url },
+    });
+
+    res.status(201).json({ pdf: updated });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Internal server error during upload.' });
+  }
+};
+
+export const deletePlanPdf = async (req: Request, res: Response) => {
+  const { id, pdfId } = req.params;
+  const user = req.user!;
+
+  const pdf = await prisma.therapyPlanPdf.findUnique({
+    where: { id: pdfId },
+    include: { plan: { include: { therapist: true } } },
+  });
+  if (!pdf || pdf.planId !== id) return res.status(404).json({ message: 'PDF not found' });
+  if (user.role === 'THERAPIST' && pdf.plan.therapist.userId !== user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+
+  await deleteAsset(pdf.url);
+  await prisma.therapyPlanPdf.delete({ where: { id: pdfId } });
+
+  res.status(204).send();
+};
+
+export const reorderPlanPdfs = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user!;
+  const { order } = req.body as { order: string[] };
+
+  if (!Array.isArray(order)) return res.status(400).json({ message: 'order must be an array of PDF IDs' });
 
   const plan = await prisma.therapyPlan.findUnique({
     where: { id },
-    include: { therapist: true },
+    include: { therapist: true, pdfs: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
   if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  const attachmentUrl = await uploadPdf(file.buffer, id);
-  const attachmentName = file.originalname;
+  const planPdfIds = new Set(plan.pdfs.map((p: any) => p.id));
+  if (!order.every((pdfId) => planPdfIds.has(pdfId))) {
+    return res.status(400).json({ message: 'Invalid PDF IDs in order array' });
+  }
 
-  await prisma.therapyPlan.update({
-    where: { id },
-    data: { attachmentUrl, attachmentName },
-  });
+  await prisma.$transaction(
+    order.map((pdfId, idx) =>
+      prisma.therapyPlanPdf.update({ where: { id: pdfId }, data: { order: idx } })
+    )
+  );
 
-  res.json({ attachmentUrl, attachmentName });
+  res.status(200).json({ message: 'Order updated' });
 };
 
 // ─── Upsert plan events ───────────────────────────────────────────────────────

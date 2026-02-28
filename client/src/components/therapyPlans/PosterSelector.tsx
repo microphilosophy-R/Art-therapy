@@ -59,15 +59,14 @@ export const PosterSelector = ({
             type="button"
             disabled={disabled}
             onClick={() => onChange({ type: 'default', id: n })}
-            className={`relative aspect-video overflow-hidden rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-              selectedDefaultId === n
+            className={`relative aspect-video overflow-hidden rounded-lg border-2 transition-all focus:outline-none focus:ring-2 focus:ring-teal-500 ${selectedDefaultId === n
                 ? 'border-teal-500 shadow-md'
                 : 'border-stone-200 hover:border-stone-400'
-            }`}
+              }`}
           >
             <img
               src={`/posters/default-${n}.jpg`}
-              alt={`Default poster ${n}`}
+              alt={t('therapyPlans.form.defaultPosterAlt', { n })}
               className="w-full h-full object-cover"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -77,7 +76,7 @@ export const PosterSelector = ({
               <div className="absolute inset-0 bg-teal-500/20 flex items-center justify-center">
                 <div className="h-4 w-4 rounded-full bg-teal-500 flex items-center justify-center">
                   <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 12 12">
-                    <path d="M10 3L5 9 2 6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M10 3L5 9 2 6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
@@ -100,11 +99,10 @@ export const PosterSelector = ({
           type="button"
           disabled={disabled}
           onClick={() => fileInputRef.current?.click()}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${
-            customUrl
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 ${customUrl
               ? 'border-teal-500 text-teal-700 bg-teal-50'
               : 'border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700'
-          }`}
+            }`}
         >
           <Upload className="h-4 w-4" />
           {customUrl

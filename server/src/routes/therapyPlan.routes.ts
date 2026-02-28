@@ -14,7 +14,9 @@ import {
   addPlanImage,
   deletePlanImage,
   reorderPlanImages,
-  uploadPlanPdf,
+  addPlanPdf,
+  deletePlanPdf,
+  reorderPlanPdfs,
   upsertPlanEvents,
   exportPlanIcs,
   closeSignup,
@@ -152,13 +154,15 @@ therapyPlanRouter.patch('/:id/images/order', authenticate, authorize('THERAPIST'
 
 // ─── PDF attachment (Therapist or Admin) ──────────────────────────────────────
 therapyPlanRouter.post(
-  '/:id/attachment',
+  '/:id/pdfs',
   authenticate,
   authorize('THERAPIST', 'ADMIN'),
-  pdfUpload.single('attachment'),
+  pdfUpload.single('pdf'),
   multerErrorHandler,
-  uploadPlanPdf,
+  addPlanPdf,
 );
+therapyPlanRouter.delete('/:id/pdfs/:pdfId', authenticate, authorize('THERAPIST', 'ADMIN'), deletePlanPdf);
+therapyPlanRouter.patch('/:id/pdfs/order', authenticate, authorize('THERAPIST', 'ADMIN'), reorderPlanPdfs);
 
 // ─── Therapist or Admin (events) ─────────────────────────────────────────────
 therapyPlanRouter.put(

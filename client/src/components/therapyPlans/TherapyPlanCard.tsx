@@ -45,6 +45,10 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
 
   const sloganString = plan.slogan || t(`common.planSlogan.${plan.type}`);
 
+  const linkTo = (isPersonal && perspective === 'public')
+    ? `/therapists/${plan.therapistId}`
+    : `/therapy-plans/${plan.id}`;
+
   return (
     <Card
       className={[
@@ -85,7 +89,7 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
       )}
 
       <Link
-        to={`/therapy-plans/${plan.id}`}
+        to={linkTo}
         className="absolute inset-0 z-20 flex flex-col justify-end p-5 text-white"
       >
         {/* Slogan - Always visible, pushed up on hover */}
@@ -118,9 +122,15 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
               <div className="flex items-start gap-1.5">
                 <Calendar className="h-4 w-4 flex-shrink-0" />
                 <div className="flex flex-col">
-                  <span>{new Date(plan.startTime).toLocaleDateString()}</span>
-                  {isRetreat && plan.endTime && (
-                    <span className="opacity-75">to {new Date(plan.endTime).toLocaleDateString()}</span>
+                  {(isPersonal && perspective === 'public') ? (
+                    <span className="font-semibold">{t('common.bookNow', 'Book now')}</span>
+                  ) : (
+                    <>
+                      <span>{new Date(plan.startTime).toLocaleDateString()}</span>
+                      {isRetreat && plan.endTime && (
+                        <span className="opacity-75">to {new Date(plan.endTime).toLocaleDateString()}</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

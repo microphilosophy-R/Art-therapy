@@ -10,7 +10,12 @@ export const createWechatOrder = async (appointmentId: string): Promise<WechatOr
   return data;
 };
 
-export const getWechatOrder = async (appointmentId: string) => {
-  const { data } = await api.get(`/wechat/order/${appointmentId}`);
+export const createPlanWechatOrder = async (participantId: string): Promise<WechatOrderResponse> => {
+  const { data } = await api.post('/wechat/create-plan-order', { participantId });
+  return data;
+};
+
+export const getWechatOrder = async (id: string) => {
+  const { data } = await api.get(`/wechat/order/${id}`);
   return data;
 };

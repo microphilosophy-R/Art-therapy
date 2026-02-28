@@ -227,3 +227,8 @@ export const signUpForTherapyPlan = async (
 export const cancelTherapyPlanSignup = async (id: string): Promise<void> => {
   await api.delete(`/therapy-plans/${id}/signup`);
 };
+
+export const getTherapyPlanSignupStatus = async (id: string): Promise<any> => {
+  const { data } = await api.get(`/therapy-plans/${id}/signup/status`);
+  return data;
+};

@@ -13,6 +13,9 @@ import {
   signUpForTherapyPlan,
   cancelTherapyPlanSignup,
 } from '../../api/therapyPlans';
+import { AlipayPaymentForm } from '../../components/payments/AlipayPaymentForm';
+import { WechatPaymentForm } from '../../components/payments/WechatPaymentForm';
+import { PaymentMethodSelector, type PaymentMethod } from '../../components/payments/PaymentMethodSelector';
 import { PlanSchedule } from '../../components/therapyPlans/PlanSchedule';
 import { getPosterUrl } from '../../utils/therapyPlanUtils';
 import { ImageSlideshow } from '../../components/ui/ImageSlideshow';
@@ -37,11 +40,14 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
 
 export const TherapyPlanDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('alipay');
+  const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['therapy-plan', id],
@@ -60,10 +66,16 @@ export const TherapyPlanDetail = () => {
   });
 
   const signupMutation = useMutation({
-    mutationFn: () => signUpForTherapyPlan(id!, { paymentProvider: 'ALIPAY' }),
-    onSuccess: () => {
+    mutationFn: () => signUpForTherapyPlan(id!, { paymentProvider: paymentMethod === 'wechat' ? 'WECHAT_PAY' : 'ALIPAY' }),
+    onSuccess: (data) => {
       setSignupError(null);
-      queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
+      if (data.payment) {
+        // If there's a payment needed, don't invalidate yet, show the payment form
+        setSignupResult({ participantId: data.participant.id, payment: data.payment });
+      } else {
+        // Free plan, just refresh
+        queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
+      }
     },
     onError: (err: any) => {
       setSignupError(err?.response?.data?.message ?? t('common.errors.generic', 'An error occurred'));
@@ -111,8 +123,13 @@ export const TherapyPlanDetail = () => {
   const isNonPersonal = plan.type !== 'PERSONAL_CONSULT';
   const myParticipation = plan.participants?.find((p) => p.userId === user?.id);
   const isEnrolled = myParticipation?.status === 'SIGNED_UP';
-  const canSignUp = isClient && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled;
-  const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && isEnrolled;
+  const isPendingPayment = myParticipation?.status === 'PENDING_PAYMENT';
+
+  const now = new Date();
+  const isPastSignupDeadline = (new Date(plan.startTime).getTime() - now.getTime()) < 12 * 60 * 60 * 1000;
+
+  const canSignUp = (!user || isClient) && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled && !isPendingPayment && !isPastSignupDeadline;
+  const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && (isEnrolled || isPendingPayment);
 
   const priceDisplay = plan.price != null
     ? `¥${Number(plan.price).toFixed(2)}`
@@ -161,6 +178,11 @@ export const TherapyPlanDetail = () => {
             {(isOwner || isAdmin) && (
               <Badge variant={statusVariant[plan.status] ?? 'default'}>
                 {t(`common.planStatus.${plan.status}`)}
+              </Badge>
+            )}
+            {plan.status === 'PUBLISHED' && isPastSignupDeadline && (
+              <Badge variant="warning">
+                {t('therapyPlans.detail.closedSignUp', 'Closed Sign Up')}
               </Badge>
             )}
             {isEnrolled && (
@@ -221,43 +243,112 @@ export const TherapyPlanDetail = () => {
 
       {/* Sign-up panel */}
       {(canSignUp || canCancelSignup) && (
-        <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 mb-6 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-teal-800">
-              {isEnrolled
-                ? t('therapyPlans.detail.enrolled')
-                : t('therapyPlans.detail.signUp')}
-            </p>
-            {priceDisplay && (
-              <p className="text-2xl font-bold text-teal-700 mt-0.5">{priceDisplay}</p>
-            )}
-            {signupError && (
-              <p className="text-sm text-rose-600 mt-1">{signupError}</p>
-            )}
+        <div className="bg-teal-50 border border-teal-200 rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <p className="text-sm font-semibold text-teal-800">
+                {isEnrolled
+                  ? t('therapyPlans.detail.enrolled')
+                  : isPendingPayment
+                    ? t('payment.waitingForPayment', 'Waiting for Payment')
+                    : t('therapyPlans.detail.signUp')}
+              </p>
+              {priceDisplay && !isEnrolled && !isPendingPayment && (
+                <p className="text-2xl font-bold text-teal-700 mt-0.5">{priceDisplay}</p>
+              )}
+              {signupError && (
+                <p className="text-sm text-rose-600 mt-1">{signupError}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {canSignUp && !isCheckingOut && !signupResult && (
+                <Button
+                  onClick={() => {
+                    if (!user) {
+                      navigate('/login', { state: { from: `/therapy-plans/${id}` } });
+                      return;
+                    }
+                    if (priceDisplay) {
+                      setIsCheckingOut(true);
+                    } else {
+                      signupMutation.mutate();
+                    }
+                  }}
+                >
+                  {priceDisplay
+                    ? `${t('therapyPlans.detail.signUp')} · ${priceDisplay}`
+                    : t('therapyPlans.detail.signUp')}
+                </Button>
+              )}
+              {(canCancelSignup || isPendingPayment) && (
+                <Button
+                  variant="outline"
+                  loading={cancelSignupMutation.isPending}
+                  disabled={cancelSignupMutation.isPending}
+                  onClick={() => {
+                    setSignupResult(null);
+                    setIsCheckingOut(false);
+                    cancelSignupMutation.mutate();
+                  }}
+                >
+                  {t('common.cancel', 'Cancel')}
+                </Button>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {canSignUp && (
-              <Button
-                loading={signupMutation.isPending}
-                disabled={signupMutation.isPending}
-                onClick={() => signupMutation.mutate()}
-              >
-                {priceDisplay
-                  ? `${t('therapyPlans.detail.signUp')} · ${priceDisplay}`
-                  : t('therapyPlans.detail.signUp')}
-              </Button>
-            )}
-            {canCancelSignup && (
-              <Button
-                variant="outline"
-                loading={cancelSignupMutation.isPending}
-                disabled={cancelSignupMutation.isPending}
-                onClick={() => cancelSignupMutation.mutate()}
-              >
-                {t('common.cancel', 'Cancel')}
-              </Button>
-            )}
-          </div>
+
+          {isCheckingOut && priceDisplay && !signupResult && (
+            <div className="border-t border-teal-200 pt-4 mt-2">
+              <PaymentMethodSelector
+                alipayWechatEnabled={true}
+                selectedMethod={paymentMethod}
+                onSelect={setPaymentMethod}
+                isZh={i18n.language.startsWith('zh')}
+              />
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={() => setIsCheckingOut(false)} disabled={signupMutation.isPending}>
+                  {t('common.cancel', 'Cancel')}
+                </Button>
+                <Button
+                  loading={signupMutation.isPending}
+                  disabled={signupMutation.isPending || !paymentMethod}
+                  onClick={() => signupMutation.mutate()}
+                >
+                  {t('payment.confirmAndPay', 'Confirm Payment')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {(signupResult || isPendingPayment) && (
+            <div className="border-t border-teal-200 pt-4 mt-2">
+              <p className="text-sm font-medium text-stone-700 mb-4 px-1">
+                {t('payment.completeYourPayment', 'Please complete your payment to finalize registration:')}
+              </p>
+              {paymentMethod === 'alipay' && (
+                <AlipayPaymentForm
+                  participantId={signupResult?.participantId || myParticipation?.id}
+                  onSuccess={() => {
+                    setSignupResult(null);
+                    setIsCheckingOut(false);
+                    queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
+                  }}
+                  onError={setSignupError}
+                />
+              )}
+              {paymentMethod === 'wechat' && (
+                <WechatPaymentForm
+                  participantId={signupResult?.participantId || myParticipation?.id}
+                  onSuccess={() => {
+                    setSignupResult(null);
+                    setIsCheckingOut(false);
+                    queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
+                  }}
+                  onError={setSignupError}
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
 

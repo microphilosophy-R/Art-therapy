@@ -33,7 +33,7 @@ export const TherapistDashboard = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>('upcoming');
+  const [tab, setTab] = useState<Tab>('plans');
 
   const { data, isLoading } = useQuery({
     queryKey: ['appointments', 'therapist', tab],
@@ -175,7 +175,7 @@ export const TherapistDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
             <div className="flex gap-1 flex-wrap">
-              {(['pending', 'upcoming', 'past', 'forms', 'calendar', 'plans', 'messages'] as Tab[]).map((tabKey) => (
+              {(['plans', 'pending', 'upcoming', 'past', 'forms', 'calendar', 'messages'] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}

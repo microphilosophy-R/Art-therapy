@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,14 +23,13 @@ import {
 } from '../../api/therapyPlans';
 import { saveTherapyPlanAsTemplate } from '../../api/therapyPlanTemplates';
 import { draftsToApiPayload } from '../../components/therapyPlans/PlanSchedule';
-import { TherapyPlanForm, planToFormValues, type TherapyPlanFormValues } from './TherapyPlanForm';
+import { TherapyPlanForm, planToFormValues, type TherapyPlanFormValues, type StepChangePayload } from './TherapyPlanForm';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
 import { Input } from '../../components/ui/Input';
 import { TemplatePickerModal } from '../../components/therapyPlans/TemplatePickerModal';
 import type { TherapyPlanTemplate, TherapyPlanType } from '../../types';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
@@ -54,19 +53,20 @@ export const EditTherapyPlan = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [videoUploadPercent, setVideoUploadPercent] = useState(0);
+
+  // Auto-save: track the plan ID created during step-by-step save in create mode
+  const [autoSavePlanId, setAutoSavePlanId] = useState<string | null>(null);
 
   // Create mode specific state
   const [formKey, setFormKey] = useState(0);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [initialCreateValues, setInitialCreateValues] = useState<Partial<TherapyPlanFormValues> | undefined>(undefined);
   const [currentType, setCurrentType] = useState<TherapyPlanType>('PERSONAL_CONSULT');
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   // Save-as-template state
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -85,15 +85,6 @@ export const EditTherapyPlan = () => {
     queryClient.invalidateQueries({ queryKey: ['therapy-plan', id] });
     queryClient.invalidateQueries({ queryKey: ['therapy-plans'] });
   };
-
-  const updateMutation = useMutation({
-    mutationFn: ({ payload }: { payload: any }) => updateTherapyPlan(id!, payload),
-    onSuccess: invalidate,
-  });
-
-  const posterMutation = useMutation({
-    mutationFn: (file: File) => uploadTherapyPlanPoster(id!, file),
-  });
 
   const addImageMutation = useMutation({
     mutationFn: (file: File) => addTherapyPlanImage(id!, file),
@@ -116,13 +107,6 @@ export const EditTherapyPlan = () => {
   const deletePdfMutation = useMutation({
     mutationFn: (pdfId: string) => deleteTherapyPlanPdf(id!, pdfId),
     onSuccess: invalidate,
-  });
-
-  const createMutation = useMutation({ mutationFn: createTherapyPlan });
-
-  const submitMutation = useMutation({
-    mutationFn: (targetId?: string) => submitTherapyPlanForReview(targetId || id!),
-    onSuccess: () => { invalidate(); setSubmitSuccess(true); },
   });
 
   const saveTemplateMutation = useMutation({
@@ -160,112 +144,114 @@ export const EditTherapyPlan = () => {
     setFormKey((k) => k + 1);
   };
 
-  const handleSubmit = async (
-    values: TherapyPlanFormValues,
-    posterFile: File | null,
-    videoFile: File | null,
-    galleryFiles: File[],
-    pdfFiles: File[]
-  ) => {
+  // ── Auto-save: called before each step advance ────────────────────────────
+
+  const buildMetadataPayload = (values: TherapyPlanFormValues) => ({
+    type: values.type,
+    title: values.title,
+    slogan: values.slogan || null,
+    introduction: values.introduction,
+    startTime: values.startTime ? new Date(values.startTime).toISOString() : new Date().toISOString(),
+    endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+    location: values.location,
+    maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
+    contactInfo: values.contactInfo,
+    artSalonSubType: (values.artSalonSubType || null) as any,
+    sessionMedium: (values.sessionMedium || null) as any,
+    defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
+    posterUrl: values.poster?.type === 'custom' ? values.poster.url : null,
+    price: values.price ? parseFloat(values.price) : null,
+  });
+
+  const handleBeforeStepChange = async (fromStep: number, payload: StepChangePayload) => {
+    const { values, posterFile, videoFile, galleryFiles, pdfFiles } = payload;
     setSaveError(null);
-    setVideoUploadPercent(0);
-    setIsFormSubmitting(true);
     try {
-      let planId = id;
+    if (fromStep === 1) {
+      // ── Step 1 → 2: save metadata ───────────────────────────────────────
+      const metaPayload = buildMetadataPayload(values);
 
-      if (isCreateMode) {
-        const plan = await createMutation.mutateAsync({
-          type: values.type,
-          title: values.title,
-          slogan: values.slogan || undefined,
-          introduction: values.introduction,
-          startTime: new Date(values.startTime).toISOString(),
-          endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
-          location: values.location,
-          maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
-          contactInfo: values.contactInfo,
-          artSalonSubType: (values.artSalonSubType || null) as any,
-          sessionMedium: (values.sessionMedium || null) as any,
-          defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
-          posterUrl: null,
-          price: values.price ? parseFloat(values.price) : null,
-        });
-        planId = plan.id;
+      if (isCreateMode && !autoSavePlanId) {
+        // First time: create the DRAFT
+        const created = await createTherapyPlan(metaPayload as any);
+        setAutoSavePlanId(created.id);
+        // Upload poster immediately if selected
+        if (posterFile) {
+          await uploadTherapyPlanPoster(created.id, posterFile);
+        }
+      } else if (isCreateMode && autoSavePlanId) {
+        await updateTherapyPlan(autoSavePlanId, metaPayload);
+        if (posterFile) {
+          await uploadTherapyPlanPoster(autoSavePlanId, posterFile);
+        }
       } else {
-        await updateMutation.mutateAsync({
-          payload: {
-            type: values.type,
-            title: values.title,
-            slogan: values.slogan || null,
-            introduction: values.introduction,
-            startTime: new Date(values.startTime).toISOString(),
-            endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
-            location: values.location,
-            maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
-            price: values.price ? parseFloat(values.price) : null,
-            contactInfo: values.contactInfo,
-            artSalonSubType: (values.artSalonSubType || null) as any,
-            sessionMedium: (values.sessionMedium || null) as any,
-            defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
-            posterUrl: values.poster?.type === 'custom' && !posterFile ? values.poster.url : null,
-          },
-        });
+        // Edit mode
+        await updateTherapyPlan(id!, metaPayload);
+        if (posterFile) {
+          await uploadTherapyPlanPoster(id!, posterFile);
+        }
+        invalidate();
+      }
+    } else if (fromStep === 2) {
+      // ── Step 2 → 3: save schedule ────────────────────────────────────────
+      const pid = isCreateMode ? autoSavePlanId! : id!;
+      await updateTherapyPlan(pid, {
+        startTime: values.startTime ? new Date(values.startTime).toISOString() : undefined,
+        endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+      });
+      if (values.events.length > 0) {
+        await upsertTherapyPlanEvents(pid, { events: draftsToApiPayload(values.events) });
+      }
+      if (!isCreateMode) invalidate();
+    } else if (fromStep === 3) {
+      // ── Step 3 → 4: upload media files ───────────────────────────────────
+      const pid = isCreateMode ? autoSavePlanId! : id!;
+      setVideoUploadPercent(0);
+
+      const uploads: Promise<any>[] = [];
+
+      if (videoFile) {
+        uploads.push(uploadTherapyPlanVideo(pid, videoFile, (pct) => setVideoUploadPercent(pct)));
+      }
+      if (galleryFiles.length > 0) {
+        galleryFiles.forEach((file) => uploads.push(addTherapyPlanImage(pid, file)));
+      }
+      if (pdfFiles.length > 0) {
+        pdfFiles.forEach((file) => uploads.push(addTherapyPlanPdf(pid, file)));
       }
 
-      const uploadPromises: Promise<any>[] = [];
-
-      if (posterFile && planId) {
-        uploadPromises.push(uploadTherapyPlanPoster(planId, posterFile));
-      }
-
-      if (videoFile && planId) {
-        uploadPromises.push(uploadTherapyPlanVideo(planId, videoFile, (pct) => setVideoUploadPercent(pct)));
-      }
-
-      if (values.events.length > 0 && planId) {
-        uploadPromises.push(upsertTherapyPlanEvents(planId, {
-          events: draftsToApiPayload(values.events),
-        }));
-      }
-
-      if (galleryFiles.length > 0 && planId) {
-        galleryFiles.forEach(file => {
-          uploadPromises.push(addTherapyPlanImage(planId!, file));
-        });
-      }
-
-      if (pdfFiles.length > 0 && planId) {
-        pdfFiles.forEach(file => {
-          uploadPromises.push(addTherapyPlanPdf(planId!, file));
-        });
-      }
-
-      await Promise.all(uploadPromises);
-
-      // If we are in create mode, it means the user clicked "Submit for Review" on Step 4.
-      // We must explicitly trigger the submission to change status from DRAFT to PENDING_REVIEW.
-      if (isCreateMode && planId) {
-        await submitMutation.mutateAsync(planId);
-        navigate('/dashboard/therapist');
-      } else {
-        navigate('/dashboard/therapist');
-      }
+      await Promise.all(uploads);
+      if (!isCreateMode) invalidate();
+    }
     } catch (err: any) {
-      setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
-    } finally {
-      setIsFormSubmitting(false);
+      setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError', 'Failed to save. Please try again.'));
+      throw err; // re-throw so TherapyPlanForm does not advance the step
     }
   };
+
+  // ── Step 4 actions ────────────────────────────────────────────────────────
 
   const handleSubmitForReview = async () => {
-    setSubmitError(null);
+    setSaveError(null);
+    const pid = isCreateMode ? autoSavePlanId! : id!;
     try {
-      await submitMutation.mutateAsync(id);
+      await submitTherapyPlanForReview(pid);
       navigate('/dashboard/therapist');
     } catch (err: any) {
-      setSubmitError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
+      setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
+      throw err; // re-throw so TherapyPlanForm keeps isSubmittingForReview=true on failure
     }
   };
+
+  const handleSaveDraftAndExit = () => {
+    navigate('/dashboard/therapist');
+  };
+
+  const handleExit = () => {
+    navigate('/dashboard/therapist');
+  };
+
+  // ── Access checks ─────────────────────────────────────────────────────────
 
   if (!isCreateMode && isLoading) return <div className="flex justify-center py-16"><Spinner /></div>;
   if (!isCreateMode && !plan) return <div className="text-center py-16 text-stone-500">{t('therapyPlans.detail.notFound')}</div>;
@@ -278,15 +264,20 @@ export const EditTherapyPlan = () => {
     isAdmin ||
     (isOwner && plan && ['DRAFT', 'REJECTED', 'IN_GALLERY'].includes(plan.status));
 
-  const canSubmit = !isCreateMode && isTherapist && isOwner && plan && ['DRAFT', 'REJECTED'].includes(plan.status) && !submitSuccess;
+  // Submit for review: create mode (after first auto-save creates the plan) or edit DRAFT/REJECTED
+  const canSubmitForReview =
+    (isCreateMode) ||
+    (!isCreateMode && isTherapist && isOwner && plan && ['DRAFT', 'REJECTED'].includes(plan.status));
 
   const isNonPersonal = isCreateMode ? currentType !== 'PERSONAL_CONSULT' : plan?.type !== 'PERSONAL_CONSULT';
   const activeStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
 
-  const isSaving = isFormSubmitting;
   const isLifecycleBusy =
     closeSignupMutation.isPending || startMutation.isPending ||
     finishMutation.isPending || toGalleryMutation.isPending || cancelPlanMutation.isPending;
+
+  // The planId to show in the form (edit mode has `id`; create mode gets it after first auto-save)
+  const effectivePlanId = isCreateMode ? (autoSavePlanId ?? undefined) : id;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -381,21 +372,15 @@ export const EditTherapyPlan = () => {
         </div>
       )}
 
-      {/* Submit for review success */}
-      {submitSuccess && (
-        <div className="mb-6 bg-teal-50 border border-teal-200 rounded-lg p-4">
-          <p className="text-sm text-teal-700 font-medium">{t('therapyPlans.detail.pendingBanner')}</p>
-        </div>
-      )}
-
       {canEdit ? (
         <TherapyPlanForm
           key={formKey}
           initialValues={isCreateMode ? initialCreateValues : (plan ? planToFormValues(plan) : undefined)}
-          isCreateMode={isCreateMode}
-          onSubmit={handleSubmit}
-          submitLabel={isCreateMode ? t('therapyPlans.form.saveDraft') : t('therapyPlans.form.saveChanges')}
-          isLoading={isSaving}
+          planId={effectivePlanId}
+          onBeforeStepChange={handleBeforeStepChange}
+          onSubmitForReview={canSubmitForReview ? handleSubmitForReview : undefined}
+          onSaveDraftAndExit={handleSaveDraftAndExit}
+          onExit={handleExit}
           error={saveError}
           rejectionReason={plan?.status === 'REJECTED' ? plan.rejectionReason : null}
           existingVideoUrl={plan?.videoUrl}
@@ -409,22 +394,6 @@ export const EditTherapyPlan = () => {
           onDeletePdf={!isCreateMode ? (pdfId) => deletePdfMutation.mutate(pdfId) : undefined}
           isAddingPdf={addPdfMutation.isPending}
           videoUploadPercent={videoUploadPercent}
-          secondaryAction={canSubmit ? (
-            <>
-              {submitError && (
-                <span className="text-sm text-rose-600">{submitError}</span>
-              )}
-              <Button
-                variant="outline"
-                type="button"
-                onClick={handleSubmitForReview}
-                loading={submitMutation.isPending}
-                disabled={submitMutation.isPending}
-              >
-                {t('therapyPlans.detail.submitForReview')}
-              </Button>
-            </>
-          ) : undefined}
         />
       ) : plan ? (
         <>

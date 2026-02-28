@@ -2,20 +2,26 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
-import { createWechatOrder } from '../../api/wechat';
+import { createWechatOrder, createPlanWechatOrder } from '../../api/wechat';
 import { getAppointment } from '../../api/appointments';
+import { getTherapyPlanSignupStatus } from '../../api/therapyPlans';
 
 interface WechatPaymentFormProps {
-  appointmentId: string;
+  appointmentId?: string;
+  participantId?: string;
   onSuccess: () => void;
   onError?: (msg: string) => void;
 }
 
-export const WechatPaymentForm = ({ appointmentId, onSuccess, onError }: WechatPaymentFormProps) => {
+export const WechatPaymentForm = ({ appointmentId, participantId, onSuccess, onError }: WechatPaymentFormProps) => {
   const { t } = useTranslation();
 
   const mutation = useMutation({
-    mutationFn: () => createWechatOrder(appointmentId),
+    mutationFn: () => {
+      if (participantId) return createPlanWechatOrder(participantId);
+      if (appointmentId) return createWechatOrder(appointmentId);
+      throw new Error('Missing ID');
+    },
     onError: (err: any) => {
       onError?.(err.message ?? t('common.errors.tryAgain'));
     },
@@ -24,22 +30,35 @@ export const WechatPaymentForm = ({ appointmentId, onSuccess, onError }: WechatP
   // Auto-trigger order creation on mount
   useEffect(() => {
     mutation.mutate();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll appointment status every 3 seconds until CONFIRMED
-  const { data: appointment } = useQuery({
-    queryKey: ['appointment', appointmentId, 'wechat-poll'],
-    queryFn: () => getAppointment(appointmentId),
+  // Poll status every 3 seconds
+  const { data: pollData } = useQuery({
+    queryKey: ['payment-poll', appointmentId ?? participantId],
+    queryFn: async () => {
+      if (participantId) return getTherapyPlanSignupStatus(participantId);
+      return getAppointment(appointmentId!);
+    },
     enabled: !!mutation.data?.codeUrl,
-    refetchInterval: (query) => (query.state.data?.status === 'CONFIRMED' ? false : 3000),
+    refetchInterval: (query) => {
+      const data = query.state.data as any;
+      if (participantId) {
+        return data?.payment?.status === 'SUCCEEDED' ? false : 3000;
+      }
+      return data?.status === 'CONFIRMED' ? false : 3000;
+    },
   });
 
   useEffect(() => {
-    if (appointment?.status === 'CONFIRMED') {
+    if (participantId) {
+      if ((pollData as any)?.payment?.status === 'SUCCEEDED') {
+        onSuccess();
+      }
+    } else if ((pollData as any)?.status === 'CONFIRMED') {
       onSuccess();
     }
-  }, [appointment?.status, onSuccess]);
+  }, [pollData, participantId, onSuccess]);
 
   if (mutation.isPending) {
     return (

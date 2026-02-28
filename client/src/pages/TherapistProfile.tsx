@@ -15,17 +15,29 @@ import { PageLoader } from '../components/ui/Spinner';
 import { formatPrice, getSpecialtyColor } from '../utils/formatters';
 import { useAuthStore } from '../store/authStore';
 import { PriceDisplay } from '../components/ui/PriceDisplay';
+import { listTherapyPlans } from '../api/therapyPlans';
+import type { TherapyPlan } from '../types';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 
 export const TherapistProfile = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'about' | 'reviews'>('about');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'about' | 'reviews'>('schedule');
 
   const { data: therapist, isLoading } = useQuery({
     queryKey: ['therapist', id],
     queryFn: () => getTherapist(id!),
+    enabled: !!id,
+  });
+
+  const { data: therapistPlansResponse, isLoading: plansLoading } = useQuery({
+    queryKey: ['therapist-plans', id],
+    queryFn: () => listTherapyPlans({ therapistId: id, status: 'PUBLISHED' }),
     enabled: !!id,
   });
 
@@ -55,10 +67,31 @@ export const TherapistProfile = () => {
     }
   };
 
-  const tabLabels: Record<'about' | 'reviews', string> = {
+  const tabLabels: Record<'schedule' | 'about' | 'reviews', string> = {
+    schedule: t('therapists.profile.scheduleTab', 'Schedule'),
     about: t('therapists.profile.about'),
     reviews: t('therapists.profile.reviewsTab'),
   };
+
+  const calendarEvents = (therapistPlansResponse?.data ?? []).flatMap((plan: TherapyPlan) => {
+    return (plan.events || []).map((evt) => {
+      let displayTitle = plan.title;
+      const isSensitive = plan.type === 'PERSONAL_CONSULT' || plan.type === 'GROUP_CONSULT';
+
+      if (isSensitive) {
+        displayTitle = t(`common.planType.${plan.type}`);
+      }
+
+      return {
+        id: evt.id,
+        title: displayTitle,
+        start: evt.startTime,
+        end: evt.endTime || undefined,
+        backgroundColor: isSensitive ? '#14b8a6' : '#8b5cf6', // Different colors for visual distinction
+        borderColor: isSensitive ? '#14b8a6' : '#8b5cf6',
+      };
+    });
+  });
 
   return (
     <div className="bg-stone-50 min-h-screen">
@@ -141,21 +174,53 @@ export const TherapistProfile = () => {
             {/* Tabs */}
             <div className="border-b border-stone-200">
               <nav className="flex gap-6">
-                {(['about', 'reviews'] as const).map((tab) => (
+                {(['schedule', 'about', 'reviews'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`pb-3 text-sm font-medium capitalize transition-colors ${
-                      activeTab === tab
-                        ? 'border-b-2 border-teal-600 text-teal-600'
-                        : 'text-stone-500 hover:text-stone-700'
-                    }`}
+                    className={`pb-3 text-sm font-medium capitalize transition-colors ${activeTab === tab
+                      ? 'border-b-2 border-teal-600 text-teal-600'
+                      : 'text-stone-500 hover:text-stone-700'
+                      }`}
                   >
                     {tabLabels[tab]}
                   </button>
                 ))}
               </nav>
             </div>
+
+            {activeTab === 'schedule' && (
+              <Card>
+                <CardContent className="p-6">
+                  {plansLoading ? (
+                    <div className="flex justify-center py-10"><PageLoader /></div>
+                  ) : (
+                    <div className="calendar-container">
+                      <FullCalendar
+                        plugins={[timeGridPlugin, dayGridPlugin]}
+                        initialView="timeGridWeek"
+                        locale={i18n.language.startsWith('zh') ? zhCnLocale : undefined}
+                        headerToolbar={{
+                          left: 'prev,next today',
+                          center: 'title',
+                          right: 'dayGridMonth,timeGridWeek',
+                        }}
+                        events={calendarEvents}
+                        height="auto"
+                        nowIndicator
+                        slotMinTime="07:00:00"
+                        slotMaxTime="21:00:00"
+                        eventContent={(arg) => (
+                          <div className="overflow-hidden px-1 text-xs leading-tight">
+                            <div className="font-semibold truncate">{arg.event.title}</div>
+                          </div>
+                        )}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {activeTab === 'about' && (
               <Card>

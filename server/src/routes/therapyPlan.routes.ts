@@ -26,6 +26,7 @@ import {
   cancelPlan,
   signUpForPlan,
   cancelSignup,
+  getSignupStatus,
 } from '../controllers/therapyPlan.controller';
 import { saveAsTemplate } from '../controllers/therapyPlanTemplate.controller';
 import { saveAsTemplateSchema } from '../schemas/therapyPlanTemplate.schemas';
@@ -206,6 +207,7 @@ therapyPlanRouter.post(
 );
 
 // ─── Sign-up (Client) ─────────────────────────────────────────────────────────
+therapyPlanRouter.get('/:id/signup/status', authenticate, authorize('CLIENT'), getSignupStatus);
 therapyPlanRouter.post(
   '/:id/signup',
   authenticate,

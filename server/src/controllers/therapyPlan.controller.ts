@@ -284,7 +284,7 @@ const checkPlanConflicts = async (
     prisma.appointment.findMany({
       where: {
         therapistId,
-        status: { in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'] as any },
+        status: { in: ['CONFIRMED', 'IN_PROGRESS'] as any },
         ...apptOverlapsClause,
       },
       select: { id: true, startTime: true, endTime: true },
@@ -1063,6 +1063,13 @@ export const signUpForPlan = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Personal consultations are booked via appointments' });
   }
 
+  // Check 12 hours deadline
+  const now = new Date();
+  const deadline = new Date(plan.startTime).getTime() - 12 * 60 * 60 * 1000;
+  if (now.getTime() > deadline) {
+    return res.status(400).json({ message: 'Sign-ups are closed 12 hours before the plan starts' });
+  }
+
   // Check capacity
   if (plan.maxParticipants !== null && (plan._count as any).participants >= plan.maxParticipants) {
     return res.status(400).json({ message: 'This plan is fully booked' });
@@ -1076,14 +1083,19 @@ export const signUpForPlan = async (req: Request, res: Response) => {
     return res.status(409).json({ message: 'Already signed up for this plan' });
   }
 
+  // Determine initial status: if paid, PENDING_PAYMENT. If free, SIGNED_UP.
+  const initialStatus = (plan.price !== null && Number(plan.price) > 0)
+    ? 'PENDING_PAYMENT'
+    : 'SIGNED_UP';
+
   // Create or re-activate participant
   const participant = existing
     ? await prisma.therapyPlanParticipant.update({
       where: { id: existing.id },
-      data: { status: 'SIGNED_UP' as any, enrolledAt: new Date() },
+      data: { status: initialStatus as any, enrolledAt: new Date() },
     })
     : await prisma.therapyPlanParticipant.create({
-      data: { userId: user.id, planId: id },
+      data: { userId: user.id, planId: id, status: initialStatus as any },
     });
 
   // Create pending payment record if plan has a price
@@ -1108,6 +1120,19 @@ export const signUpForPlan = async (req: Request, res: Response) => {
   await notifyTherapistOnSignup(plan.therapist.userId, id, plan.title, clientName);
 
   res.status(201).json({ participant, payment });
+};
+
+export const getSignupStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user!;
+
+  const participant = await prisma.therapyPlanParticipant.findUnique({
+    where: { userId_planId: { userId: user.id, planId: id } },
+    include: { payment: true },
+  });
+
+  if (!participant) return res.status(404).json({ message: 'Sign-up not found' });
+  res.json({ participant, payment: participant.payment });
 };
 
 // ─── Cancel sign-up (client) ──────────────────────────────────────────────────

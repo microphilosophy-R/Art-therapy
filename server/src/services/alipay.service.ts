@@ -32,30 +32,14 @@ export const createAlipayOrder = async (appointmentId: string, userId: string) =
   const totalCents = Math.round(Number(appointment.therapist.sessionPrice) * 100);
   const platformFee = Math.round(totalCents * PLATFORM_FEE_PERCENT / 100);
   const therapistPayout = totalCents - platformFee;
-  // Alipay expects yuan with 2 decimal places
   const totalYuan = (totalCents / 100).toFixed(2);
 
   const outTradeNo = generateOrderId();
-  const returnUrl = process.env.ALIPAY_RETURN_URL ?? 'http://localhost:5173/booking/confirmation';
-  const notifyUrl = process.env.ALIPAY_NOTIFY_URL ?? 'http://localhost:3001/webhooks/alipay';
+  const returnUrl = process.env.ALIPAY_RETURN_URL || 'http://localhost:5173/booking/confirmation';
+  const notifyUrl = process.env.ALIPAY_NOTIFY_URL || 'http://localhost:3001/webhooks/alipay';
 
   const subject = `Art therapy session with ${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`;
 
-  const formHtml = alipay!.pageExec('alipay.trade.page.pay', {
-    returnUrl,
-    notifyUrl,
-    bizContent: {
-      out_trade_no: outTradeNo,
-      total_amount: totalYuan,
-      subject,
-      product_code: 'FAST_INSTANT_TRADE_PAY',
-    },
-  });
-
-  // pageExec returns an HTML form string; extract the action URL for API convenience.
-  // For web redirect flow, we return the full form so frontend can submit it,
-  // or construct the URL from the form action for a GET redirect.
-  // alipay-sdk's exec() with method:'GET' returns a direct URL:
   const payUrl = alipay!.exec('alipay.trade.page.pay', {
     returnUrl,
     notifyUrl,
@@ -82,6 +66,46 @@ export const createAlipayOrder = async (appointmentId: string, userId: string) =
   return { payUrl, paymentId: payment.id };
 };
 
+export const createPlanAlipayOrder = async (participantId: string, userId: string) => {
+  const participant = await prisma.therapyPlanParticipant.findUnique({
+    where: { id: participantId },
+    include: {
+      plan: { include: { therapist: { include: { user: true } } } },
+      payment: true,
+    },
+  });
+
+  if (!participant) throw new Error('Participant record not found');
+  if (participant.userId !== userId) throw new Error('Forbidden');
+  if (!participant.payment) throw new Error('Payment record not found for this participant');
+  if (participant.payment.status === 'SUCCEEDED') throw new Error('Payment already completed');
+
+  const totalYuan = (participant.payment.amount / 100).toFixed(2);
+  const outTradeNo = generateOrderId();
+  const returnUrl = process.env.ALIPAY_RETURN_URL || 'http://localhost:5173/dashboard/client';
+  const notifyUrl = process.env.ALIPAY_NOTIFY_URL || 'http://localhost:3001/webhooks/alipay';
+
+  const subject = `Therapy Plan: ${participant.plan.title}`;
+
+  const payUrl = alipay!.exec('alipay.trade.page.pay', {
+    returnUrl,
+    notifyUrl,
+    bizContent: {
+      out_trade_no: outTradeNo,
+      total_amount: totalYuan,
+      subject,
+      product_code: 'FAST_INSTANT_TRADE_PAY',
+    },
+  });
+
+  await prisma.planPayment.update({
+    where: { id: participant.payment.id },
+    data: { externalOrderId: outTradeNo },
+  });
+
+  return { payUrl, paymentId: participant.payment.id };
+};
+
 export const handleAlipayNotification = async (params: Record<string, string>) => {
   // Verify Alipay signature
   const isValid = alipay!.checkNotifySign(params);
@@ -106,31 +130,54 @@ export const handleAlipayNotification = async (params: Record<string, string>) =
     },
   });
 
-  if (!payment) throw new Error('Payment record not found');
-  if (payment.status === 'SUCCEEDED') return 'success'; // idempotent
+  if (payment) {
+    if (payment.status === 'SUCCEEDED') return 'success';
+    await prisma.$transaction([
+      prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: 'SUCCEEDED', externalTradeNo: trade_no },
+      }),
+      prisma.appointment.update({
+        where: { id: payment.appointmentId },
+        data: { status: 'CONFIRMED' },
+      }),
+    ]);
 
-  await prisma.$transaction([
-    prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: 'SUCCEEDED', externalTradeNo: trade_no },
-    }),
-    prisma.appointment.update({
-      where: { id: payment.appointmentId },
-      data: { status: 'CONFIRMED' },
-    }),
-  ]);
+    const { appointment } = payment;
+    await sendAppointmentConfirmation({
+      clientName: `${appointment.client.firstName} ${appointment.client.lastName}`,
+      clientEmail: appointment.client.email,
+      therapistName: `${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`,
+      therapistEmail: appointment.therapist.user.email,
+      date: appointment.startTime.toDateString(),
+      time: appointment.startTime.toTimeString().slice(0, 5),
+      medium: appointment.medium,
+      amount: `¥${(payment.amount / 100).toFixed(2)}`,
+    }).catch(() => { });
+    return 'success';
+  }
 
-  const { appointment } = payment;
-  await sendAppointmentConfirmation({
-    clientName: `${appointment.client.firstName} ${appointment.client.lastName}`,
-    clientEmail: appointment.client.email,
-    therapistName: `${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`,
-    therapistEmail: appointment.therapist.user.email,
-    date: appointment.startTime.toDateString(),
-    time: appointment.startTime.toTimeString().slice(0, 5),
-    medium: appointment.medium,
-    amount: `¥${(payment.amount / 100).toFixed(2)}`,
-  }).catch(() => {}); // non-blocking
+  // If not found in appointment payments, check therapy plan payments
+  const planPayment = await prisma.planPayment.findFirst({
+    where: { externalOrderId: out_trade_no },
+  });
+
+  if (planPayment) {
+    if (planPayment.status === 'SUCCEEDED') return 'success';
+    await prisma.$transaction([
+      prisma.planPayment.update({
+        where: { id: planPayment.id },
+        data: { status: 'SUCCEEDED', externalTradeNo: trade_no },
+      }),
+      prisma.therapyPlanParticipant.update({
+        where: { id: planPayment.participantId },
+        data: { status: 'SIGNED_UP' as any },
+      }),
+    ]);
+    return 'success';
+  }
+
+  throw new Error('Payment record not found');
 
   return 'success';
 };

@@ -144,7 +144,7 @@ export type MessageTrigger =
   | 'PLAN_REJECTED'
   | 'MANUAL';
 
-export type ParticipantStatus = 'SIGNED_UP' | 'CANCELLED';
+export type ParticipantStatus = 'PENDING_PAYMENT' | 'SIGNED_UP' | 'CANCELLED';
 
 export interface TherapyPlanParticipant {
   id: string;
@@ -153,6 +153,7 @@ export interface TherapyPlanParticipant {
   planId: string;
   status: ParticipantStatus;
   enrolledAt: string;
+  payment?: any; // Add generic payment for now
 }
 
 export interface TherapyPlanEvent {
@@ -232,6 +233,7 @@ export interface Message {
 }
 
 export interface TherapyPlanFilters {
+  therapistId?: string;
   type?: TherapyPlanType | '';
   status?: TherapyPlanStatus | '';
   timeFilter?: 'upcoming' | 'past';

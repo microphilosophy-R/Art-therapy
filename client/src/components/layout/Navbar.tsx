@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut, LayoutDashboard, Heart, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
 import { getUnreadCount } from '../../api/messages';
@@ -17,10 +17,14 @@ export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     try { await logout(); } catch { /* ignore */ }
     clearAuth();
+    // Clear all cached query data so the next user (or re-login) starts fresh
+    // and never sees another user's cached appointments / plans.
+    queryClient.clear();
     navigate('/login');
   };
 

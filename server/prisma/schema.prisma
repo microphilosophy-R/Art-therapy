@@ -86,6 +86,7 @@ enum TherapyPlanStatus {
 }
 
 enum ParticipantStatus {
+  PENDING_PAYMENT
   SIGNED_UP
   CANCELLED
 }

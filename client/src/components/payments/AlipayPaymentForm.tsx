@@ -1,21 +1,25 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
-import { createAlipayOrder } from '../../api/alipay';
+import { createAlipayOrder, createPlanAlipayOrder } from '../../api/alipay';
 
 interface AlipayPaymentFormProps {
-  appointmentId: string;
+  appointmentId?: string;
+  participantId?: string;
   onSuccess: () => void;
   onError?: (msg: string) => void;
 }
 
-export const AlipayPaymentForm = ({ appointmentId, onSuccess, onError }: AlipayPaymentFormProps) => {
+export const AlipayPaymentForm = ({ appointmentId, participantId, onSuccess, onError }: AlipayPaymentFormProps) => {
   const { t } = useTranslation();
 
   const mutation = useMutation({
-    mutationFn: () => createAlipayOrder(appointmentId),
+    mutationFn: () => {
+      if (participantId) return createPlanAlipayOrder(participantId);
+      if (appointmentId) return createAlipayOrder(appointmentId);
+      throw new Error('Missing ID');
+    },
     onSuccess: ({ payUrl }) => {
-      // Redirect browser to Alipay payment page
       window.location.href = payUrl;
     },
     onError: (err: any) => {
@@ -26,7 +30,7 @@ export const AlipayPaymentForm = ({ appointmentId, onSuccess, onError }: AlipayP
   // Auto-trigger order creation on mount
   useEffect(() => {
     mutation.mutate();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (mutation.isError) {

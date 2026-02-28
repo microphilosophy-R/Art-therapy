@@ -993,14 +993,19 @@ When a therapist submits a therapy plan for review, the server performs two over
 
 If any conflicts are found, the submission is rejected with a `409 Conflict` response listing the conflicting resources. The therapist must adjust the plan's dates before resubmitting.
 
-### 5. Payment Provider Selection
+### 5. Payment and Revenue Model
+
+#### Revenue Distribution
+As scheduled, therapists receive their share of the income, and the admin receives the rest (platform fee). However, initially, all income is transferred centrally to the admin. In the future, an option will be provided for the admin to decide between a "centralized" mode and a "split" mode. Currently, only the centralized mode is active, meaning the Stripe integration is not available yet for direct payouts.
+
+#### Payment Provider Selection
 
 The payment method shown to clients on the booking page is influenced by the active UI language:
 
 - When the UI language is Chinese (`zh`), Alipay is pre-selected by default.
-- When the UI language is English (`en`), Stripe card payment is shown first.
+- When the UI language is English (`en`), Stripe card payment is shown first, but will be greyed out if disabled.
 
-Clients can always switch to any available payment method. Stripe card payment is gated by `VITE_PAYMENTS_ENABLED`. Alipay and WeChat Pay are gated by `VITE_ALIPAY_WECHAT_ENABLED`.
+Clients can always switch to any available payment method. Stripe card payment is gated by `VITE_PAYMENTS_ENABLED` (which is currently turned off as we only accept Alipay and WeChat Pay). Alipay and WeChat Pay are gated by `VITE_ALIPAY_WECHAT_ENABLED`.
 
 ### 6. Exchange Rate Display
 

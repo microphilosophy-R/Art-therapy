@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, LogOut } from 'lucide-react';
 import type { TherapyPlan, TherapyPlanImage, TherapyPlanType, ArtSalonSubType, SessionMedium } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { PosterValue } from '../../components/therapyPlans/PosterSelector';
@@ -72,14 +72,35 @@ export const planToFormValues = (plan: TherapyPlan): TherapyPlanFormValues => ({
   events: plan.events ? eventsToFormDrafts(plan.events) : [],
 });
 
+export interface StepChangePayload {
+  values: TherapyPlanFormValues;
+  posterFile: File | null;
+  videoFile: File | null;
+  galleryFiles: File[];
+  pdfFiles: File[];
+}
+
+type Step = 1 | 2 | 3 | 4;
+
 interface TherapyPlanFormProps {
   initialValues?: Partial<TherapyPlanFormValues>;
-  onSubmit: (values: TherapyPlanFormValues, posterFile: File | null, videoFile: File | null, galleryFiles: File[], pdfFiles: File[]) => Promise<void>;
-  submitLabel: string;
-  isLoading?: boolean;
+  /** ID of the already-created/auto-saved plan (undefined in early create mode) */
+  planId?: string;
+  /**
+   * Called before each step advance. Parent handles saving (create/update + file uploads).
+   * If it throws, the step will NOT advance.
+   */
+  onBeforeStepChange?: (fromStep: number, payload: StepChangePayload) => Promise<void>;
+  /** Called when therapist clicks "Submit for Review" on step 4. */
+  onSubmitForReview?: () => Promise<void>;
+  /** Called when therapist clicks "Save Draft & Exit" on step 4. */
+  onSaveDraftAndExit?: () => void;
+  /** Called when therapist clicks the Exit button on any step. */
+  onExit: () => void;
+  /** External loading flag (e.g. parent-level operations). */
+  isSaving?: boolean;
   error?: string | null;
   rejectionReason?: string | null;
-  secondaryAction?: React.ReactNode;
   videoUploadPercent?: number;
 
   existingVideoUrl?: string | null;
@@ -93,17 +114,18 @@ interface TherapyPlanFormProps {
   onAddPdf?: (file: File) => void;
   onDeletePdf?: (id: string) => void;
   isAddingPdf?: boolean;
-  isCreateMode?: boolean;
 }
 
 export const TherapyPlanForm = ({
   initialValues,
-  onSubmit,
-  submitLabel,
-  isLoading,
+  planId,
+  onBeforeStepChange,
+  onSubmitForReview,
+  onSaveDraftAndExit,
+  onExit,
+  isSaving,
   error,
   rejectionReason,
-  secondaryAction,
   existingVideoUrl,
   galleryImages = [],
   onAddGalleryImage,
@@ -115,13 +137,18 @@ export const TherapyPlanForm = ({
   onDeletePdf,
   isAddingPdf,
   videoUploadPercent = 0,
-  isCreateMode = false,
 }: TherapyPlanFormProps) => {
   const { t } = useTranslation();
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [currentStep, setCurrentStep] = useState<Step>(1);
   const [values, setValues] = useState<TherapyPlanFormValues>({ ...defaultValues, ...initialValues });
   const [errors, setErrors] = useState<Partial<Record<keyof TherapyPlanFormValues, string>>>({});
+
+  // Track whether the user has made changes since the last auto-save
+  const [hasStepChanges, setHasStepChanges] = useState(false);
+  // Internal loading states
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isSubmittingForReview, setIsSubmittingForReview] = useState(false);
 
   // File states
   const [posterFile, setPosterFile] = useState<File | null>(null);
@@ -131,6 +158,13 @@ export const TherapyPlanForm = ({
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [stagedGalleryFiles, setStagedGalleryFiles] = useState<File[]>([]);
   const [galleryError, setGalleryError] = useState<string | null>(null);
+
+  // Mark dirty when any file changes (skip the initial mount)
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    setHasStepChanges(true);
+  }, [posterFile, videoFile, stagedGalleryFiles, pdfFiles]);
 
   // Time handling
   const [durationMinutes, setDurationMinutes] = useState<string>(() => {
@@ -143,11 +177,12 @@ export const TherapyPlanForm = ({
     return '';
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // ── Value helpers ─────────────────────────────────────────────────────────
 
   const set = <K extends keyof TherapyPlanFormValues>(key: K, val: TherapyPlanFormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: val }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+    setHasStepChanges(true);
   };
 
   const toLocalInput = (d: Date): string => {
@@ -193,6 +228,8 @@ export const TherapyPlanForm = ({
     }
   };
 
+  // ── Validation ────────────────────────────────────────────────────────────
+
   const validateStep1 = (): boolean => {
     const errs: Partial<Record<keyof TherapyPlanFormValues, string>> = {};
     if (!values.title.trim()) errs.title = t('common.errors.required');
@@ -216,6 +253,12 @@ export const TherapyPlanForm = ({
       else if (values.type === 'GROUP_CONSULT' && n > 12) errs.maxParticipants = t('therapyPlans.form.maxParticipantsGroupError');
       else if (n > 100) errs.maxParticipants = t('therapyPlans.form.maxParticipantsError');
     }
+
+    if (values.price) {
+      const p = parseFloat(values.price);
+      if (isNaN(p) || p < 0) errs.price = t('therapyPlans.form.priceInvalid', 'Invalid price format');
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -230,29 +273,66 @@ export const TherapyPlanForm = ({
     return Object.keys(errs).length === 0;
   };
 
-  const handleNext = () => {
-    if (currentStep === 1) {
-      if (validateStep1()) setCurrentStep(2);
-    } else if (currentStep === 2) {
-      if (validateStep2()) setCurrentStep(3);
-    } else if (currentStep === 3) {
-      setCurrentStep(4);
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  const handleNext = async () => {
+    if (currentStep === 1 && !validateStep1()) return;
+    if (currentStep === 2 && !validateStep2()) return;
+
+    if (onBeforeStepChange) {
+      setIsAutoSaving(true);
+      try {
+        await onBeforeStepChange(currentStep, {
+          values,
+          posterFile,
+          videoFile,
+          galleryFiles: stagedGalleryFiles,
+          pdfFiles,
+        });
+        // After step 3 → 4 files are uploaded, clear staged states
+        if (currentStep === 3) {
+          setVideoFile(null);
+          setStagedGalleryFiles([]);
+          setPdfFiles([]);
+        }
+      } catch {
+        setIsAutoSaving(false);
+        return; // Don't advance if auto-save failed
+      }
+      setIsAutoSaving(false);
     }
+
+    setCurrentStep((prev) => (prev + 1) as Step);
+    setHasStepChanges(false);
   };
 
   const handleBack = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
+    if (currentStep > 1) setCurrentStep((prev) => (prev - 1) as Step);
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep1() || !validateStep2()) return;
-    setIsSubmitting(true);
+  const handleExit = () => {
+    if (hasStepChanges) {
+      if (!window.confirm(
+        t(
+          'therapyPlans.form.exitConfirm',
+          'Changes on this step have not been auto-saved yet (auto-save runs when you click "Next Step"). Exit anyway? Changes on this step will be discarded.',
+        ),
+      )) return;
+    }
+    onExit();
+  };
+
+  const handleSubmitForReview = async () => {
+    if (!onSubmitForReview) return;
+    setIsSubmittingForReview(true);
     try {
-      await onSubmit(values, posterFile, videoFile, stagedGalleryFiles, pdfFiles);
+      await onSubmitForReview();
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingForReview(false);
     }
   };
+
+  // ── Stepper steps ─────────────────────────────────────────────────────────
 
   const steps = [
     { id: 1, name: t('therapyPlans.form.steps.metadata') },
@@ -260,6 +340,8 @@ export const TherapyPlanForm = ({
     { id: 3, name: t('therapyPlans.form.steps.imports') },
     { id: 4, name: t('therapyPlans.form.steps.preview') },
   ];
+
+  const isNextBusy = isAutoSaving || !!isSaving;
 
   return (
     <div className="space-y-6">
@@ -287,34 +369,18 @@ export const TherapyPlanForm = ({
             <li key={step.name} className="md:flex-1">
               <button
                 onClick={() => {
-                  if (step.id < currentStep) setCurrentStep(step.id);
-                  else if (step.id === 2 && currentStep === 1) handleNext();
-                  else if (step.id === 3 && currentStep === 2) handleNext();
-                  else if (step.id === 4 && currentStep === 3) handleNext();
-                  else if (step.id === 3 && currentStep === 1) {
-                    if (validateStep1()) {
-                      setCurrentStep(2);
-                      setTimeout(() => {
-                        setCurrentStep(3);
-                      }, 0);
-                    }
-                  } else if (step.id === 4 && currentStep === 1) {
-                    if (validateStep1()) {
-                      setCurrentStep(2);
-                      setTimeout(() => {
-                        setCurrentStep(4);
-                      }, 0);
-                    }
-                  }
+                  // Only allow navigating backwards via stepper; forward requires "Next"
+                  if (step.id < currentStep) setCurrentStep(step.id as Step);
                 }}
+                disabled={step.id >= currentStep}
                 className={`group flex w-full flex-col border-l-4 py-2 pl-4 md:border-l-0 md:border-t-4 md:pb-0 md:pl-0 md:pt-4 text-left ${currentStep > step.id
-                  ? 'border-teal-600 hover:border-teal-800'
+                  ? 'border-teal-600 hover:border-teal-800 cursor-pointer'
                   : currentStep === step.id
-                    ? 'border-teal-600'
-                    : 'border-stone-200 hover:border-stone-300'
+                    ? 'border-teal-600 cursor-default'
+                    : 'border-stone-200 cursor-not-allowed'
                   }`}
               >
-                <span className={`text-sm font-medium ${currentStep > step.id ? 'text-teal-600 group-hover:text-teal-800' : currentStep === step.id ? 'text-teal-600' : 'text-stone-500 group-hover:text-stone-700'}`}>
+                <span className={`text-sm font-medium ${currentStep > step.id ? 'text-teal-600 group-hover:text-teal-800' : currentStep === step.id ? 'text-teal-600' : 'text-stone-400'}`}>
                   {t('therapyPlans.form.step', { n: step.id })} {currentStep > step.id && <CheckCircle className="inline h-4 w-4 mb-0.5 ml-1" />}
                 </span>
                 <span className="text-sm font-medium text-stone-900">{step.name}</span>
@@ -335,7 +401,7 @@ export const TherapyPlanForm = ({
             setErrors={setErrors}
             posterFile={posterFile}
             setPosterFile={setPosterFile}
-            isLoading={isLoading}
+            isLoading={isNextBusy}
           />
         )}
         {currentStep === 2 && (
@@ -351,7 +417,7 @@ export const TherapyPlanForm = ({
         )}
         {currentStep === 3 && (
           <Step3Imports
-            isLoading={isLoading}
+            isLoading={isNextBusy}
             videoUploadPercent={videoUploadPercent}
             videoFile={videoFile}
             setVideoFile={setVideoFile}
@@ -379,31 +445,50 @@ export const TherapyPlanForm = ({
           />
         )}
         {currentStep === 4 && (
-          <Step4Preview
-            values={values}
-            posterFile={posterFile}
-            videoFile={videoFile}
-            stagedGalleryFiles={stagedGalleryFiles}
-            pdfFiles={pdfFiles}
-            existingGalleryCount={galleryImages.length}
-            existingVideoUrl={existingVideoUrl}
-            existingPdfCount={existingPdfs.length}
-          />
+          <div className="space-y-4">
+            {/* Plan ID display */}
+            {planId && (
+              <div className="flex items-center gap-2 text-xs text-stone-400">
+                <span className="font-medium">{t('therapyPlans.form.planId', 'Plan ID')}:</span>
+                <code className="font-mono bg-stone-100 px-2 py-0.5 rounded text-stone-500 select-all">{planId}</code>
+              </div>
+            )}
+            <Step4Preview
+              values={values}
+              posterFile={posterFile}
+              videoFile={videoFile}
+              stagedGalleryFiles={stagedGalleryFiles}
+              pdfFiles={pdfFiles}
+              existingGalleryCount={galleryImages.length}
+              existingVideoUrl={existingVideoUrl}
+              existingPdfCount={existingPdfs.length}
+            />
+          </div>
         )}
       </div>
 
       {/* Action Bar */}
       <div className="flex items-center justify-between border-t border-stone-200 pt-6 mt-8">
-        <div>
-          {secondaryAction && currentStep === 3 && secondaryAction}
-        </div>
+        {/* Left: Exit */}
+        <Button
+          variant="ghost"
+          type="button"
+          onClick={handleExit}
+          disabled={isNextBusy || isSubmittingForReview}
+          className="text-stone-500 hover:text-stone-700"
+        >
+          <LogOut className="h-4 w-4 mr-1.5" />
+          {t('common.exit', 'Exit')}
+        </Button>
+
+        {/* Right: navigation / submit actions */}
         <div className="flex items-center gap-3">
           {currentStep > 1 && (
             <Button
               variant="outline"
               type="button"
               onClick={handleBack}
-              disabled={isLoading || isSubmitting}
+              disabled={isNextBusy || isSubmittingForReview}
             >
               {t('common.back', 'Back')}
             </Button>
@@ -413,20 +498,39 @@ export const TherapyPlanForm = ({
             <Button
               type="button"
               onClick={handleNext}
-              disabled={isLoading || isSubmitting}
+              loading={isNextBusy}
+              disabled={isNextBusy}
             >
-              {t('therapyPlans.form.nextStep')}
+              {isAutoSaving
+                ? t('therapyPlans.form.saving', 'Saving…')
+                : t('therapyPlans.form.nextStep')}
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              loading={isLoading || isSubmitting}
-              disabled={isLoading || isSubmitting}
-              className="bg-teal-600 hover:bg-teal-700 text-white"
-            >
-              {isCreateMode ? t('therapyPlans.form.submitForReview') : t('therapyPlans.form.saveAndExit')}
-            </Button>
+            <>
+              {/* Save Draft & Exit — always available once a plan exists */}
+              {(planId || onSaveDraftAndExit) && (
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={onSaveDraftAndExit}
+                  disabled={isSubmittingForReview}
+                >
+                  {t('therapyPlans.form.saveDraftAndExit', 'Save Draft & Exit')}
+                </Button>
+              )}
+              {/* Submit for Review — only shown when the plan can be submitted */}
+              {onSubmitForReview && (
+                <Button
+                  type="button"
+                  onClick={handleSubmitForReview}
+                  loading={isSubmittingForReview}
+                  disabled={isSubmittingForReview}
+                  className="bg-teal-600 hover:bg-teal-700 text-white"
+                >
+                  {t('therapyPlans.form.submitForReview')}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -16,9 +16,10 @@ import { PrivacyTerms } from './pages/PrivacyTerms';
 import { ComposeForm } from './pages/forms/ComposeForm';
 import { FillForm } from './pages/forms/FillForm';
 import { FormDetail } from './pages/forms/FormDetail';
-import { TherapyPlansDirectory } from './pages/therapy-plans/TherapyPlansDirectory';
-import { TherapyPlanDetail } from './pages/therapy-plans/TherapyPlanDetail';
-import { EditTherapyPlan } from './pages/therapy-plans/EditTherapyPlan';
+import { TherapyPlansDirectory } from '@/pages/therapy-plans/TherapyPlansDirectory';
+import { TherapyPlanDetail } from '@/pages/therapy-plans/TherapyPlanDetail';
+import { TherapyPlanSignup } from '@/pages/therapy-plans/TherapyPlanSignup';
+import { EditTherapyPlan } from '@/pages/therapy-plans/EditTherapyPlan';
 import { Gallery } from './pages/Gallery';
 import { useAuthStore } from './store/authStore';
 
@@ -100,6 +101,14 @@ export default function App() {
           {/* Therapy Plans */}
           <Route path="/therapy-plans" element={<TherapyPlansDirectory />} />
           <Route path="/therapy-plans/:id" element={<TherapyPlanDetail />} />
+          <Route
+            path="/therapy-plans/:id/signup"
+            element={
+              <ProtectedRoute roles={['CLIENT']}>
+                <TherapyPlanSignup />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/therapy-plans/create"
             element={

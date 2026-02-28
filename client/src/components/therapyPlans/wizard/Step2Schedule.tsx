@@ -43,15 +43,21 @@ export const Step2Schedule = ({
     const [durationUnit, setDurationUnit] = useState<'min' | 'hm'>('hm');
     const { user } = useAuthStore();
 
+    // Include user?.id in both query keys so each user gets their own cache slot.
+    // Without this, two therapists sharing the same browser session would see
+    // each other's cached appointments / plans.
     const { data: appointmentData } = useQuery({
-        queryKey: ['appointments', { status: ['CONFIRMED'] }],
-        queryFn: () => getAppointments({ status: ['CONFIRMED'] }),
+        queryKey: ['appointments', user?.id, { status: ['CONFIRMED', 'IN_PROGRESS'] }],
+        queryFn: () => getAppointments({ status: ['CONFIRMED', 'IN_PROGRESS'] }),
         enabled: !!user?.id,
     });
 
+    // Fetch own plans; filter to statuses the server conflict check uses:
+    // PUBLISHED, SIGN_UP_CLOSED, IN_PROGRESS
+    const CONFLICT_PLAN_STATUSES = new Set(['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS']);
     const { data: plansData } = useQuery({
-        queryKey: ['therapy-plans', { status: 'PUBLISHED' }],
-        queryFn: () => listTherapyPlans({ status: 'PUBLISHED' }),
+        queryKey: ['therapy-plans', user?.id, 'schedule-context'],
+        queryFn: () => listTherapyPlans({}),
         enabled: !!user?.id,
     });
 
@@ -59,29 +65,56 @@ export const Step2Schedule = ({
 
     if (appointmentData?.data) {
         calendarEvents = calendarEvents.concat(
-            appointmentData.data.map((app: Appointment) => ({
-                id: `app-${app.id}`,
-                title: t('therapyPlans.form.busyAppointment'),
-                start: app.startTime,
-                end: app.endTime,
-                color: '#f43f5e', // rose-500
-            }))
+            // Guard: for admin users the server may return all therapists' appointments;
+            // restrict to only the current user's by matching the nested therapist.userId.
+            appointmentData.data
+                .filter((app: Appointment) => !app.therapist || app.therapist.userId === user?.id)
+                .map((app: Appointment) => ({
+                    id: `app-${app.id}`,
+                    title: t('therapyPlans.form.busyAppointment'),
+                    start: app.startTime,
+                    end: app.endTime,
+                    color: '#f43f5e', // rose-500
+                }))
         );
     }
 
     if (plansData?.data) {
         calendarEvents = calendarEvents.concat(
-            plansData.data.flatMap((plan: TherapyPlan) =>
-                plan.events ? plan.events.map((ev: any) => ({
-                    id: `plan-ev-${ev.id}`,
-                    title: `${t('common.therapyPlans', 'Plan')}: ${plan.title}`,
-                    start: ev.startTime,
-                    end: ev.endTime || ev.startTime,
-                    color: '#0d9488', // teal-600
-                })) : []
-            )
+            plansData.data
+                // Guard: for admin users the server returns all therapists' plans;
+                // restrict to only plans belonging to the current user.
+                .filter((plan: TherapyPlan) =>
+                    CONFLICT_PLAN_STATUSES.has(plan.status) &&
+                    (!plan.therapist || plan.therapist.userId === user?.id)
+                )
+                .flatMap((plan: TherapyPlan) =>
+                    plan.events && plan.events.length > 0
+                        ? plan.events.map((ev: any) => ({
+                            id: `plan-ev-${ev.id}`,
+                            title: `${t('common.therapyPlans', 'Plan')}: ${plan.title}`,
+                            start: ev.startTime,
+                            end: ev.endTime || ev.startTime,
+                            color: '#0d9488', // teal-600
+                        }))
+                        : [{
+                            id: `plan-${plan.id}`,
+                            title: `${t('common.therapyPlans', 'Plan')}: ${plan.title}`,
+                            start: plan.startTime,
+                            end: plan.endTime || plan.startTime,
+                            color: '#0d9488', // teal-600
+                        }]
+                )
         );
     }
+
+    // Deduplicate calendar events by id before adding draft
+    const seenIds = new Set<string>();
+    const deduped: typeof calendarEvents = [];
+    for (const ev of calendarEvents) {
+        if (!seenIds.has(ev.id)) { seenIds.add(ev.id); deduped.push(ev); }
+    }
+    calendarEvents = deduped;
 
     // Add current draft event
     if (values.startTime) {

@@ -11,6 +11,15 @@ export const createWechatOrder = async (req: Request, res: Response) => {
   }
 };
 
+export const createPlanWechatOrder = async (req: Request, res: Response) => {
+  try {
+    const result = await wechatService.createPlanWechatOrder(req.body.participantId, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 export const getWechatOrder = async (req: Request, res: Response) => {
   try {
     const payment = await prisma.payment.findFirst({

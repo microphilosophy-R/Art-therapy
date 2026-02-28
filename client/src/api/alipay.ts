@@ -10,7 +10,12 @@ export const createAlipayOrder = async (appointmentId: string): Promise<AlipayOr
   return data;
 };
 
-export const getAlipayOrder = async (appointmentId: string) => {
-  const { data } = await api.get(`/alipay/order/${appointmentId}`);
+export const createPlanAlipayOrder = async (participantId: string): Promise<AlipayOrderResponse> => {
+  const { data } = await api.post('/alipay/create-plan-order', { participantId });
+  return data;
+};
+
+export const getAlipayOrder = async (id: string) => {
+  const { data } = await api.get(`/alipay/order/${id}`);
   return data;
 };

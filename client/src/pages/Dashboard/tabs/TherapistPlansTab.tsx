@@ -50,7 +50,9 @@ export const TherapistPlansTab = () => {
 
   if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
 
-  const plans = data?.data ?? [];
+  const plans = (data?.data ?? []).filter(
+    (p: TherapyPlan, i: number, arr: TherapyPlan[]) => arr.findIndex((x: TherapyPlan) => x.id === p.id) === i,
+  );
 
   return (
     <div>
@@ -101,6 +103,7 @@ export const TherapistPlansTab = () => {
                 <p className="text-xs text-stone-400">
                   {new Date(plan.startTime).toLocaleDateString()}
                 </p>
+                <p className="text-xs font-mono text-stone-300 mt-0.5">ID: {plan.id.slice(0, 8)}</p>
                 {plan.status === 'REJECTED' && plan.rejectionReason && (
                   <p className="text-xs text-rose-500 mt-0.5 line-clamp-1">{plan.rejectionReason}</p>
                 )}

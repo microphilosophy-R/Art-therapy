@@ -8,3 +8,4 @@ build
 7. Chatting system(! may cause heavy burden, try to use Wechat/red book instead)
 
 validation
+1. Define a standard font size uniformly across the web(title, subtitile, description).

@@ -24,10 +24,11 @@ import type { AppointmentStatus } from '../../types';
 type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar' | 'plans' | 'messages' | 'profile';
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  PENDING: '#fbbf24',
-  CONFIRMED: '#14b8a6',
-  CANCELLED: '#f87171',
-  COMPLETED: '#94a3b8',
+  PENDING:     '#fbbf24',
+  CONFIRMED:   '#14b8a6',
+  IN_PROGRESS: '#14b8a6',
+  CANCELLED:   '#f87171',
+  COMPLETED:   '#94a3b8',
 };
 
 export const TherapistDashboard = () => {
@@ -114,10 +115,11 @@ export const TherapistDashboard = () => {
   }));
 
   const calendarLegendLabels: Record<AppointmentStatus, string> = {
-    PENDING: t('dashboard.therapist.calendarLegend.pending'),
-    CONFIRMED: t('dashboard.therapist.calendarLegend.confirmed'),
-    CANCELLED: t('dashboard.therapist.calendarLegend.cancelled'),
-    COMPLETED: t('dashboard.therapist.calendarLegend.completed'),
+    PENDING:     t('dashboard.therapist.calendarLegend.pending'),
+    CONFIRMED:   t('dashboard.therapist.calendarLegend.confirmed'),
+    IN_PROGRESS: t('dashboard.therapist.calendarLegend.confirmed'),
+    CANCELLED:   t('dashboard.therapist.calendarLegend.cancelled'),
+    COMPLETED:   t('dashboard.therapist.calendarLegend.completed'),
   };
 
   return (

@@ -157,10 +157,10 @@ export const EditTherapyPlan = () => {
   const buildMetadataPayload = (values: TherapyPlanFormValues) => ({
     type: values.type,
     title: values.title,
-    slogan: values.slogan || null,
+    slogan: values.slogan || undefined,
     introduction: values.introduction,
     startTime: values.startTime ? new Date(values.startTime).toISOString() : new Date().toISOString(),
-    endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+    endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
     location: values.location,
     maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
     contactInfo: values.contactInfo,
@@ -205,7 +205,7 @@ export const EditTherapyPlan = () => {
       const pid = isCreateMode ? autoSavePlanId! : id!;
       await updateTherapyPlan(pid, {
         startTime: values.startTime ? new Date(values.startTime).toISOString() : undefined,
-        endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+        endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
       });
       if (values.events.length > 0) {
         await upsertTherapyPlanEvents(pid, { events: draftsToApiPayload(values.events) });

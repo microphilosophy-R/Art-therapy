@@ -1,5 +1,5 @@
 export type UserRole = 'CLIENT' | 'THERAPIST' | 'ADMIN';
-export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'CANCELLED' | 'COMPLETED';
 export type SessionMedium = 'IN_PERSON' | 'VIDEO';
 export type StripeAccountStatus = 'NOT_CONNECTED' | 'ONBOARDING_IN_PROGRESS' | 'ACTIVE' | 'RESTRICTED' | 'DISABLED';
 export type ProfileStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';

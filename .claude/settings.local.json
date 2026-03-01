@@ -31,7 +31,8 @@
       "Bash(npx prisma generate)",
       "Bash(npm ls:*)",
       "Bash(npx ts-node:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx prisma db seed:*)"
     ]
   }
 }

@@ -15,10 +15,11 @@ interface AppointmentCardProps {
 }
 
 const statusVariant = {
-  PENDING:   'warning',
-  CONFIRMED: 'success',
-  CANCELLED: 'danger',
-  COMPLETED: 'default',
+  PENDING:     'warning',
+  CONFIRMED:   'success',
+  IN_PROGRESS: 'success',
+  CANCELLED:   'danger',
+  COMPLETED:   'default',
 } as const;
 
 export const AppointmentCard = ({ appointment, perspective, onCancel }: AppointmentCardProps) => {

@@ -44,6 +44,7 @@ async function main() {
   await prisma.webhookEvent.deleteMany();
   await prisma.refundPolicy.deleteMany();
   await prisma.availability.deleteMany();
+  await prisma.therapistGalleryImage.deleteMany();
   await prisma.therapistProfile.deleteMany();
   await prisma.user.deleteMany();
 
@@ -127,6 +128,10 @@ async function main() {
       locationCity: 'San Francisco, CA',
       isAccepting: true,
       rating: 4.9,
+      profileStatus: 'APPROVED',
+      consultEnabled: true,
+      hourlyConsultFee: 200,
+      socialMediaLink: 'https://instagram.com',
     },
   });
 
@@ -140,6 +145,7 @@ async function main() {
       locationCity: 'Austin, TX',
       isAccepting: true,
       rating: 4.7,
+      profileStatus: 'APPROVED',
     },
   });
 
@@ -153,10 +159,22 @@ async function main() {
       locationCity: 'New York, NY',
       isAccepting: true,
       rating: 4.8,
+      profileStatus: 'APPROVED',
     },
   });
 
   console.log('✓ Therapist profiles created');
+
+  // ─── Gallery Images ───────────────────────────────────────────────────────
+  await prisma.therapistGalleryImage.createMany({
+    data: [
+      { therapistId: profile2.id, url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400', order: 0 },
+      { therapistId: profile2.id, url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400', order: 1 },
+      { therapistId: profile2.id, url: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400', order: 2 },
+    ],
+  });
+
+  console.log('✓ Gallery images created');
 
   // ─── Availability ─────────────────────────────────────────────────────────
   for (const day of [1, 2, 3, 4, 5]) {

@@ -32,7 +32,9 @@
       "Bash(npm ls:*)",
       "Bash(npx ts-node:*)",
       "Bash(ls:*)",
-      "Bash(npx prisma db seed:*)"
+      "Bash(npx prisma db seed:*)",
+      "Bash(find:*)",
+      "Bash(timeout 15 npx tsx:*)"
     ]
   }
 }

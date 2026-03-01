@@ -33,7 +33,8 @@
     "role": {
       "CLIENT": "来访者",
       "THERAPIST": "治疗师",
-      "ADMIN": "管理员"
+      "ADMIN": "管理员",
+      "ARTIST": "艺术家"
     },
     "errors": {
       "required": "此字段为必填项",
@@ -82,9 +83,13 @@
     }
   },
   "nav": {
+    "home": "首页",
     "findTherapist": "寻找治疗师",
     "therapyPlans": "疗愈计划",
     "gallery": "往期画廊",
+    "shop": "商店",
+    "cart": "购物车",
+    "myOrders": "我的订单",
     "signIn": "登录",
     "getStarted": "立即开始",
     "dashboard": "控制台",
@@ -686,75 +691,41 @@
     }
   },
   "profile": {
-    "title": "账户设置",
-    "subtitle": "管理您的个人信息和账户偏好",
-    "tabs": {
-      "personal": "个人信息",
-      "security": "安全",
-      "payment": "支付",
-      "privacy": "隐私"
+    "wizard": {
+      "step1": "基本信息",
+      "step2": "咨询设置",
+      "step3": "媒体资料",
+      "step4": "预览与提交",
+      "locationCity": "城市",
+      "sessionPrice": "单次价格",
+      "sessionLength": "单次时长",
+      "isAccepting": "当前接受新客户",
+      "bio": "个人简介",
+      "specialties": "专业领域",
+      "enableConsult": "开启个人/团体咨询",
+      "enableConsultDesc": "允许您创建个人咨询和团体咨询计划，需要上传有效证书。",
+      "basicFees": "基本费用",
+      "hourlyConsultFee": "每小时咨询费",
+      "certificate": "专业证书",
+      "certificateUploaded": "证书已上传",
+      "uploadCertificate": "上传证书（PDF 或图片）",
+      "certificateHint": "请上传您的执照或资质证书文件。",
+      "uploadFeatured": "上传封面图片",
+      "submitForReview": "提交资料审核",
+      "pendingDesc": "您的资料正在审核中，审核完成后将通知您。",
+      "approvedDesc": "您的资料已通过审核，客户可以查看您的主页。",
+      "consultDisabledHint": "请在个人资料中开启咨询功能，以解锁个人咨询和团体咨询计划类型。"
     },
-    "personal": {
-      "title": "个人信息",
-      "firstName": "名",
-      "lastName": "姓",
-      "nickname": "昵称（可选）",
-      "nicknamePlaceholder": "您希望被如何称呼？",
-      "age": "年龄（可选）",
-      "gender": "性别（可选）",
-      "genderOptions": {
-        "preferNotToSay": "不愿透露",
-        "female": "女",
-        "male": "男",
-        "nonBinary": "非二元性别",
-        "genderqueer": "酷儿",
-        "transgender": "跨性别",
-        "other": "其他"
-      },
-      "email": "邮箱地址",
-      "emailNote": "邮箱不可更改。如需帮助，请联系客服。",
-      "phone": "电话（可选）",
-      "phonePlaceholder": "+86 138-0000-0000",
-      "saveSuccess": "个人资料已更新。",
-      "saveError": "更新失败，请重试。",
-      "changeAvatar": "更换头像",
-      "avatarSuccess": "头像已更新",
-      "avatarError": "头像上传失败",
-      "avatarHint": "jpg / png / webp · 最大 5 MB"
+    "status": {
+      "DRAFT": "草稿",
+      "PENDING_REVIEW": "待审核",
+      "APPROVED": "已通过",
+      "REJECTED": "已拒绝"
     },
-    "security": {
-      "title": "修改密码",
-      "subtitle": "请设置至少8个字符的强密码。",
-      "current": "当前密码",
-      "new": "新密码",
-      "confirm": "确认新密码",
-      "submit": "更新密码",
-      "success": "密码已成功修改。",
-      "error": "密码修改失败。"
-    },
-    "payment": {
-      "title": "支付方式",
-      "stripeTitle": "通过 Stripe 安全支付",
-      "stripeDesc": "您的支付信息由 Stripe（PCI DSS 一级认证支付处理商）独家处理。ArtTherapy 从不在服务器上存储您的原始卡号、CVV 或完整卡片信息。",
-      "stripeDesc2": "支付方式安全保存在您的 Stripe 客户档案中，可在结账时管理。每次疗程付款均在预约时处理。",
-      "privacyNote": "支付隐私说明",
-      "privacyDesc": "平台手续费为每次疗程的 15%。每笔交易记录（金额、日期、治疗师）将保存用于收据历史，受我们的隐私政策保护。治疗师可见的支付信息仅限疗程确认——他们永远无法查看您的完整卡片信息。",
-      "learnMore": "在隐私政策中了解更多"
-    },
-    "privacyTab": {
-      "title": "隐私与授权",
-      "accepted": "已接受隐私条款",
-      "acceptedOn": "接受日期：{{date}}",
-      "notAccepted": "尚未接受隐私条款",
-      "notAcceptedDesc": "请查阅并接受我们的隐私条款以启用全部功能。",
-      "acceptBtn": "接受隐私条款",
-      "readPolicy": "阅读隐私政策与服务条款",
-      "dataRights": "您的数据权利",
-      "right1": "您可通过联系客服申请获取您的数据副本",
-      "right2": "您可申请删除您的账户及数据",
-      "right3": "疗程记录及治疗档案须遵守法律留存要求（最少6年）",
-      "right4": "支付记录须按 PCI DSS 要求留存",
-      "success": "已接受隐私条款。"
+    "gallery": {
+      "title": "图片集",
+      "add": "添加图片",
+      "images": "张图片"
     }
   },
   "forms": {
@@ -935,42 +906,15 @@
       "noRetaliation": "提出投诉不会导致报复。"
     }
   },
-  "profile": {
-    "wizard": {
-      "step1": "基本信息",
-      "step2": "咨询设置",
-      "step3": "媒体资料",
-      "step4": "预览与提交",
-      "locationCity": "城市",
-      "sessionPrice": "单次价格",
-      "sessionLength": "单次时长",
-      "isAccepting": "当前接受新客户",
-      "bio": "个人简介",
-      "specialties": "专业领域",
-      "enableConsult": "开启个人/团体咨询",
-      "enableConsultDesc": "允许您创建个人咨询和团体咨询计划，需要上传有效证书。",
-      "basicFees": "基本费用",
-      "hourlyConsultFee": "每小时咨询费",
-      "certificate": "专业证书",
-      "certificateUploaded": "证书已上传",
-      "uploadCertificate": "上传证书（PDF 或图片）",
-      "certificateHint": "请上传您的执照或资质证书文件。",
-      "uploadFeatured": "上传封面图片",
-      "submitForReview": "提交资料审核",
-      "pendingDesc": "您的资料正在审核中，审核完成后将通知您。",
-      "approvedDesc": "您的资料已通过审核，客户可以查看您的主页。",
-      "consultDisabledHint": "请在个人资料中开启咨询功能，以解锁个人咨询和团体咨询计划类型。"
-    },
-    "status": {
-      "DRAFT": "草稿",
-      "PENDING_REVIEW": "待审核",
-      "APPROVED": "已通过",
-      "REJECTED": "已拒绝"
-    },
-    "gallery": {
-      "title": "图片集",
-      "add": "添加图片",
-      "images": "张图片"
+  "artist": {
+    "profile": {
+      "title": "艺术家主页",
+      "backToShop": "返回商店",
+      "visitShop": "访问商店",
+      "commission": "接单状态",
+      "portfolio": "作品集",
+      "noProducts": "该艺术家暂无在售商品。",
+      "productsTitle": "在售作品"
     }
   },
   "admin": {
@@ -984,6 +928,154 @@
       "confirmReject": "确认拒绝",
       "rejectReasonPlaceholder": "请说明拒绝原因...",
       "consultEnabled": "已开启咨询"
+    }
+  },
+  "shop": {
+    "title": "创意艺术商店",
+    "subtitle": "探索由我们的治疗师和艺术家创作的独特作品。",
+    "searchPlaceholder": "搜索商品...",
+    "allCategories": "所有分类",
+    "categories": {
+      "PAINTING": "绘画",
+      "SCULPTURE": "雕塑",
+      "CRAFTS": "手工艺品",
+      "DIGITAL_ART": "数字艺术",
+      "MERCHANDISE": "周边商品",
+      "OTHER": "其他"
+    },
+    "product": {
+      "by": "由 {{name}} 创作",
+      "soldOut": "已售罄",
+      "viewDetails": "查看详情",
+      "noProducts": "未找到符合条件的商品。",
+      "loading": "正在加载商品详情...",
+      "notFound": "未找到商品",
+      "backToShop": "返回商店",
+      "quantity": "数量",
+      "available": "库存 {{count}} 件",
+      "addToCart": "加入购物车",
+      "loginToAddToCart": "登录后加入购物车",
+      "outOfStock": "缺货",
+      "noImage": "暂无图片"
+    },
+    "cart": {
+      "title": "购物车",
+      "empty": "您的购物车是空的",
+      "emptyExtra": "您还没有在购物车中添加任何创意商品。",
+      "startShopping": "开始购物",
+      "remove": "移除",
+      "orderSummary": "订单摘要",
+      "subtotal": "小计 ({{count}} 件商品)",
+      "shipping": "运费",
+      "calculatedAtCheckout": "结算时计算",
+      "total": "总计",
+      "includesVat": "含增值税",
+      "proceedToCheckout": "前往结算",
+      "continueShopping": "继续购物"
+    },
+    "checkout": {
+      "title": "结算",
+      "loading": "正在加载结算页面...",
+      "shippingAddress": "收货地址 (中国)",
+      "province": "省",
+      "city": "市",
+      "district": "区",
+      "addressDetails": "详细地址",
+      "addressPlaceholder": "街道名称、建筑物、公寓号",
+      "recipientName": "收件人姓名",
+      "phoneNumber": "联系电话",
+      "confirmOrder": "确认并下单",
+      "paymentMethod": "选择付款方式",
+      "alipay": "支付宝",
+      "wechatPay": "微信支付",
+      "orderSummary": "订单摘要",
+      "qty": "数量: {{count}}",
+      "free": "包邮",
+      "terms": "下单即表示您同意我们的销售条款和隐私政策。"
+    },
+    "orders": {
+      "title": "我的订单",
+      "empty": "暂无订单",
+      "emptyDesc": "当您在商店购买商品后，将在此处显示订单及物流信息。",
+      "browseShop": "浏览商店",
+      "datePlaced": "下单日期",
+      "total": "总计",
+      "orderId": "订单号",
+      "items": "商品",
+      "shippingInfo": "收货信息",
+      "logisticsDetails": "物流信息",
+      "carrier": "快递公司",
+      "trackingNumber": "运单号",
+      "trackOnKuaidi": "在快递100查询",
+      "qty": "数量: {{count}}",
+      "status": {
+        "PENDING": "待付款",
+        "PAID": "处理中",
+        "SHIPPED": "已发货",
+        "DELIVERED": "已签收",
+        "CANCELLED": "已取消"
+      }
+    },
+    "artist": {
+      "dashboard": {
+        "subtitle": "管理您的创意商店、商品和订单。",
+        "activeProducts": "在售商品",
+        "pendingOrders": "待处理订单",
+        "profileStatus": "账号状态",
+        "tabs": {
+          "showcase": "我的展示",
+          "products": "商品",
+          "orders": "订单",
+          "profile": "主页"
+        }
+      },
+      "showcase": {
+        "preview": "这是访客看到您主页的样子",
+        "viewLive": "查看公开主页",
+        "editProfile": "编辑资料",
+        "products": "在售作品",
+        "noProducts": "暂无商品。请在"商品"标签中添加您的第一件作品。",
+        "commission": "接单状态",
+        "portfolio": "作品集"
+      },
+      "orders": {
+        "title": "管理订单",
+        "empty": "暂无收到的订单。",
+        "items": "商品",
+        "shippingDetails": "收货信息",
+        "noShippingDetails": "无收货信息。",
+        "total": "总计",
+        "carrierName": "快递公司（如：顺丰速运）",
+        "trackingNumber": "运单号",
+        "markAsShipped": "标记为已发货",
+        "shippedVia": "已通过 {{carrier}} 发货",
+        "unknownProduct": "未知商品"
+      },
+      "products": {
+        "title": "您的商品",
+        "addProduct": "添加商品",
+        "editProduct": "编辑商品",
+        "newProduct": "新建商品",
+        "titleField": "标题",
+        "category": "分类",
+        "price": "价格（元）",
+        "stock": "库存",
+        "stockLabel": "库存: {{count}}",
+        "description": "描述",
+        "imageUrls": "图片链接（逗号分隔）",
+        "saveProduct": "保存商品",
+        "empty": "暂无在售商品。添加您的第一件创意作品！",
+        "noImage": "暂无图片",
+        "deleteConfirm": "确定要删除此商品吗？",
+        "profileNotApproved": "您的艺术家主页需要审核通过后，方可管理商品。",
+        "categories": {
+          "ARTWORK": "艺术品",
+          "MERCHANDISE": "周边商品",
+          "THERAPY_TOOL": "疗愈工具",
+          "BOOK": "书籍",
+          "OTHER": "其他"
+        }
+      }
     }
   }
 }

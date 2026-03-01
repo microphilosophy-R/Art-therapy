@@ -6,6 +6,7 @@ import { ArrowRight, Heart, Shield, Clock, Star, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listTherapyPlans } from '../api/therapyPlans';
 import { TherapyPlanCard } from '../components/therapyPlans/TherapyPlanCard';
+import { FeaturedProductsRow } from '../components/shop/FeaturedProductsRow';
 import { Button } from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Spinner';
 
@@ -167,6 +168,9 @@ export const Home = () => {
         "No featured plans available at the moment.",
         "bg-stone-50"
       )}
+
+      {/* Featured Products */}
+      <FeaturedProductsRow />
 
       {/* Salons */}
       {renderPlanSection(

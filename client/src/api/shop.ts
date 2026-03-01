@@ -26,7 +26,7 @@ export const getProducts = async (params?: {
     limit?: number;
 }) => {
     const { data } = await api.get('/products', { params });
-    return data;
+    return data.data as Product[];
 };
 
 export const getProductById = async (id: string) => {

@@ -1,11 +1,13 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getCart, updateCartItem, removeFromCart } from '../../api/shop';
 import { Button } from '../../components/ui/Button';
 import { Loader2, Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export const CartPage = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -44,11 +46,11 @@ export const CartPage = () => {
             <div className="container mx-auto px-4 py-20 max-w-4xl text-center">
                 <div className="bg-gray-50 rounded-2xl p-12 py-24 flex flex-col items-center justify-center">
                     <ShoppingBag className="w-20 h-20 text-gray-300 mb-6" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-                    <p className="text-gray-500 mb-8 max-w-sm">Looks like you haven't added any creative items to your cart yet.</p>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('shop.cart.empty')}</h2>
+                    <p className="text-gray-500 mb-8 max-w-sm">{t('shop.cart.emptyExtra')}</p>
                     <Link to="/shop">
                         <Button size="lg" className="bg-teal-600 hover:bg-teal-700">
-                            Start Shopping
+                            {t('shop.cart.startShopping')}
                         </Button>
                     </Link>
                 </div>
@@ -58,7 +60,7 @@ export const CartPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('shop.cart.title')}</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                 {/* Cart Items List */}
@@ -83,12 +85,14 @@ export const CartPage = () => {
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
                                         <span className="text-xs font-semibold text-teal-600 uppercase tracking-wider mb-1 block">
-                                            {item.product.category}
+                                            {t(`shop.categories.${item.product.category}`)}
                                         </span>
                                         <Link to={`/shop/${item.productId}`} className="text-lg font-semibold text-gray-900 hover:text-teal-600 transition-colors">
                                             {item.product.title}
                                         </Link>
-                                        <p className="text-sm text-gray-500 mt-1">By {item.product.artist.user.firstName}</p>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {t('shop.product.by', { name: item.product.artist.user.firstName })}
+                                        </p>
                                     </div>
                                     <div className="text-lg font-bold text-gray-900">
                                         ¥{Number(item.product.price).toFixed(2)}
@@ -119,7 +123,7 @@ export const CartPage = () => {
                                         className="text-gray-400 hover:text-red-500 transition-colors flex items-center text-sm font-medium"
                                     >
                                         <Trash2 className="w-4 h-4 mr-1" />
-                                        Remove
+                                        {t('shop.cart.remove')}
                                     </button>
                                 </div>
                             </div>
@@ -130,25 +134,25 @@ export const CartPage = () => {
                 {/* Order Summary */}
                 <div className="lg:col-span-1">
                     <div className="bg-gray-50 rounded-xl p-6 sticky top-24 border">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-6">{t('shop.cart.orderSummary')}</h2>
 
                         <div className="space-y-4 mb-6">
                             <div className="flex justify-between text-gray-600">
-                                <span>Subtotal ({cartItems.length} items)</span>
+                                <span>{t('shop.cart.subtotal', { count: cartItems.length })}</span>
                                 <span>¥{subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-gray-600">
-                                <span>Shipping</span>
-                                <span className="text-teal-600 text-sm font-medium">Calculated at checkout</span>
+                                <span>{t('shop.cart.shipping')}</span>
+                                <span className="text-teal-600 text-sm font-medium">{t('shop.cart.calculatedAtCheckout')}</span>
                             </div>
                         </div>
 
                         <div className="border-t pt-4 mb-8">
                             <div className="flex justify-between items-end">
-                                <span className="font-semibold text-gray-900">Total</span>
+                                <span className="font-semibold text-gray-900">{t('shop.cart.total')}</span>
                                 <div className="text-right">
                                     <span className="text-2xl font-bold text-gray-900 block">¥{subtotal.toFixed(2)}</span>
-                                    <span className="text-xs text-gray-500">Includes VAT</span>
+                                    <span className="text-xs text-gray-500">{t('shop.cart.includesVat')}</span>
                                 </div>
                             </div>
                         </div>
@@ -158,13 +162,13 @@ export const CartPage = () => {
                             className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-lg"
                             onClick={() => navigate('/checkout')}
                         >
-                            Proceed to Checkout
+                            {t('shop.cart.proceedToCheckout')}
                             <ArrowRight className="w-5 h-5 ml-2" />
                         </Button>
 
                         <div className="mt-4 text-center">
                             <Link to="/shop" className="text-sm text-gray-500 hover:text-teal-600 transition-colors">
-                                or Continue Shopping
+                                {t('shop.cart.continueShopping')}
                             </Link>
                         </div>
                     </div>

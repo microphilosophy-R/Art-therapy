@@ -26,11 +26,12 @@ import type { UserRole, AppointmentStatus } from '../../types';
 
 type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages' | 'profiles';
 
-const ROLE_OPTION_VALUES: UserRole[] = ['CLIENT', 'THERAPIST', 'ADMIN'];
+const ROLE_OPTION_VALUES: UserRole[] = ['CLIENT', 'THERAPIST', 'ARTIST', 'ADMIN'];
 
 const roleBadgeVariant = (role: UserRole) => {
   if (role === 'ADMIN') return 'danger' as const;
   if (role === 'THERAPIST') return 'info' as const;
+  if (role === 'ARTIST') return 'warning' as const;
   return 'default' as const;
 };
 

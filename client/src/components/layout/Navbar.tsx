@@ -90,7 +90,7 @@ export const Navbar = () => {
                 : 'text-stone-600 hover:bg-stone-100'
                 }`}
             >
-              Shop
+              {t('nav.shop')}
             </Link>
             <Link
               to="/therapy-plans"
@@ -118,7 +118,7 @@ export const Navbar = () => {
                 <Link
                   to="/cart"
                   className="relative p-2 rounded-lg hover:bg-stone-100 transition-colors"
-                  title="Shopping Cart"
+                  title={t('nav.cart')}
                 >
                   <ShoppingCart className="h-5 w-5 text-stone-600" />
                   {cartItemCount > 0 && (
@@ -178,7 +178,7 @@ export const Navbar = () => {
                           onClick={() => setMenuOpen(false)}
                           className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                         >
-                          <ShoppingCart className="h-4 w-4" /> My Orders
+                          <ShoppingCart className="h-4 w-4" /> {t('nav.myOrders')}
                         </Link>
                         <hr className="my-1 border-stone-100" />
                         <button

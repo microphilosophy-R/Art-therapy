@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getMyArtistProfile, getArtistProducts, deleteProduct, createProduct, updateProduct } from '../../../api/artist';
 import { Button } from '../../../components/ui/Button';
 import { PageLoader } from '../../../components/ui/Spinner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 
 export const ArtistProductsTab = () => {
+    const { t } = useTranslation();
     const qc = useQueryClient();
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -38,7 +40,7 @@ export const ArtistProductsTab = () => {
     });
 
     const handleDelete = (id: string) => {
-        if (confirm('Are you sure you want to delete this product?')) {
+        if (confirm(t('shop.artist.products.deleteConfirm'))) {
             deleteMutation.mutate(id);
         }
     };
@@ -68,7 +70,7 @@ export const ArtistProductsTab = () => {
     if (profile?.status !== 'APPROVED') {
         return (
             <div className="text-center py-12 text-stone-500">
-                <p>Your artist profile must be approved before you can manage products.</p>
+                <p>{t('shop.artist.products.profileNotApproved')}</p>
             </div>
         );
     }
@@ -76,50 +78,50 @@ export const ArtistProductsTab = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-stone-900">Your Products</h2>
+                <h2 className="text-xl font-bold text-stone-900">{t('shop.artist.products.title')}</h2>
                 {!isFormOpen && (
                     <Button onClick={() => setIsFormOpen(true)} size="sm">
-                        <Plus className="h-4 w-4 mr-2" /> Add Product
+                        <Plus className="h-4 w-4 mr-2" /> {t('shop.artist.products.addProduct')}
                     </Button>
                 )}
             </div>
 
             {isFormOpen && (
                 <form onSubmit={handleSubmit} className="mb-8 bg-stone-50 p-6 rounded-xl border border-stone-200 space-y-4">
-                    <h3 className="font-semibold text-lg">{editingProduct ? 'Edit Product' : 'New Product'}</h3>
+                    <h3 className="font-semibold text-lg">{editingProduct ? t('shop.artist.products.editProduct') : t('shop.artist.products.newProduct')}</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-stone-700">Title</label>
+                            <label className="block text-sm font-medium text-stone-700">{t('shop.artist.products.titleField')}</label>
                             <input required name="title" defaultValue={editingProduct?.title} className="mt-1 block w-full rounded-md border-stone-300 shadow-sm" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-stone-700">Category</label>
+                            <label className="block text-sm font-medium text-stone-700">{t('shop.artist.products.category')}</label>
                             <select required name="category" defaultValue={editingProduct?.category || 'ARTWORK'} className="mt-1 block w-full rounded-md border-stone-300 shadow-sm">
-                                <option value="ARTWORK">Artwork</option>
-                                <option value="MERCHANDISE">Merchandise</option>
-                                <option value="THERAPY_TOOL">Therapy Tool</option>
-                                <option value="BOOK">Book</option>
-                                <option value="OTHER">Other</option>
+                                <option value="ARTWORK">{t('shop.artist.products.categories.ARTWORK')}</option>
+                                <option value="MERCHANDISE">{t('shop.artist.products.categories.MERCHANDISE')}</option>
+                                <option value="THERAPY_TOOL">{t('shop.artist.products.categories.THERAPY_TOOL')}</option>
+                                <option value="BOOK">{t('shop.artist.products.categories.BOOK')}</option>
+                                <option value="OTHER">{t('shop.artist.products.categories.OTHER')}</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-stone-700">Price (CNY)</label>
+                            <label className="block text-sm font-medium text-stone-700">{t('shop.artist.products.price')}</label>
                             <input required type="number" step="0.01" min="0" name="price" defaultValue={editingProduct?.price} className="mt-1 block w-full rounded-md border-stone-300 shadow-sm" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-stone-700">Stock</label>
+                            <label className="block text-sm font-medium text-stone-700">{t('shop.artist.products.stock')}</label>
                             <input required type="number" min="0" name="stock" defaultValue={editingProduct?.stock} className="mt-1 block w-full rounded-md border-stone-300 shadow-sm" />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Description</label>
+                        <label className="block text-sm font-medium text-stone-700">{t('shop.artist.products.description')}</label>
                         <textarea required name="description" rows={3} defaultValue={editingProduct?.description} className="mt-1 block w-full rounded-md border-stone-300 shadow-sm" />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Image URLs (comma separated)</label>
+                        <label className="block text-sm font-medium text-stone-700">{t('shop.artist.products.imageUrls')}</label>
                         <input
                             required
                             name="images"
@@ -131,10 +133,10 @@ export const ArtistProductsTab = () => {
 
                     <div className="flex gap-2 justify-end pt-2">
                         <Button type="button" variant="outline" onClick={() => { setIsFormOpen(false); setEditingProduct(null); }}>
-                            Cancel
+                            {t('common.cancel')}
                         </Button>
                         <Button type="submit" loading={saveMutation.isPending}>
-                            Save Product
+                            {t('shop.artist.products.saveProduct')}
                         </Button>
                     </div>
                 </form>
@@ -142,7 +144,7 @@ export const ArtistProductsTab = () => {
 
             {(!products || products.length === 0) && !isFormOpen ? (
                 <div className="text-center py-12 text-stone-500 border-2 border-dashed border-stone-200 rounded-xl">
-                    <p>No products selling yet. Add your first creative product!</p>
+                    <p>{t('shop.artist.products.empty')}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -153,12 +155,12 @@ export const ArtistProductsTab = () => {
                                     <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-stone-400">
-                                        No Image
+                                        {t('shop.artist.products.noImage')}
                                     </div>
                                 )}
                                 {product.stock <= 0 && (
                                     <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
-                                        OUT OF STOCK
+                                        {t('shop.product.outOfStock')}
                                     </div>
                                 )}
                             </div>
@@ -169,19 +171,19 @@ export const ArtistProductsTab = () => {
                                 </div>
                                 <p className="text-sm text-stone-500 line-clamp-2">{product.description}</p>
                                 <div className="mt-4 flex justify-between items-center text-sm border-t border-stone-100 pt-3">
-                                    <span className="text-stone-600">Stock: {product.stock}</span>
+                                    <span className="text-stone-600">{t('shop.artist.products.stockLabel', { count: product.stock })}</span>
                                     <div className="flex gap-1.5">
                                         <button
                                             onClick={() => handleEdit(product)}
                                             className="p-1.5 text-stone-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                                            title="Edit"
+                                            title={t('common.edit')}
                                         >
                                             <Edit2 className="h-4 w-4" />
                                         </button>
                                         <button
                                             onClick={() => handleDelete(product.id)}
                                             className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Delete"
+                                            title={t('common.delete')}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>

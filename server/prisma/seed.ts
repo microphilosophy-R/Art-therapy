@@ -8,6 +8,7 @@ import {
   TherapyPlanType,
   ArtSalonSubType,
   TherapyPlanStatus,
+  ProductCategory,
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -46,6 +47,14 @@ async function main() {
   await prisma.availability.deleteMany();
   await prisma.therapistGalleryImage.deleteMany();
   await prisma.therapistProfile.deleteMany();
+  // Shop tables
+  await prisma.productPayment.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.productImage.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.artistProfile.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('✓ All tables cleared');
@@ -546,6 +555,180 @@ async function main() {
 
   console.log('✓ Therapy plans created');
 
+  // ─── Artist Users ─────────────────────────────────────────────────────────
+  const artist1User = await prisma.user.create({
+    data: {
+      email: 'artist@arttherapy.dev',
+      passwordHash,
+      role: Role.ARTIST,
+      firstName: 'Li',
+      lastName: 'Wei',
+      phone: '+86 138-0013-8000',
+    },
+  });
+
+  const artist2User = await prisma.user.create({
+    data: {
+      email: 'artist2@arttherapy.dev',
+      passwordHash,
+      role: Role.ARTIST,
+      firstName: 'Mei',
+      lastName: 'Zhang',
+    },
+  });
+
+  console.log('✓ Artist users created');
+
+  // ─── Artist Profiles ──────────────────────────────────────────────────────
+  const artistProfile1 = await prisma.artistProfile.create({
+    data: {
+      userId: artist1User.id,
+      bio: 'Traditional Chinese ink and watercolour artist. My work explores the connection between mindfulness, nature, and the healing power of slow, intentional brushwork.',
+      portfolioUrl: 'https://unsplash.com',
+      socialMediaLink: 'https://instagram.com',
+      profileStatus: 'APPROVED',
+      submittedAt: daysFromNow(-20),
+      reviewedAt: daysFromNow(-18),
+    },
+  });
+
+  const artistProfile2 = await prisma.artistProfile.create({
+    data: {
+      userId: artist2User.id,
+      bio: 'Digital illustrator and ceramic artist working at the intersection of technology and handcraft. I create tools and objects designed to support emotional wellbeing.',
+      portfolioUrl: 'https://unsplash.com',
+      profileStatus: 'APPROVED',
+      submittedAt: daysFromNow(-15),
+      reviewedAt: daysFromNow(-13),
+    },
+  });
+
+  console.log('✓ Artist profiles created');
+
+  // ─── Products ─────────────────────────────────────────────────────────────
+  // Artist 1 — Li Wei (painting / crafts)
+  await prisma.product.create({
+    data: {
+      artistId: artistProfile1.id,
+      title: '秋山水彩原画 / Autumn Mountain Watercolour',
+      description: '手工水彩原画，描绘秋日山间晨雾。使用专业水彩纸与颜料，适合装裱收藏。\n\nOriginal hand-painted watercolour on 300gsm cold-press paper. Depicts misty mountain peaks at dawn. Each piece is unique and signed by the artist. Suitable for framing.',
+      price: 980.00,
+      stock: 3,
+      category: ProductCategory.PAINTING,
+      images: {
+        create: [
+          { url: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800', order: 0 },
+          { url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800', order: 1 },
+        ],
+      },
+    },
+  });
+
+  await prisma.product.create({
+    data: {
+      artistId: artistProfile1.id,
+      title: '书法挂轴「静」/ Calligraphy Scroll — Stillness',
+      description: '手写书法挂轴，字为「静」，意为宁静与内心平和。宣纸墨书，配实木轴杆，可直接悬挂。\n\nHand-brushed Chinese calligraphy on Xuan paper mounted on a bamboo scroll. The character 静 (stillness) is rendered in a flowing semi-cursive style. Ready to hang.',
+      price: 560.00,
+      stock: 5,
+      category: ProductCategory.CRAFTS,
+      images: {
+        create: [
+          { url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800', order: 0 },
+        ],
+      },
+    },
+  });
+
+  await prisma.product.create({
+    data: {
+      artistId: artistProfile1.id,
+      title: '艺术疗愈手册 / Art Therapy Workbook',
+      description: '专为成人设计的艺术疗愈练习手册，包含30个引导性绘画与书写练习，帮助情绪整理与自我探索。配有插图与说明。\n\nA guided workbook with 30 structured art therapy exercises for adults. Covers emotion mapping, gratitude drawing, and expressive journalling. Illustrated throughout. A4 softcover, 120 pages.',
+      price: 128.00,
+      stock: 20,
+      category: ProductCategory.OTHER,
+      images: {
+        create: [
+          { url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800', order: 0 },
+          { url: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800', order: 1 },
+        ],
+      },
+    },
+  });
+
+  // Artist 2 — Mei Zhang (digital art / merchandise)
+  const product4 = await prisma.product.create({
+    data: {
+      artistId: artistProfile2.id,
+      title: '《呼吸》数字版画 / "Breathe" Digital Art Print',
+      description: '数字插画版画，主题为正念呼吸。高品质哑光纸打印，A3尺寸，附签名证书。适合治疗室或家居装饰。\n\nHigh-resolution digital illustration printed on premium matte fine-art paper (A3). The piece visualises a mindful breath — gentle waves expanding outward from a single point. Signed certificate of authenticity included.',
+      price: 320.00,
+      stock: 15,
+      category: ProductCategory.DIGITAL_ART,
+      images: {
+        create: [
+          { url: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800', order: 0 },
+          { url: 'https://images.unsplash.com/photo-1549490349-8643362247b5?w=800', order: 1 },
+        ],
+      },
+    },
+  });
+
+  const product5 = await prisma.product.create({
+    data: {
+      artistId: artistProfile2.id,
+      title: '手工陶瓷疗愈马克杯 / Handmade Ceramic Therapy Mug',
+      description: '纯手工拉坯陶瓷马克杯，釉色温柔，握感舒适。每只独一无二，略有差异。容量约350ml，微波炉及洗碗机安全。\n\nHand-thrown ceramic mug in calming sage glaze. Each piece is unique with natural variations. Approx. 350ml capacity. Microwave and dishwasher safe. Designed to make everyday rituals feel intentional.',
+      price: 198.00,
+      stock: 8,
+      category: ProductCategory.MERCHANDISE,
+      images: {
+        create: [
+          { url: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800', order: 0 },
+          { url: 'https://images.unsplash.com/photo-1572119865084-43c285814d63?w=800', order: 1 },
+        ],
+      },
+    },
+  });
+
+  await prisma.product.create({
+    data: {
+      artistId: artistProfile2.id,
+      title: '正念彩绘套装 / Mindfulness Watercolour Set',
+      description: '入门级水彩套装，专为艺术疗愈课程设计，包含12色固体水彩、两支画笔、调色盘及说明卡。适合无绘画基础的成人使用。\n\nA starter watercolour kit designed for art therapy sessions. Includes 12 solid pigment pans, 2 brushes, a ceramic palette, and a getting-started instruction card. Non-toxic, suitable for adults with no prior painting experience.',
+      price: 158.00,
+      stock: 0,
+      category: ProductCategory.MERCHANDISE,
+      images: {
+        create: [
+          { url: 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=800', order: 0 },
+        ],
+      },
+    },
+  });
+
+  console.log('✓ Products created');
+
+  // ─── Sample cart item for client1 ─────────────────────────────────────────
+  await prisma.cartItem.create({
+    data: {
+      userId: client1.id,
+      productId: product4.id,
+      quantity: 1,
+    },
+  });
+
+  await prisma.cartItem.create({
+    data: {
+      userId: client1.id,
+      productId: product5.id,
+      quantity: 2,
+    },
+  });
+
+  console.log('✓ Sample cart items created');
+
   console.log('\n✅ Seed complete!\n');
   console.log('Test accounts — password for all: password123');
   console.log('─────────────────────────────────────────────────');
@@ -555,6 +738,8 @@ async function main() {
   console.log('Therapist 3:  therapist3@arttherapy.dev  (Priya Patel)');
   console.log('Client 1:     client@arttherapy.dev      (Alex Rivera)');
   console.log('Client 2:     client2@arttherapy.dev     (Jordan Kim)');
+  console.log('Artist 1:     artist@arttherapy.dev      (Li Wei)');
+  console.log('Artist 2:     artist2@arttherapy.dev     (Mei Zhang)');
 }
 
 main()

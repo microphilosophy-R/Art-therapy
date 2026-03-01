@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getArtistOrders, fulfillOrder } from '../../../api/artist';
 import { Button } from '../../../components/ui/Button';
 import { PageLoader } from '../../../components/ui/Spinner';
 import { Package, Truck } from 'lucide-react';
 
 export const ArtistOrdersTab = () => {
+    const { t } = useTranslation();
     const qc = useQueryClient();
     const [fulfillingOrderId, setFulfillingOrderId] = useState<string | null>(null);
 
@@ -38,13 +40,13 @@ export const ArtistOrdersTab = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-stone-900">Manage Orders</h2>
+                <h2 className="text-xl font-bold text-stone-900">{t('shop.artist.orders.title')}</h2>
             </div>
 
             {(!orders || orders.length === 0) ? (
                 <div className="text-center py-12 text-stone-500 border-2 border-dashed border-stone-200 rounded-xl">
                     <Package className="h-10 w-10 mx-auto opacity-30 mb-3" />
-                    <p>No orders received yet.</p>
+                    <p>{t('shop.artist.orders.empty')}</p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -63,30 +65,30 @@ export const ArtistOrdersTab = () => {
                                             order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
                                                 'bg-stone-100 text-stone-800'
                                         }`}>
-                                        {order.status}
+                                        {t(`shop.orders.status.${order.status}`, order.status)}
                                     </span>
                                 </div>
                             </div>
 
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Items</h4>
+                                    <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">{t('shop.artist.orders.items')}</h4>
                                     <ul className="space-y-2">
                                         {order.items?.map((item: any) => (
                                             <li key={item.id} className="flex justify-between text-sm">
-                                                <span className="text-stone-900">{item.product?.title || 'Unknown Product'} <span className="text-stone-500">x{item.quantity}</span></span>
+                                                <span className="text-stone-900">{item.product?.title || t('shop.artist.orders.unknownProduct')} <span className="text-stone-500">x{item.quantity}</span></span>
                                                 <span className="text-stone-600 font-medium">¥{(item.price * item.quantity).toFixed(2)}</span>
                                             </li>
                                         ))}
                                     </ul>
                                     <div className="mt-3 pt-3 border-t border-stone-100 flex justify-between font-bold text-stone-900 text-sm">
-                                        <span>Total</span>
+                                        <span>{t('shop.artist.orders.total')}</span>
                                         <span>¥{order.totalAmount.toFixed(2)}</span>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Shipping Details</h4>
+                                    <h4 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">{t('shop.artist.orders.shippingDetails')}</h4>
                                     {order.shippingAddress ? (
                                         <div className="text-sm text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-100">
                                             <p className="font-medium text-stone-900 mb-1">
@@ -98,7 +100,7 @@ export const ArtistOrdersTab = () => {
                                             <p>{(order.shippingAddress as any).detailedAddress}</p>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-stone-500 italic">No shipping details provided.</p>
+                                        <p className="text-sm text-stone-500 italic">{t('shop.artist.orders.noShippingDetails')}</p>
                                     )}
                                 </div>
                             </div>
@@ -108,22 +110,22 @@ export const ArtistOrdersTab = () => {
                                     {fulfillingOrderId === order.id ? (
                                         <form onSubmit={(e) => handleFulfillSubmit(e, order.id)} className="flex gap-3 items-end">
                                             <div className="flex-1">
-                                                <label className="block text-xs font-medium text-stone-700 mb-1">Carrier Name (e.g., SF Express)</label>
+                                                <label className="block text-xs font-medium text-stone-700 mb-1">{t('shop.artist.orders.carrierName')}</label>
                                                 <input required name="carrierName" className="block w-full rounded-md border-stone-300 shadow-sm sm:text-sm" />
                                             </div>
                                             <div className="flex-1">
-                                                <label className="block text-xs font-medium text-stone-700 mb-1">Tracking Number</label>
+                                                <label className="block text-xs font-medium text-stone-700 mb-1">{t('shop.artist.orders.trackingNumber')}</label>
                                                 <input required name="trackingNumber" className="block w-full rounded-md border-stone-300 shadow-sm sm:text-sm" />
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button type="button" variant="outline" onClick={() => setFulfillingOrderId(null)}>Cancel</Button>
-                                                <Button type="submit" loading={fulfillMutation.isPending}>Submit</Button>
+                                                <Button type="button" variant="outline" onClick={() => setFulfillingOrderId(null)}>{t('common.cancel')}</Button>
+                                                <Button type="submit" loading={fulfillMutation.isPending}>{t('common.submit')}</Button>
                                             </div>
                                         </form>
                                     ) : (
                                         <div className="flex justify-end">
                                             <Button onClick={() => setFulfillingOrderId(order.id)} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                                                <Truck className="h-4 w-4 mr-2" /> Mark as Shipped
+                                                <Truck className="h-4 w-4 mr-2" /> {t('shop.artist.orders.markAsShipped')}
                                             </Button>
                                         </div>
                                     )}
@@ -134,7 +136,7 @@ export const ArtistOrdersTab = () => {
                                 <div className="px-4 py-3 bg-blue-50 border-t border-blue-100 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Truck className="h-4 w-4 text-blue-600" />
-                                        <span className="text-sm font-medium text-blue-900">Shipped via {order.carrierName}</span>
+                                        <span className="text-sm font-medium text-blue-900">{t('shop.artist.orders.shippedVia', { carrier: order.carrierName })}</span>
                                     </div>
                                     <span className="text-sm text-blue-800 font-mono tracking-wide">{order.trackingNumber}</span>
                                 </div>

@@ -33,7 +33,8 @@
     "role": {
       "CLIENT": "Client",
       "THERAPIST": "Therapist",
-      "ADMIN": "Admin"
+      "ADMIN": "Admin",
+      "ARTIST": "Artist"
     },
     "errors": {
       "required": "This field is required",
@@ -82,9 +83,13 @@
     }
   },
   "nav": {
+    "home": "Home",
     "findTherapist": "Find a Therapist",
     "therapyPlans": "Therapy Plans",
     "gallery": "Gallery",
+    "shop": "Shop",
+    "cart": "Shopping Cart",
+    "myOrders": "My Orders",
     "signIn": "Sign in",
     "getStarted": "Get started",
     "dashboard": "Dashboard",
@@ -685,75 +690,41 @@
     }
   },
   "profile": {
-    "title": "Account Settings",
-    "subtitle": "Manage your personal information and account preferences",
-    "tabs": {
-      "personal": "Personal Info",
-      "security": "Security",
-      "payment": "Payment",
-      "privacy": "Privacy"
+    "wizard": {
+      "step1": "Basic Info",
+      "step2": "Consultations",
+      "step3": "Media",
+      "step4": "Preview & Submit",
+      "locationCity": "City",
+      "sessionPrice": "Session Price",
+      "sessionLength": "Session Length",
+      "isAccepting": "Currently accepting new clients",
+      "bio": "Bio",
+      "specialties": "Specialties",
+      "enableConsult": "Enable personal & group consultations",
+      "enableConsultDesc": "Allows you to create Personal Consult and Group Consult plans. Requires a valid certificate.",
+      "basicFees": "Basic Fees",
+      "hourlyConsultFee": "Hourly Consult Fee",
+      "certificate": "Professional Certificate",
+      "certificateUploaded": "Certificate uploaded",
+      "uploadCertificate": "Upload certificate (PDF or image)",
+      "certificateHint": "Upload your professional license or certification document.",
+      "uploadFeatured": "Upload featured image",
+      "submitForReview": "Submit Profile for Review",
+      "pendingDesc": "Your profile is under review. You will be notified once approved.",
+      "approvedDesc": "Your profile is live and visible to clients.",
+      "consultDisabledHint": "Enable consultations in your profile to unlock Personal Consult and Group Consult plan types."
     },
-    "personal": {
-      "title": "Personal Information",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "nickname": "Nickname (optional)",
-      "nicknamePlaceholder": "How would you like to be called?",
-      "age": "Age (optional)",
-      "gender": "Gender (optional)",
-      "genderOptions": {
-        "preferNotToSay": "Prefer not to say",
-        "female": "Female",
-        "male": "Male",
-        "nonBinary": "Non-binary",
-        "genderqueer": "Genderqueer",
-        "transgender": "Transgender",
-        "other": "Other"
-      },
-      "email": "Email Address",
-      "emailNote": "Email cannot be changed. Contact support if needed.",
-      "phone": "Phone (optional)",
-      "phonePlaceholder": "+1 555-000-0000",
-      "saveSuccess": "Profile updated successfully.",
-      "saveError": "Failed to update profile.",
-      "changeAvatar": "Change avatar",
-      "avatarSuccess": "Avatar updated",
-      "avatarError": "Failed to upload avatar",
-      "avatarHint": "jpg / png / webp · max 5 MB"
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING_REVIEW": "Pending Review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
     },
-    "security": {
-      "title": "Change Password",
-      "subtitle": "Choose a strong password of at least 8 characters.",
-      "current": "Current Password",
-      "new": "New Password",
-      "confirm": "Confirm New Password",
-      "submit": "Update Password",
-      "success": "Password changed successfully.",
-      "error": "Failed to change password."
-    },
-    "payment": {
-      "title": "Payment Methods",
-      "stripeTitle": "Secure Payment via Stripe",
-      "stripeDesc": "Your payment information is handled exclusively by Stripe, a PCI DSS Level 1 certified payment processor. ArtTherapy never stores your raw card number, CVV, or full card details on our servers.",
-      "stripeDesc2": "Payment methods are saved securely in your Stripe customer profile and can be managed during checkout. Each session payment is processed at the time of booking.",
-      "privacyNote": "Privacy Note on Payments",
-      "privacyDesc": "Platform fees are 15% per session. A record of each transaction (amount, date, therapist) is stored for your receipt history and is protected under our Privacy Policy. Payment details visible to therapists are limited to session confirmation — they never see your full card information.",
-      "learnMore": "Learn more in our Privacy Policy"
-    },
-    "privacyTab": {
-      "title": "Privacy & Consent",
-      "accepted": "Privacy Terms Accepted",
-      "acceptedOn": "Accepted on {{date}}",
-      "notAccepted": "Privacy Terms Not Yet Accepted",
-      "notAcceptedDesc": "Please review and accept our privacy terms to enable all features.",
-      "acceptBtn": "Accept Privacy Terms",
-      "readPolicy": "Read Privacy Policy & Terms",
-      "dataRights": "Your Data Rights",
-      "right1": "You may request a copy of your data by contacting support",
-      "right2": "You may request deletion of your account and data",
-      "right3": "Session notes and therapy records are subject to legal retention requirements (minimum 6 years)",
-      "right4": "Payment records are retained per PCI DSS requirements",
-      "success": "Privacy terms accepted."
+    "gallery": {
+      "title": "Gallery",
+      "add": "Add photo",
+      "images": "photos"
     }
   },
   "forms": {
@@ -933,42 +904,15 @@
     },
     "consentLabel": "By clicking below you confirm you have read and understood these terms."
   },
-  "profile": {
-    "wizard": {
-      "step1": "Basic Info",
-      "step2": "Consultations",
-      "step3": "Media",
-      "step4": "Preview & Submit",
-      "locationCity": "City",
-      "sessionPrice": "Session Price",
-      "sessionLength": "Session Length",
-      "isAccepting": "Currently accepting new clients",
-      "bio": "Bio",
-      "specialties": "Specialties",
-      "enableConsult": "Enable personal & group consultations",
-      "enableConsultDesc": "Allows you to create Personal Consult and Group Consult plans. Requires a valid certificate.",
-      "basicFees": "Basic Fees",
-      "hourlyConsultFee": "Hourly Consult Fee",
-      "certificate": "Professional Certificate",
-      "certificateUploaded": "Certificate uploaded",
-      "uploadCertificate": "Upload certificate (PDF or image)",
-      "certificateHint": "Upload your professional license or certification document.",
-      "uploadFeatured": "Upload featured image",
-      "submitForReview": "Submit Profile for Review",
-      "pendingDesc": "Your profile is under review. You will be notified once approved.",
-      "approvedDesc": "Your profile is live and visible to clients.",
-      "consultDisabledHint": "Enable consultations in your profile to unlock Personal Consult and Group Consult plan types."
-    },
-    "status": {
-      "DRAFT": "Draft",
-      "PENDING_REVIEW": "Pending Review",
-      "APPROVED": "Approved",
-      "REJECTED": "Rejected"
-    },
-    "gallery": {
-      "title": "Gallery",
-      "add": "Add photo",
-      "images": "photos"
+  "artist": {
+    "profile": {
+      "title": "Artist Profile",
+      "backToShop": "Back to Shop",
+      "visitShop": "Visit Shop",
+      "commission": "Commission Status",
+      "portfolio": "Portfolio",
+      "noProducts": "This artist has no products listed yet.",
+      "productsTitle": "Available Works"
     }
   },
   "admin": {
@@ -982,6 +926,154 @@
       "confirmReject": "Confirm Reject",
       "rejectReasonPlaceholder": "Explain why this profile is being rejected...",
       "consultEnabled": "Consult enabled"
+    }
+  },
+  "shop": {
+    "title": "Creative Art Shop",
+    "subtitle": "Discover unique creative products by our therapists and artists.",
+    "searchPlaceholder": "Search items...",
+    "allCategories": "All Categories",
+    "categories": {
+      "PAINTING": "Painting",
+      "SCULPTURE": "Sculpture",
+      "CRAFTS": "Crafts",
+      "DIGITAL_ART": "Digital Art",
+      "MERCHANDISE": "Merchandise",
+      "OTHER": "Other"
+    },
+    "product": {
+      "by": "By {{name}}",
+      "soldOut": "Sold Out",
+      "viewDetails": "View details",
+      "noProducts": "No products found matching your criteria.",
+      "loading": "Loading product details...",
+      "notFound": "Product Not Found",
+      "backToShop": "Back to Shop",
+      "quantity": "Quantity",
+      "available": "{{count}} available",
+      "addToCart": "Add to Cart",
+      "loginToAddToCart": "Log in to add to cart",
+      "outOfStock": "Out of Stock",
+      "noImage": "No image available"
+    },
+    "cart": {
+      "title": "Shopping Cart",
+      "empty": "Your cart is empty",
+      "emptyExtra": "Looks like you haven't added any creative items to your cart yet.",
+      "startShopping": "Start Shopping",
+      "remove": "Remove",
+      "orderSummary": "Order Summary",
+      "subtotal": "Subtotal ({{count}} items)",
+      "shipping": "Shipping",
+      "calculatedAtCheckout": "Calculated at checkout",
+      "total": "Total",
+      "includesVat": "Includes VAT",
+      "proceedToCheckout": "Proceed to Checkout",
+      "continueShopping": "Continue Shopping"
+    },
+    "checkout": {
+      "title": "Checkout",
+      "loading": "Loading checkout...",
+      "shippingAddress": "Shipping Address (China)",
+      "province": "Province",
+      "city": "City",
+      "district": "District",
+      "addressDetails": "Detailed Address",
+      "addressPlaceholder": "Street name, building, apartment number",
+      "recipientName": "Recipient Name",
+      "phoneNumber": "Phone Number",
+      "confirmOrder": "Confirm & Place Order",
+      "paymentMethod": "Select Payment Method",
+      "alipay": "Alipay",
+      "wechatPay": "WeChat Pay",
+      "orderSummary": "Order Summary",
+      "qty": "Qty: {{count}}",
+      "free": "Free",
+      "terms": "By placing your order, you agree to our Terms of Sale and Privacy Policy."
+    },
+    "orders": {
+      "title": "My Orders",
+      "empty": "No orders yet",
+      "emptyDesc": "When you buy items from the shop, they will appear here with tracking information.",
+      "browseShop": "Browse Shop",
+      "datePlaced": "Date placed",
+      "total": "Total",
+      "orderId": "Order ID",
+      "items": "Items",
+      "shippingInfo": "Shipping Information",
+      "logisticsDetails": "Logistics Details",
+      "carrier": "Carrier",
+      "trackingNumber": "Tracking #",
+      "trackOnKuaidi": "Track on Kuaidi100",
+      "qty": "Qty: {{count}}",
+      "status": {
+        "PENDING": "Awaiting Payment",
+        "PAID": "Processing",
+        "SHIPPED": "Shipped",
+        "DELIVERED": "Delivered",
+        "CANCELLED": "Cancelled"
+      }
+    },
+    "artist": {
+      "dashboard": {
+        "subtitle": "Manage your creative shop, products, and orders.",
+        "activeProducts": "Active Products",
+        "pendingOrders": "Pending Orders",
+        "profileStatus": "Profile Status",
+        "tabs": {
+          "showcase": "My Showcase",
+          "products": "Products",
+          "orders": "Orders",
+          "profile": "Profile"
+        }
+      },
+      "showcase": {
+        "preview": "This is how your profile appears to visitors",
+        "viewLive": "View Live Profile",
+        "editProfile": "Edit Profile",
+        "products": "Products on Sale",
+        "noProducts": "No products listed yet. Add your first product in the Products tab.",
+        "commission": "Commission Status",
+        "portfolio": "Portfolio"
+      },
+      "orders": {
+        "title": "Manage Orders",
+        "empty": "No orders received yet.",
+        "items": "Items",
+        "shippingDetails": "Shipping Details",
+        "noShippingDetails": "No shipping details provided.",
+        "total": "Total",
+        "carrierName": "Carrier Name (e.g., SF Express)",
+        "trackingNumber": "Tracking Number",
+        "markAsShipped": "Mark as Shipped",
+        "shippedVia": "Shipped via {{carrier}}",
+        "unknownProduct": "Unknown Product"
+      },
+      "products": {
+        "title": "Your Products",
+        "addProduct": "Add Product",
+        "editProduct": "Edit Product",
+        "newProduct": "New Product",
+        "titleField": "Title",
+        "category": "Category",
+        "price": "Price (CNY)",
+        "stock": "Stock",
+        "stockLabel": "Stock: {{count}}",
+        "description": "Description",
+        "imageUrls": "Image URLs (comma separated)",
+        "saveProduct": "Save Product",
+        "empty": "No products selling yet. Add your first creative product!",
+        "noImage": "No Image",
+        "deleteConfirm": "Are you sure you want to delete this product?",
+        "profileNotApproved": "Your artist profile must be approved before you can manage products.",
+        "categories": {
+          "ARTWORK": "Artwork",
+          "MERCHANDISE": "Merchandise",
+          "THERAPY_TOOL": "Therapy Tool",
+          "BOOK": "Book",
+          "OTHER": "Other"
+        }
+      }
     }
   }
 }

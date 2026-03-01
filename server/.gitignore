@@ -5,3 +5,4 @@ dist/
 prisma/migrations/*.sql
 code.md
 admin.pem
+uploads/

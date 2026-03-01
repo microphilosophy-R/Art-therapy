@@ -1,11 +1,13 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getMyOrders } from '../../api/shop';
 import { Loader2, Package, Truck, CheckCircle2, XCircle, ShoppingBag } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 
 export const MyOrdersPage = () => {
+    const { t } = useTranslation();
     const { data: orders, isLoading } = useQuery({
         queryKey: ['my-orders'],
         queryFn: getMyOrders,
@@ -24,11 +26,11 @@ export const MyOrdersPage = () => {
             <div className="container mx-auto px-4 py-20 max-w-4xl text-center">
                 <div className="bg-gray-50 rounded-2xl p-12 py-24 flex flex-col items-center justify-center">
                     <Package className="w-20 h-20 text-gray-300 mb-6" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">No orders yet</h2>
-                    <p className="text-gray-500 mb-8 max-w-sm">When you buy items from the shop, they will appear here with tracking information.</p>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('shop.orders.empty')}</h2>
+                    <p className="text-gray-500 mb-8 max-w-sm">{t('shop.orders.emptyDesc')}</p>
                     <Link to="/shop">
                         <Button size="lg" className="bg-teal-600 hover:bg-teal-700">
-                            Browse Shop
+                            {t('shop.orders.browseShop')}
                         </Button>
                     </Link>
                 </div>
@@ -47,20 +49,9 @@ export const MyOrdersPage = () => {
         }
     };
 
-    const getStatusText = (status: string) => {
-        switch (status) {
-            case 'PENDING': return 'Awaiting Payment';
-            case 'PAID': return 'Processing';
-            case 'SHIPPED': return 'Shipped';
-            case 'DELIVERED': return 'Delivered';
-            case 'CANCELLED': return 'Cancelled';
-            default: return status;
-        }
-    };
-
     return (
         <div className="container mx-auto px-4 py-8 max-w-5xl">
-            <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('shop.orders.title')}</h1>
 
             <div className="space-y-6">
                 {orders.map((order) => (
@@ -69,21 +60,21 @@ export const MyOrdersPage = () => {
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50 p-4 border-b gap-4">
                             <div className="flex flex-wrap gap-6 text-sm">
                                 <div>
-                                    <span className="text-gray-500 block">Date placed</span>
+                                    <span className="text-gray-500 block">{t('shop.orders.datePlaced')}</span>
                                     <span className="font-medium text-gray-900">{new Date(order.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500 block">Total</span>
+                                    <span className="text-gray-500 block">{t('shop.orders.total')}</span>
                                     <span className="font-medium text-gray-900">¥{(order.totalAmount / 100).toFixed(2)}</span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500 block">Order ID</span>
+                                    <span className="text-gray-500 block">{t('shop.orders.orderId')}</span>
                                     <span className="font-mono text-gray-900">{order.id}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border text-sm font-medium">
                                 {getStatusIcon(order.status)}
-                                {getStatusText(order.status)}
+                                {t(`shop.orders.status.${order.status}`, order.status)}
                             </div>
                         </div>
 
@@ -92,7 +83,7 @@ export const MyOrdersPage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 {/* Items */}
                                 <div className="md:col-span-2 space-y-4">
-                                    <h3 className="font-semibold text-gray-900 mb-4 border-b pb-2">Items</h3>
+                                    <h3 className="font-semibold text-gray-900 mb-4 border-b pb-2">{t('shop.orders.items')}</h3>
                                     {order.items.map((item) => (
                                         <div key={item.id} className="flex gap-4">
                                             <Link to={`/shop/${item.productId}`} className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded border overflow-hidden">
@@ -112,7 +103,7 @@ export const MyOrdersPage = () => {
                                                 <Link to={`/shop/${item.productId}`} className="font-semibold text-gray-900 hover:text-teal-600 transition-colors line-clamp-1">
                                                     {item.product.title}
                                                 </Link>
-                                                <div className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</div>
+                                                <div className="text-sm text-gray-500 mt-1">{t('shop.orders.qty', { count: item.quantity })}</div>
                                                 <div className="text-sm font-medium text-gray-900 mt-1">¥{(item.price / 100).toFixed(2)}</div>
                                             </div>
                                         </div>
@@ -122,7 +113,7 @@ export const MyOrdersPage = () => {
                                 {/* Shipping & Tracking */}
                                 <div className="space-y-6 border-t md:border-t-0 md:border-l pt-6 md:pt-0 md:pl-8">
                                     <div>
-                                        <h3 className="font-semibold text-gray-900 mb-2 border-b pb-2">Shipping Information</h3>
+                                        <h3 className="font-semibold text-gray-900 mb-2 border-b pb-2">{t('shop.orders.shippingInfo')}</h3>
                                         <div className="text-sm text-gray-600 space-y-1">
                                             <div className="font-medium text-gray-900">{order.shippingAddress.recipientName}</div>
                                             <div>{order.shippingAddress.phone}</div>
@@ -137,15 +128,15 @@ export const MyOrdersPage = () => {
                                         <div className="bg-teal-50 border border-teal-100 rounded-lg p-4">
                                             <h4 className="font-semibold text-teal-800 mb-2 flex items-center text-sm">
                                                 <Truck className="w-4 h-4 mr-2" />
-                                                Logistics Details
+                                                {t('shop.orders.logisticsDetails')}
                                             </h4>
                                             <div className="text-sm space-y-2">
                                                 <div className="flex justify-between">
-                                                    <span className="text-stone-600">Carrier:</span>
-                                                    <span className="font-medium text-teal-900">{order.carrierName || 'Standard Shipping'}</span>
+                                                    <span className="text-stone-600">{t('shop.orders.carrier')}:</span>
+                                                    <span className="font-medium text-teal-900">{order.carrierName || t('shop.orders.status.SHIPPED')}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-stone-600">Tracking #:</span>
+                                                    <span className="text-stone-600">{t('shop.orders.trackingNumber')}:</span>
                                                     <span className="font-mono text-teal-900 bg-teal-100 px-2 py-0.5 rounded">{order.trackingNumber || 'N/A'}</span>
                                                 </div>
                                                 {order.trackingNumber && (
@@ -155,7 +146,7 @@ export const MyOrdersPage = () => {
                                                         rel="noopener noreferrer"
                                                         className="text-teal-600 hover:text-teal-700 text-xs font-medium block mt-2 text-right"
                                                     >
-                                                        Track on Kuaidi100 &rarr;
+                                                        {t('shop.orders.trackOnKuaidi')} &rarr;
                                                     </a>
                                                 )}
                                             </div>

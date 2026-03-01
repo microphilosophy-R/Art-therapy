@@ -12,10 +12,30 @@ export interface ArtistProfile {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
+export interface PublicArtistProfile {
+    id: string;
+    userId: string;
+    bio: string | null;
+    portfolioUrl: string | null;
+    socialMediaLink: string | null;
+    commissionStatus: string | null;
+    profileStatus: string;
+    user: {
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+    };
+}
+
 // Profile Endpoints
 export const getMyArtistProfile = async () => {
     const { data } = await api.get('/artist/me');
     return data as ArtistProfile;
+};
+
+export const getPublicArtistProfile = async (artistId: string) => {
+    const { data } = await api.get(`/artists/${artistId}`);
+    return data as PublicArtistProfile;
 };
 
 export const updateArtistProfile = async (updates: Partial<ArtistProfile>) => {

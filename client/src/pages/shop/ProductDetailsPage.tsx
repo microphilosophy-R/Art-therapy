@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getProductById, addToCart } from '../../api/shop';
 import { Button } from '../../components/ui/Button';
 import { useAuthStore } from '../../store/authStore';
 import { Loader2, ArrowLeft, ShoppingCart, Minus, Plus } from 'lucide-react';
 
 export const ProductDetailsPage = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const { isAuthenticated } = useAuthStore();
@@ -33,7 +35,7 @@ export const ProductDetailsPage = () => {
         return (
             <div className="flex justify-center flex-col items-center py-32 space-y-4">
                 <Loader2 className="w-12 h-12 animate-spin text-teal-600" />
-                <p className="text-gray-500">Loading product details...</p>
+                <p className="text-gray-500">{t('shop.product.loading')}</p>
             </div>
         );
     }
@@ -41,9 +43,9 @@ export const ProductDetailsPage = () => {
     if (!product) {
         return (
             <div className="container mx-auto px-4 py-20 text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('shop.product.notFound')}</h2>
                 <Link to="/shop">
-                    <Button variant="outline">Back to Shop</Button>
+                    <Button variant="outline">{t('shop.product.backToShop')}</Button>
                 </Link>
             </div>
         );
@@ -53,7 +55,7 @@ export const ProductDetailsPage = () => {
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <Link to="/shop" className="inline-flex items-center text-gray-500 hover:text-teal-600 mb-6 transition-colors">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Shop
+                {t('shop.product.backToShop')}
             </Link>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -68,7 +70,7 @@ export const ProductDetailsPage = () => {
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                No image available
+                                {t('shop.product.noImage')}
                             </div>
                         )}
                     </div>
@@ -92,7 +94,7 @@ export const ProductDetailsPage = () => {
                 <div className="flex flex-col">
                     <div className="mb-2">
                         <span className="text-sm font-semibold tracking-wider text-teal-600 uppercase">
-                            {product.category}
+                            {t(`shop.categories.${product.category}`)}
                         </span>
                     </div>
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{product.title}</h1>
@@ -105,7 +107,9 @@ export const ProductDetailsPage = () => {
                                     {product.artist.user.firstName.charAt(0)}
                                 </div>
                             )}
-                            <span className="text-gray-600 text-sm">By {product.artist.user.firstName} {product.artist.user.lastName}</span>
+                            <span className="text-gray-600 text-sm">
+                                {t('shop.product.by', { name: `${product.artist.user.firstName} ${product.artist.user.lastName}` })}
+                            </span>
                         </div>
                     </div>
 
@@ -121,7 +125,7 @@ export const ProductDetailsPage = () => {
                         {product.stock > 0 ? (
                             <>
                                 <div className="flex items-center gap-4">
-                                    <span className="font-medium text-gray-700">Quantity</span>
+                                    <span className="font-medium text-gray-700">{t('shop.product.quantity')}</span>
                                     <div className="flex items-center border rounded-md">
                                         <button
                                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -139,7 +143,7 @@ export const ProductDetailsPage = () => {
                                             <Plus className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <span className="text-sm text-gray-500">{product.stock} available</span>
+                                    <span className="text-sm text-gray-500">{t('shop.product.available', { count: product.stock })}</span>
                                 </div>
 
                                 {isAuthenticated ? (
@@ -150,7 +154,7 @@ export const ProductDetailsPage = () => {
                                         disabled={isAdding}
                                     >
                                         {isAdding ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShoppingCart className="w-5 h-5 mr-2" />}
-                                        Add to Cart
+                                        {t('shop.product.addToCart')}
                                     </Button>
                                 ) : (
                                     <Button
@@ -159,13 +163,13 @@ export const ProductDetailsPage = () => {
                                         className="w-full text-lg h-14 border-teal-600 text-teal-600 hover:bg-teal-50"
                                         onClick={() => navigate('/login?redirect=/shop/' + product.id)}
                                     >
-                                        Log in to add to cart
+                                        {t('shop.product.loginToAddToCart')}
                                     </Button>
                                 )}
                             </>
                         ) : (
                             <Button size="lg" disabled className="w-full text-lg h-14 bg-gray-300">
-                                Out of Stock
+                                {t('shop.product.outOfStock')}
                             </Button>
                         )}
                     </div>

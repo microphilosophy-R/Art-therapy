@@ -76,9 +76,33 @@ export const submitForReview = async (req: Request, res: Response) => {
     res.json(updated);
 };
 
+export const getPublicProfile = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const profile = await prisma.artistProfile.findUnique({
+        where: { id },
+        include: {
+            user: {
+                select: {
+                    firstName: true,
+                    lastName: true,
+                    avatarUrl: true,
+                },
+            },
+        },
+    });
+
+    if (!profile || profile.profileStatus !== 'APPROVED') {
+        return res.status(404).json({ message: 'Artist not found' });
+    }
+
+    res.json(profile);
+};
+
 export const ArtistController = {
     getMyProfile,
     updateProfile,
     submitForReview,
+    getPublicProfile,
     updateProfileSchema,
 };

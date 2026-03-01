@@ -100,6 +100,52 @@ export const createPlanWechatOrder = async (participantId: string, userId: strin
   return { codeUrl, paymentId: participant.payment.id };
 };
 
+export const createProductWechatOrder = async (orderId: string, userId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { payment: true },
+  });
+
+  if (!order) throw new Error('Order not found');
+  if (order.userId !== userId) throw new Error('Forbidden');
+  if (order.status !== 'PENDING') throw new Error('Order is not in PENDING status');
+  if (order.payment && order.payment.status === 'SUCCEEDED') {
+    throw new Error('Payment already completed');
+  }
+
+  const totalFen = order.totalAmount; // Already in cents/fen
+  const outTradeNo = generateOrderId();
+  const notifyUrl = process.env.WECHAT_NOTIFY_URL || 'http://localhost:3001/webhooks/wechat';
+  const description = `Art Shopping Order: ${order.id}`;
+
+  const response = await wechatpay!.v3.pay.transactions.native.post({
+    mchid: process.env.WECHAT_MCH_ID!,
+    appid: process.env.WECHAT_APP_ID!,
+    description,
+    out_trade_no: outTradeNo,
+    notify_url: notifyUrl,
+    amount: { total: totalFen, currency: 'CNY' },
+  });
+  const codeUrl = (response.data as any).code_url as string;
+
+  const payment = order.payment
+    ? await prisma.productPayment.update({
+      where: { id: order.payment.id },
+      data: { externalOrderId: outTradeNo, provider: 'WECHAT_PAY' },
+    })
+    : await prisma.productPayment.create({
+      data: {
+        orderId,
+        provider: 'WECHAT_PAY',
+        externalOrderId: outTradeNo,
+        amount: order.totalAmount, // No split fee
+        currency: 'cny',
+      },
+    });
+
+  return { codeUrl, paymentId: payment.id };
+};
+
 export const handleWechatNotification = async (
   decryptedBody: Record<string, any>
 ) => {
@@ -161,6 +207,26 @@ export const handleWechatNotification = async (
       prisma.therapyPlanParticipant.update({
         where: { id: planPayment.participantId },
         data: { status: 'SIGNED_UP' as any },
+      }),
+    ]);
+    return;
+  }
+
+  // If not found in therapy plans, check product payments
+  const productPayment = await prisma.productPayment.findFirst({
+    where: { externalOrderId: out_trade_no },
+  });
+
+  if (productPayment) {
+    if (productPayment.status === 'SUCCEEDED') return;
+    await prisma.$transaction([
+      prisma.productPayment.update({
+        where: { id: productPayment.id },
+        data: { status: 'SUCCEEDED', externalTradeNo: transaction_id },
+      }),
+      prisma.order.update({
+        where: { id: productPayment.orderId },
+        data: { status: 'PAID' },
       }),
     ]);
     return;

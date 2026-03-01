@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import * as wechatService from '../services/wechat.service';
 
-export const createWechatOrder = async (req: Request, res: Response) => {
+export const createWechatOrderController = async (req: Request, res: Response) => {
   try {
     const result = await wechatService.createWechatOrder(req.body.appointmentId, req.user!.id);
     res.json(result);
@@ -11,9 +11,18 @@ export const createWechatOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const createPlanWechatOrder = async (req: Request, res: Response) => {
+export const createPlanWechatOrderController = async (req: Request, res: Response) => {
   try {
     const result = await wechatService.createPlanWechatOrder(req.body.participantId, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const createProductWechatOrderController = async (req: Request, res: Response) => {
+  try {
+    const result = await wechatService.createProductWechatOrder(req.body.orderId, req.user!.id);
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ message: err.message });

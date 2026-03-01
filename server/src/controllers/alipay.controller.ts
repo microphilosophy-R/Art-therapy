@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import * as alipayService from '../services/alipay.service';
 
-export const createAlipayOrder = async (req: Request, res: Response) => {
+export const createAlipayOrderController = async (req: Request, res: Response) => {
   try {
     const result = await alipayService.createAlipayOrder(req.body.appointmentId, req.user!.id);
     res.json(result);
@@ -11,9 +11,18 @@ export const createAlipayOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const createPlanAlipayOrder = async (req: Request, res: Response) => {
+export const createPlanAlipayOrderController = async (req: Request, res: Response) => {
   try {
     const result = await alipayService.createPlanAlipayOrder(req.body.participantId, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const createProductAlipayOrderController = async (req: Request, res: Response) => {
+  try {
+    const result = await alipayService.createProductAlipayOrder(req.body.orderId, req.user!.id);
     res.json(result);
   } catch (err: any) {
     res.status(400).json({ message: err.message });

@@ -11,6 +11,7 @@ enum Role {
   CLIENT
   THERAPIST
   ADMIN
+  ARTIST
 }
 
 enum AppointmentStatus {
@@ -124,6 +125,25 @@ enum ProfileStatus {
   REJECTED
 }
 
+// ─── E-commerce Enums ──────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum ProductCategory {
+  PAINTING
+  SCULPTURE
+  CRAFTS
+  DIGITAL_ART
+  MERCHANDISE
+  OTHER
+}
+
 model User {
   id               String    @id @default(cuid())
   email            String    @unique
@@ -140,27 +160,30 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  therapistProfile     TherapistProfile?
-  appointmentsAsClient Appointment[]     @relation("ClientAppointments")
-  reviews              Review[]
-  receivedForms        ClientForm[]      @relation("FormRecipient")
-  sentForms            ClientForm[]      @relation("FormSender")
-  sentMessages         Message[]         @relation("MessageSender")
-  receivedMessages     Message[]         @relation("MessageRecipient")
+  therapistProfile          TherapistProfile?
+  artistProfile             ArtistProfile?
+  appointmentsAsClient      Appointment[]            @relation("ClientAppointments")
+  reviews                   Review[]
+  receivedForms             ClientForm[]             @relation("FormRecipient")
+  sentForms                 ClientForm[]             @relation("FormSender")
+  sentMessages              Message[]                @relation("MessageSender")
+  receivedMessages          Message[]                @relation("MessageRecipient")
   therapyPlanParticipations TherapyPlanParticipant[] @relation("UserParticipations")
   templates                 TherapyPlanTemplate[]    @relation("UserTemplates")
+  cartItems                 CartItem[]
+  orders                    Order[]
 }
 
 model TherapistProfile {
-  id            String              @id @default(cuid())
-  userId        String              @unique
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio           String
   specialties   String[]
-  sessionPrice  Decimal             @db.Decimal(10, 2)
+  sessionPrice  Decimal  @db.Decimal(10, 2)
   sessionLength Int
   locationCity  String
-  isAccepting   Boolean             @default(true)
+  isAccepting   Boolean  @default(true)
   rating        Float?
 
   stripeAccountId     String?
@@ -177,12 +200,12 @@ model TherapistProfile {
   certificateUrl   String?
   hourlyConsultFee Decimal? @db.Decimal(10, 2)
 
-  appointments  Appointment[]
-  availability  Availability[]
-  reviews       Review[]
-  refundPolicy  RefundPolicy?
-  therapyPlans  TherapyPlan[]
-  galleryImages TherapistGalleryImage[]
+  appointments     Appointment[]
+  availability     Availability[]
+  reviews          Review[]
+  refundPolicy     RefundPolicy?
+  therapyPlans     TherapyPlan[]
+  galleryImages    TherapistGalleryImage[]
   featuredImageUrl String?
   socialMediaLink  String?
   qrCodeUrl        String?
@@ -250,14 +273,14 @@ model Review {
 }
 
 model Payment {
-  id            String          @id @default(cuid())
-  appointmentId String          @unique
-  appointment   Appointment     @relation(fields: [appointmentId], references: [id])
+  id            String      @id @default(cuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
 
-  provider      PaymentProvider @default(STRIPE)
+  provider PaymentProvider @default(STRIPE)
 
   // Stripe fields (null for Alipay/WeChat payments)
-  stripePaymentIntentId String?  @unique
+  stripePaymentIntentId String? @unique
   stripeChargeId        String?
   stripeTransferId      String?
   stripeRefundId        String?
@@ -267,7 +290,7 @@ model Payment {
   externalTradeNo String? // provider-assigned transaction number (set after success)
 
   amount                Int
-  currency              String          @default("cny")
+  currency              String @default("cny")
   platformFeeAmount     Int
   therapistPayoutAmount Int
 
@@ -312,18 +335,18 @@ model ClientForm {
   status      FormStatus @default(DRAFT)
 
   senderId    String
-  sender      User       @relation("FormSender", fields: [senderId], references: [id])
+  sender      User   @relation("FormSender", fields: [senderId], references: [id])
   recipientId String
-  recipient   User       @relation("FormRecipient", fields: [recipientId], references: [id])
+  recipient   User   @relation("FormRecipient", fields: [recipientId], references: [id])
 
   sentAt      DateTime?
   submittedAt DateTime?
 
-  questions   FormQuestion[]
-  responses   FormResponse[]
+  questions FormQuestion[]
+  responses FormResponse[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FormQuestion {
@@ -338,16 +361,16 @@ model FormQuestion {
   scaleMin Int?
   scaleMax Int?
 
-  answers  FormAnswer[]
+  answers FormAnswer[]
 }
 
 model FormResponse {
-  id          String       @id @default(cuid())
+  id          String     @id @default(cuid())
   formId      String
-  form        ClientForm   @relation(fields: [formId], references: [id], onDelete: Cascade)
-  submittedAt DateTime     @default(now())
+  form        ClientForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submittedAt DateTime   @default(now())
 
-  answers     FormAnswer[]
+  answers FormAnswer[]
 }
 
 model FormAnswer {
@@ -362,12 +385,12 @@ model FormAnswer {
 // ─── Therapy Plan System ───────────────────────────────────────────────────────
 
 model TherapyPlan {
-  id              String            @id @default(cuid())
-  therapistId     String
-  therapist       TherapistProfile  @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  therapistId String
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id], onDelete: Cascade)
 
-  type            TherapyPlanType
-  status          TherapyPlanStatus @default(DRAFT)
+  type   TherapyPlanType
+  status TherapyPlanStatus @default(DRAFT)
 
   title           String
   slogan          String?
@@ -377,20 +400,20 @@ model TherapyPlan {
   location        String
   maxParticipants Int?
   contactInfo     String
-  price           Decimal?          @db.Decimal(10, 2)  // per-seat price for Group/Art/Retreat
+  price           Decimal?  @db.Decimal(10, 2) // per-seat price for Group/Art/Retreat
 
   // Type-specific fields
   artSalonSubType ArtSalonSubType? // only for ART_SALON
-  sessionMedium   SessionMedium?   // only for PERSONAL_CONSULT
+  sessionMedium   SessionMedium? // only for PERSONAL_CONSULT
 
   // Poster — one of these two is set, never both
-  defaultPosterId Int?             // 1–6 (static file /posters/default-N.jpg)
-  posterUrl       String?          // Cloudinary URL for custom upload
-  videoUrl        String?          // Cloudinary video URL for intro/promo video
+  defaultPosterId Int? // 1–6 (static file /posters/default-N.jpg)
+  posterUrl       String? // Cloudinary URL for custom upload
+  videoUrl        String? // Cloudinary video URL for intro/promo video
 
   // Supplementary attachment
-  attachmentUrl   String?          // Cloudinary URL for PDF attachment
-  attachmentName  String?          // Original filename shown to client
+  attachmentUrl  String? // Cloudinary URL for PDF attachment
+  attachmentName String? // Original filename shown to client
 
   // Review workflow
   rejectionReason String?
@@ -398,14 +421,14 @@ model TherapyPlan {
   reviewedAt      DateTime?
   publishedAt     DateTime?
 
-  messages        Message[]
-  participants    TherapyPlanParticipant[] @relation("PlanParticipants")
-  events          TherapyPlanEvent[]       @relation("PlanEvents")
-  images          TherapyPlanImage[]       @relation("PlanImages")
-  pdfs            TherapyPlanPdf[]         @relation("PlanPdfs")
+  messages     Message[]
+  participants TherapyPlanParticipant[] @relation("PlanParticipants")
+  events       TherapyPlanEvent[]       @relation("PlanEvents")
+  images       TherapyPlanImage[]       @relation("PlanImages")
+  pdfs         TherapyPlanPdf[]         @relation("PlanPdfs")
 
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([type])
@@ -463,23 +486,23 @@ model TherapyPlanTemplate {
 }
 
 model TherapyPlanParticipant {
-  id            String            @id @default(cuid())
-  userId        String
-  user          User              @relation("UserParticipations", fields: [userId], references: [id], onDelete: Cascade)
-  planId        String
-  plan          TherapyPlan       @relation("PlanParticipants", fields: [planId], references: [id], onDelete: Cascade)
-  status        ParticipantStatus @default(SIGNED_UP)
-  enrolledAt    DateTime          @default(now())
-  payment       PlanPayment?
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation("UserParticipations", fields: [userId], references: [id], onDelete: Cascade)
+  planId     String
+  plan       TherapyPlan       @relation("PlanParticipants", fields: [planId], references: [id], onDelete: Cascade)
+  status     ParticipantStatus @default(SIGNED_UP)
+  enrolledAt DateTime          @default(now())
+  payment    PlanPayment?
 
   @@unique([userId, planId])
   @@index([planId])
 }
 
 model PlanPayment {
-  id              String                 @id @default(cuid())
-  participantId   String                 @unique
-  participant     TherapyPlanParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  id            String                 @id @default(cuid())
+  participantId String                 @unique
+  participant   TherapyPlanParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   provider              PaymentProvider @default(ALIPAY)
   externalOrderId       String?
@@ -487,7 +510,7 @@ model PlanPayment {
   stripePaymentIntentId String?
 
   amount                Int
-  currency              String        @default("cny")
+  currency              String @default("cny")
   platformFeeAmount     Int
   therapistPayoutAmount Int
 
@@ -500,22 +523,156 @@ model PlanPayment {
 }
 
 model Message {
-  id          String         @id @default(cuid())
-  senderId    String?        // null = system-generated
-  sender      User?          @relation("MessageSender",    fields: [senderId],    references: [id])
+  id          String  @id @default(cuid())
+  senderId    String? // null = system-generated
+  sender      User?   @relation("MessageSender", fields: [senderId], references: [id])
   recipientId String
-  recipient   User           @relation("MessageRecipient", fields: [recipientId], references: [id])
+  recipient   User    @relation("MessageRecipient", fields: [recipientId], references: [id])
 
-  body        String         // plain text + emoji, max 2000 chars
-  trigger     MessageTrigger
-  isRead      Boolean        @default(false)
-  readAt      DateTime?
+  body    String // plain text + emoji, max 2000 chars
+  trigger MessageTrigger
+  isRead  Boolean        @default(false)
+  readAt  DateTime?
 
-  planId      String?
-  plan        TherapyPlan?   @relation(fields: [planId], references: [id], onDelete: SetNull)
+  planId String?
+  plan   TherapyPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
 
-  createdAt   DateTime       @default(now())
+  createdAt DateTime @default(now())
 
   @@index([recipientId, isRead])
   @@index([recipientId])
+}
+
+// ─── Artist & E-Commerce System ────────────────────────────────────────────────
+
+model ArtistProfile {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio             String
+  portfolioUrl    String?
+  socialMediaLink String?
+
+  // Profile approval workflow (similar to therapists)
+  profileStatus   ProfileStatus @default(DRAFT)
+  rejectionReason String?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id       String        @id @default(cuid())
+  artistId String
+  artist   ArtistProfile @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+  price       Decimal         @db.Decimal(10, 2)
+  stock       Int             @default(0)
+  category    ProductCategory @default(OTHER)
+
+  images     ProductImage[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([artistId])
+  @@index([category])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model Order {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  totalAmount Int // Amount in cents (CNY/RMB)
+  status      OrderStatus @default(PENDING)
+
+  // Chinese Shipping Address
+  province      String
+  city          String
+  district      String
+  addressDetail String
+  recipientName String
+  phone         String
+
+  // Logistics
+  carrierName    String?
+  trackingNumber String?
+
+  items   OrderItem[]
+  payment ProductPayment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity Int
+  price    Int // Snapshot of product price (in cents) at time of order
+
+  @@index([orderId])
+}
+
+model ProductPayment {
+  id      String @id @default(cuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  provider              PaymentProvider @default(ALIPAY)
+  externalOrderId       String?
+  externalTradeNo       String?
+  stripePaymentIntentId String?
+
+  amount   Int
+  currency String @default("cny")
+
+  status       PaymentStatus @default(PENDING)
+  refundedAt   DateTime?
+  refundAmount Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

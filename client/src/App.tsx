@@ -11,6 +11,7 @@ import { Register } from './pages/auth/Register';
 import { ClientDashboard } from './pages/Dashboard/ClientDashboard';
 import { TherapistDashboard } from './pages/Dashboard/TherapistDashboard';
 import { AdminDashboard } from './pages/Dashboard/AdminDashboard';
+import { ArtistDashboard } from '@/pages/Dashboard/ArtistDashboard';
 import { UserProfile } from './pages/UserProfile';
 import { PrivacyTerms } from './pages/PrivacyTerms';
 import { ComposeForm } from './pages/forms/ComposeForm';
@@ -21,6 +22,11 @@ import { TherapyPlanDetail } from '@/pages/therapy-plans/TherapyPlanDetail';
 import { TherapyPlanSignup } from '@/pages/therapy-plans/TherapyPlanSignup';
 import { EditTherapyPlan } from '@/pages/therapy-plans/EditTherapyPlan';
 import { Gallery } from './pages/Gallery';
+import { ShopPage } from './pages/shop/ShopPage';
+import { ProductDetailsPage } from './pages/shop/ProductDetailsPage';
+import { CartPage } from './pages/shop/CartPage';
+import { CheckoutPage } from './pages/shop/CheckoutPage';
+import { MyOrdersPage } from './pages/user/MyOrdersPage';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({
@@ -94,9 +100,38 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard/artist"
+            element={
+              <ProtectedRoute roles={['ARTIST']}>
+                <ArtistDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Gallery */}
           <Route path="/gallery" element={<Gallery />} />
+
+          {/* E-commerce Shop */}
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/shop/:id" element={<ProductDetailsPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <MyOrdersPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Therapy Plans */}
           <Route path="/therapy-plans" element={<TherapyPlansDirectory />} />

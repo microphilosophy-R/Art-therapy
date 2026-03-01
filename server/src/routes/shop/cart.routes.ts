@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/authenticate';
-import { validate } from '../middleware/validate';
-import { CartController } from '../controllers/cart.controller';
+import { authenticate } from '../../middleware/authenticate';
+import { validate } from '../../middleware/validate';
+import { CartController } from '../../controllers/shop/cart.controller';
 
 const router = Router();
 

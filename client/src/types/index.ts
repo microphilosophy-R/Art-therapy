@@ -1,4 +1,4 @@
-export type UserRole = 'CLIENT' | 'THERAPIST' | 'ADMIN';
+export type UserRole = 'CLIENT' | 'THERAPIST' | 'ADMIN' | 'ARTIST';
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'CANCELLED' | 'COMPLETED';
 export type SessionMedium = 'IN_PERSON' | 'VIDEO';
 export type StripeAccountStatus = 'NOT_CONNECTED' | 'ONBOARDING_IN_PROGRESS' | 'ACTIVE' | 'RESTRICTED' | 'DISABLED';

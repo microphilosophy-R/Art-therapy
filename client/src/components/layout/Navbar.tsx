@@ -6,9 +6,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
 import { logout } from '../../api/auth';
 import { getUnreadCount } from '../../api/messages';
+import { getCart } from '../../api/shop';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
+import { ShoppingCart } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, isAuthenticated, clearAuth } = useAuthStore();
@@ -31,7 +33,8 @@ export const Navbar = () => {
   const dashboardPath =
     user?.role === 'THERAPIST' ? '/dashboard/therapist'
       : user?.role === 'ADMIN' ? '/dashboard/admin'
-        : '/dashboard/client';
+        : user?.role === 'ARTIST' ? '/dashboard/artist'
+          : '/dashboard/client';
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -42,6 +45,13 @@ export const Navbar = () => {
     enabled: isAuthenticated,
   });
   const unreadCount = unreadData?.count ?? 0;
+
+  const { data: cartData } = useQuery({
+    queryKey: ['cart'],
+    queryFn: getCart,
+    enabled: isAuthenticated,
+  });
+  const cartItemCount = cartData?.reduce((acc, item) => acc + item.quantity, 0) ?? 0;
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-stone-200">
@@ -58,8 +68,8 @@ export const Navbar = () => {
             <Link
               to="/"
               className={`px-3 py-2 text-sm rounded-lg transition-colors ${isActive('/') || isActive('/home')
-                  ? 'bg-teal-50 text-teal-700 font-medium'
-                  : 'text-stone-600 hover:bg-stone-100'
+                ? 'bg-teal-50 text-teal-700 font-medium'
+                : 'text-stone-600 hover:bg-stone-100'
                 }`}
             >
               {t('nav.home', 'Home')}
@@ -67,17 +77,26 @@ export const Navbar = () => {
             <Link
               to="/therapists"
               className={`px-3 py-2 text-sm rounded-lg transition-colors ${isActive('/therapists')
-                  ? 'bg-teal-50 text-teal-700 font-medium'
-                  : 'text-stone-600 hover:bg-stone-100'
+                ? 'bg-teal-50 text-teal-700 font-medium'
+                : 'text-stone-600 hover:bg-stone-100'
                 }`}
             >
               {t('nav.findTherapist')}
             </Link>
             <Link
+              to="/shop"
+              className={`px-3 py-2 text-sm rounded-lg transition-colors ${location.pathname.startsWith('/shop')
+                ? 'bg-teal-50 text-teal-700 font-medium'
+                : 'text-stone-600 hover:bg-stone-100'
+                }`}
+            >
+              Shop
+            </Link>
+            <Link
               to="/therapy-plans"
               className={`px-3 py-2 text-sm rounded-lg transition-colors ${location.pathname.startsWith('/therapy-plans')
-                  ? 'bg-teal-50 text-teal-700 font-medium'
-                  : 'text-stone-600 hover:bg-stone-100'
+                ? 'bg-teal-50 text-teal-700 font-medium'
+                : 'text-stone-600 hover:bg-stone-100'
                 }`}
             >
               {t('nav.therapyPlans')}
@@ -85,8 +104,8 @@ export const Navbar = () => {
             <Link
               to="/gallery"
               className={`px-3 py-2 text-sm rounded-lg transition-colors ${isActive('/gallery')
-                  ? 'bg-teal-50 text-teal-700 font-medium'
-                  : 'text-stone-600 hover:bg-stone-100'
+                ? 'bg-teal-50 text-teal-700 font-medium'
+                : 'text-stone-600 hover:bg-stone-100'
                 }`}
             >
               {t('nav.gallery', 'Gallery')}
@@ -96,6 +115,18 @@ export const Navbar = () => {
 
             {isAuthenticated && user ? (
               <>
+                <Link
+                  to="/cart"
+                  className="relative p-2 rounded-lg hover:bg-stone-100 transition-colors"
+                  title="Shopping Cart"
+                >
+                  <ShoppingCart className="h-5 w-5 text-stone-600" />
+                  {cartItemCount > 0 && (
+                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white leading-none">
+                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                    </span>
+                  )}
+                </Link>
                 <Link
                   to={dashboardPath}
                   className="relative p-2 rounded-lg hover:bg-stone-100 transition-colors"
@@ -141,6 +172,13 @@ export const Navbar = () => {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                         >
                           <User className="h-4 w-4" /> {t('nav.profile')}
+                        </Link>
+                        <Link
+                          to="/orders"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                        >
+                          <ShoppingCart className="h-4 w-4" /> My Orders
                         </Link>
                         <hr className="my-1 border-stone-100" />
                         <button

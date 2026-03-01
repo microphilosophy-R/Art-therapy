@@ -5,19 +5,22 @@ import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { createWechatOrder, createPlanWechatOrder } from '../../api/wechat';
 import { getAppointment } from '../../api/appointments';
 import { getTherapyPlanSignupStatus } from '../../api/therapyPlans';
+import { createWechatProductOrder, getOrder } from '../../api/shop';
 
 interface WechatPaymentFormProps {
   appointmentId?: string;
   participantId?: string;
+  orderId?: string;
   onSuccess: () => void;
   onError?: (msg: string) => void;
 }
 
-export const WechatPaymentForm = ({ appointmentId, participantId, onSuccess, onError }: WechatPaymentFormProps) => {
+export const WechatPaymentForm = ({ appointmentId, participantId, orderId, onSuccess, onError }: WechatPaymentFormProps) => {
   const { t } = useTranslation();
 
   const mutation = useMutation({
     mutationFn: () => {
+      if (orderId) return createWechatProductOrder(orderId);
       if (participantId) return createPlanWechatOrder(participantId);
       if (appointmentId) return createWechatOrder(appointmentId);
       throw new Error('Missing ID');
@@ -35,14 +38,18 @@ export const WechatPaymentForm = ({ appointmentId, participantId, onSuccess, onE
 
   // Poll status every 3 seconds
   const { data: pollData } = useQuery({
-    queryKey: ['payment-poll', appointmentId ?? participantId],
+    queryKey: ['payment-poll', appointmentId ?? participantId ?? orderId],
     queryFn: async () => {
+      if (orderId) return getOrder(orderId);
       if (participantId) return getTherapyPlanSignupStatus(participantId);
       return getAppointment(appointmentId!);
     },
     enabled: !!mutation.data?.codeUrl,
     refetchInterval: (query) => {
       const data = query.state.data as any;
+      if (orderId) {
+        return data?.status === 'PAID' ? false : 3000;
+      }
       if (participantId) {
         return data?.payment?.status === 'SUCCEEDED' ? false : 3000;
       }
@@ -51,14 +58,18 @@ export const WechatPaymentForm = ({ appointmentId, participantId, onSuccess, onE
   });
 
   useEffect(() => {
-    if (participantId) {
+    if (orderId) {
+      if ((pollData as any)?.status === 'PAID') {
+        onSuccess();
+      }
+    } else if (participantId) {
       if ((pollData as any)?.payment?.status === 'SUCCEEDED') {
         onSuccess();
       }
     } else if ((pollData as any)?.status === 'CONFIRMED') {
       onSuccess();
     }
-  }, [pollData, participantId, onSuccess]);
+  }, [pollData, participantId, orderId, onSuccess]);
 
   if (mutation.isPending) {
     return (

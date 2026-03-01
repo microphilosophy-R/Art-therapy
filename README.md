@@ -25,9 +25,10 @@ A full-stack web application for managing art therapy appointments, group therap
 
 | Role | Description |
 |---|---|
-| `CLIENT` | Browses therapists, books personal appointments, signs up for group plans, submits forms, and manages their session history. |
-| `THERAPIST` | Manages their schedule and availability, creates and publishes therapy plans, writes session notes, sends intake forms, and connects a Stripe payout account. |
-| `ADMIN` | Reviews and approves therapy plans submitted by therapists, manages platform users, and views revenue analytics. |
+| `CLIENT` | Browses therapists, books personal appointments, signs up for group plans, purchases items from the Art Shop, and manages history. |
+| `THERAPIST` | Manages their schedule, creates therapy plans, writes session notes, and sends intake forms. |
+| `ARTIST` | Manages their artist profile and portfolio, lists creative products for sale, and fulfills customer orders. |
+| `ADMIN` | Reviews and approves therapy plans and artist profiles, manages users, and views analytics. |
 
 ### Therapy Plan Types
 
@@ -257,9 +258,11 @@ art-therapy-app/
 |       |   +-- messages.ts
 |       |   +-- payments.ts
 |       |   +-- profile.ts
+|       |   +-- shop.ts                  # Cart, Product and Order API calls
 |       |   +-- therapists.ts
 |       |   +-- therapyPlans.ts
 |       |   +-- wechat.ts
+|       |   +-- artist.ts                # Artist profile and sales management
 |       +-- components/
 |       |   +-- ui/                      # Radix UI-based base components
 |       |   +-- layout/                  # Navbar, Footer, Layout wrapper
@@ -360,6 +363,10 @@ art-therapy-app/
 |       |   +-- therapist.routes.ts
 |       |   +-- therapyPlan.routes.ts
 |       |   +-- wechat.routes.ts
+|       |   +-- shop/                    # Unified E-commerce module
+|       |       +-- cart.routes.ts
+|       |       +-- order.routes.ts
+|       |       +-- product.routes.ts
 |       +-- controllers/
 |       |   +-- alipay.controller.ts
 |       |   +-- appointment.controller.ts
@@ -372,6 +379,10 @@ art-therapy-app/
 |       |   +-- therapyPlan.controller.ts
 |       |   +-- user.controller.ts
 |       |   +-- wechat.controller.ts
+|       |   +-- shop/                    # E-commerce logic
+|       |       +-- cart.controller.ts
+|       |       +-- order.controller.ts
+|       |       +-- product.controller.ts
 |       +-- middleware/
 |       |   +-- authenticate.ts          # JWT verification (blocks unauthenticated requests)
 |       |   +-- authorize.ts             # Role-based access guard
@@ -852,6 +863,35 @@ All endpoints are prefixed with `/api/v1`.
 | PATCH | `/admin/users/:id` | Update a user's role or status | ADMIN |
 | GET | `/admin/stats` | Platform usage and revenue statistics | ADMIN |
 
+### Art Shop (E-commerce)
+
+#### Products
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/products` | List all products (with filters) | Public |
+| GET | `/products/:id` | Get single product details | Public |
+| POST | `/products` | Create a new product | ARTIST |
+| PUT | `/products/:id` | Update a product | ARTIST (owner) |
+| DELETE | `/products/:id` | Delete a product | ARTIST (owner) |
+
+#### Cart
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | `/cart` | View current user's cart | CLIENT |
+| POST | `/cart` | Add item to cart | CLIENT |
+| PUT | `/cart/:id` | Update item quantity | CLIENT |
+| DELETE | `/cart/:id` | Remove item from cart | CLIENT |
+| DELETE | `/cart` | Clear entire cart | CLIENT |
+
+#### Orders
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| POST | `/orders` | Place a new order from cart | CLIENT |
+| GET | `/orders/my-orders` | List own orders | CLIENT |
+| GET | `/orders/:id` | Get order details | Buyer / Seller |
+| GET | `/orders/artist/orders` | List orders for artist's products | ARTIST |
+| POST | `/orders/artist/orders/:id/fulfill` | Mark an order as shipped | ARTIST |
+
 ### Webhooks
 
 | Method | Endpoint | Description | Verification |
@@ -989,7 +1029,44 @@ Cancellation (at any active stage):
      Refund service processes full refund for every participant's PlanPayment
 ```
 
-### 3. Intake / Session Form Workflow
+### 3. Art Shop Purchase workflow
+
+```
+1. CLIENT browses /shop and selects a creative product.
+
+2. CLIENT adds product to cart:
+     -> POST /cart  { productId, quantity }
+     Server validates stock and user authentication.
+
+3. CLIENT reviews cart and proceeds to checkout:
+     -> GET /cart (view items and subtotal)
+     -> navigate to /checkout
+
+4. CLIENT places order:
+     -> POST /orders
+        Body: { shippingAddress }
+        Server validates stock again in a transaction.
+        Server creates Order (status: PENDING) and OrderItems (snapshotting price).
+        Server decrements product stock.
+        Server clears the user's cart.
+        Returns { orderId }
+
+5. CLIENT pays via Alipay or WeChat Pay:
+     -> POST /alipay/create-product-order { orderId }
+     -> OR POST /wechat/create-product-order { orderId }
+     Frontend redirects or displays QR code.
+
+6. Payment webhook received:
+     -> Order status -> PAID.
+
+7. ARTIST manages fulfillment:
+     -> GET /orders/artist/orders (list of orders containing their products)
+     -> POST /orders/artist/orders/:id/fulfill
+        Body: { carrierName, trackingNumber }
+        Order status -> SHIPPED.
+```
+
+### 4. Intake / Session Form Workflow
 
 ```
 THERAPIST creates form:
@@ -1017,7 +1094,7 @@ THERAPIST reviews responses:
      Returns all FormResponse records with associated FormAnswers
 ```
 
-### 4. Conflict Detection (Plan Submission)
+### 5. Conflict Detection (Plan Submission)
 
 When a therapist submits a therapy plan for review, the server performs two overlap checks against the plan's `startTime` / `endTime` window:
 
@@ -1026,7 +1103,7 @@ When a therapist submits a therapy plan for review, the server performs two over
 
 If any conflicts are found, the submission is rejected with a `409 Conflict` response listing the conflicting resources. The therapist must adjust the plan's dates before resubmitting.
 
-### 5. Payment and Revenue Model
+### 6. Payment and Revenue Model
 
 #### Revenue Distribution
 As scheduled, therapists receive their share of the income, and the admin receives the rest (platform fee). However, initially, all income is transferred centrally to the admin. In the future, an option will be provided for the admin to decide between a "centralized" mode and a "split" mode. Currently, only the centralized mode is active, meaning the Stripe integration is not available yet for direct payouts.
@@ -1040,7 +1117,7 @@ The payment method shown to clients on the booking page is influenced by the act
 
 Clients can always switch to any available payment method. Stripe card payment is gated by `VITE_PAYMENTS_ENABLED` (which is currently turned off as we only accept Alipay and WeChat Pay). Alipay and WeChat Pay are gated by `VITE_ALIPAY_WECHAT_ENABLED`.
 
-### 6. Exchange Rate Display
+### 7. Exchange Rate Display
 
 Session prices are stored in Chinese Yuan (CNY). Display behaviour by language:
 

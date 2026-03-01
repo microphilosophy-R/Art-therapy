@@ -1,8 +1,8 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { getCart, updateCartItem, removeFromCart } from '../../lib/api/shop';
-import { Button } from '../../components/ui/button';
+import { getCart, updateCartItem, removeFromCart } from '../../api/shop';
+import { Button } from '../../components/ui/Button';
 import { Loader2, Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export const CartPage = () => {

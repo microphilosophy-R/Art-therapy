@@ -2,19 +2,22 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import { createAlipayOrder, createPlanAlipayOrder } from '../../api/alipay';
+import { createAlipayProductOrder } from '../../api/shop';
 
 interface AlipayPaymentFormProps {
   appointmentId?: string;
   participantId?: string;
+  orderId?: string;
   onSuccess: () => void;
   onError?: (msg: string) => void;
 }
 
-export const AlipayPaymentForm = ({ appointmentId, participantId, onSuccess, onError }: AlipayPaymentFormProps) => {
+export const AlipayPaymentForm = ({ appointmentId, participantId, orderId, onSuccess, onError }: AlipayPaymentFormProps) => {
   const { t } = useTranslation();
 
   const mutation = useMutation({
     mutationFn: () => {
+      if (orderId) return createAlipayProductOrder(orderId);
       if (participantId) return createPlanAlipayOrder(participantId);
       if (appointmentId) return createAlipayOrder(appointmentId);
       throw new Error('Missing ID');

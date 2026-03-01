@@ -24,9 +24,9 @@ import { therapyPlanTemplateRouter } from './routes/therapyPlanTemplate.routes';
 import { messageRouter } from './routes/message.routes';
 import { uploadRouter } from './routes/upload.routes';
 import { artistRouter } from './routes/artist.routes';
-import { productRouter } from './routes/product.routes';
-import { cartRouter } from './routes/cart.routes';
-import { orderRouter } from './routes/order.routes';
+import { productRouter } from './routes/shop/product.routes';
+import { cartRouter } from './routes/shop/cart.routes';
+import { orderRouter } from './routes/shop/order.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();

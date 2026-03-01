@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getProductById, addToCart } from '../../lib/api/shop';
-import { Button } from '../../components/ui/button';
+import { getProductById, addToCart } from '../../api/shop';
+import { Button } from '../../components/ui/Button';
 import { useAuthStore } from '../../store/authStore';
 import { Loader2, ArrowLeft, ShoppingCart, Minus, Plus } from 'lucide-react';
 

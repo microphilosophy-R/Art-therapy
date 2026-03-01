@@ -135,57 +135,44 @@ When you are ready to book a session with a therapist, click the **Book a Sessio
 
 Booking a private, one-on-one session is done in several steps. You will move through each step one at a time, and you can review everything before you pay.
 
-### Step 1: Choose a Date and Time
+### Step 1: Acknowledgement and Terms
 
-You will see a calendar view of the month. Click on a day to see what time slots that therapist has available on that day.
+Before proceeding, you must review and acknowledge the **Terms of Service** specific to the service you are booking. 
+- Read the key points regarding privacy, cancellations, and session rules.
+- Check the box "I have read and agree to the Terms of Service and Privacy Policy."
+- Click **Next** to proceed.
 
-- Available time slots will be highlighted. Click on one to select it.
-- Use the **Duration** selector to choose how long your session will be. Options are typically: 60, 90, 120, 150, or 180 minutes.
-- If you are not sure which date to pick, click the **Find Next Available** button. The platform will automatically highlight the nearest available appointment, which saves you from having to search manually.
+### Step 2: Date, Time, and Duration
 
-Once you have selected your preferred date, time, and duration, click **Next** to continue.
+You will see a calendar view showing the therapist's availability.
+- **Select a Date:** Click on a highlighted day to see available slots.
+- **Select a Time:** Choose a specific time slot from the list.
+- **Choose Duration:** Use the duration dropdown to select how long you want the session to be (e.g., 60, 90, 120 minutes).
 
-### Step 2: Choose Your Session Format and Add Notes
+If you are not sure which date to pick, click the **Find Next Available** button to skip to the nearest opening. Click **Next** to continue.
 
-**Session format:** Choose whether you would like your session to be:
-- **Video** — conducted online using a video call
-- **In-Person** — attended at the therapist's location
+### Step 3: Add Additional Information (Optional)
 
-**Notes to your therapist (optional):** There is a text box where you can write a message to your therapist before your first session. You might use this to briefly describe what you are hoping to work on, or to share any relevant background. This field has a maximum of 1,000 characters. This step is entirely optional.
+In this step, you can provide any extra details that might be helpful for the therapist.
+- **Notes/Requests:** Briefly describe your goals or any background information (maximum 1,000 characters).
+- **Invite a Friend (Coming Soon):** You will see an option to invite a friend for collaborative sessions or discounts in the future.
+- **Note:** This step is automatically skipped for certain group events like Art Salons where additional information is not required.
 
 Click **Next** when you are ready.
 
-### Step 3: Review Your Booking
+### Step 4: Final Check and Payment Method
 
-Before you pay, you will see a summary of your booking. Check the following details carefully:
+Review the summary of your booking:
+- **Service Details:** Check the date, time, and session format.
+- **Price:** Confirm the total amount.
+- **Select Payment Method:** Choose between **Alipay**, **WeChat Pay**, or **Waitlist/Card** (if available).
 
-- **Therapist name**
-- **Date and time** of your session
-- **Session format** (video or in-person)
-- **Duration**
-- **Total price**
-- **Refund policy** (if the therapist has set one — for example, full refund if cancelled more than 24 hours in advance)
-- **Therapist acceptance deadline** — your therapist must confirm your booking at least 24 hours before the session. If they do not confirm in time, your appointment will be automatically cancelled and you will receive a full refund.
+### Step 5: Complete Payment & Confirmation
 
-If everything looks correct, click **Proceed to Payment**.
-
-If you need to make a change, use the **Back** button to return to a previous step.
-
-### Step 4: Make Payment
-
-Choose your preferred payment method. The available options are:
-
-- **Card** (credit or debit card, processed by Stripe)
-- **Alipay**
-- **WeChat Pay**
-
-Detailed instructions for each payment method are in the next section of this manual.
-
-### Step 5: Booking Confirmation
-
-After your payment is successfully processed, you will see a **Booking Confirmation** page. This page confirms that your booking has been received.
-
-Your appointment will initially show a status of **PENDING**, which means it is waiting for your therapist to formally accept it. Once they accept, the status will change to **CONFIRMED** and you will receive a notification.
+Once you click **Confirm and Pay**, you will be guided through the specific payment process (scanning a QR code or being redirected). After successful payment:
+- You will see a **Success** page.
+- You will be redirected to your **Dashboard**.
+- Your appointment will show as **PENDING** until the therapist accepts it.
 
 ---
 
@@ -328,8 +315,10 @@ If a plan is **Published** and you have not already signed up, you will see a **
 **Steps to sign up:**
 
 1. Click the **Sign Up** button on the plan detail page.
-2. Choose your preferred payment method (Card, Alipay, or WeChat Pay).
-3. Complete the payment following the same process described in Section 8.
+2. The **Standard Payment Workflow** will open.
+3. **Acknowledge Terms:** Review and accept the group-specific terms of service.
+4. **Confirm Schedule:** Review the fixed dates and times for the event. Note: The "Optional Information" page is automatically skipped for most group plans.
+5. **Payment:** Choose **Alipay**, **WeChat Pay**, or **Card** and complete the transaction.
 
 After signing up, the plan detail page will show an **Enrolled** badge to confirm your place has been secured.
 

@@ -68,7 +68,7 @@ export const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <h2 className="text-3xl font-bold text-stone-900">{title}</h2>
+              <h2 className="text-xl font-semibold text-stone-900">{title}</h2>
               <p className="text-stone-500 mt-1">{subtitle}</p>
             </div>
             <Link
@@ -119,11 +119,11 @@ export const Home = () => {
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium mb-6 backdrop-blur">
               <Heart className="h-4 w-4 fill-current" /> {t('home.badge')}
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+            <h1 className="text-3xl md:text-4xl font-semibold leading-tight mb-6">
               {t('home.title')}<br />
               <span className="text-teal-200">{t('home.titleSpan')}</span>
             </h1>
-            <p className="text-lg md:text-xl text-teal-100 mb-8 leading-relaxed">
+            <p className="text-base text-teal-100 mb-8 leading-relaxed">
               {t('home.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -228,7 +228,7 @@ export const Home = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-stone-900">{t('home.testimonials.title')}</h2>
+            <h2 className="text-xl font-semibold text-stone-900">{t('home.testimonials.title')}</h2>
             <p className="text-stone-500 mt-1">{t('home.testimonials.subtitle')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -256,7 +256,7 @@ export const Home = () => {
         className="py-20 bg-teal-700"
       >
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">{t('home.ctaBanner.title')}</h2>
+          <h2 className="text-xl font-semibold text-white mb-4">{t('home.ctaBanner.title')}</h2>
           <p className="text-teal-100 mb-8">
             {t('home.ctaBanner.subtitle')}
           </p>

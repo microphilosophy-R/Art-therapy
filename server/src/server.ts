@@ -19,9 +19,13 @@ async function main() {
   await prisma.$connect();
   console.log('[DB] Connected to PostgreSQL');
 
-  // Connect Redis
-  await redis.connect();
-  console.log('[Redis] Connected');
+  // Connect Redis (non-fatal in development)
+  try {
+    await redis.connect();
+    console.log('[Redis] Connected');
+  } catch (err: any) {
+    console.warn('[Redis] Could not connect:', err.message, '— continuing without Redis');
+  }
 
   // Start cron jobs
   startScheduledJobs();

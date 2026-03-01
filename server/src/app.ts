@@ -22,6 +22,7 @@ import { formRouter } from './routes/form.routes';
 import { therapyPlanRouter } from './routes/therapyPlan.routes';
 import { therapyPlanTemplateRouter } from './routes/therapyPlanTemplate.routes';
 import { messageRouter } from './routes/message.routes';
+import { uploadRouter } from './routes/upload.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();
@@ -71,6 +72,7 @@ api.use('/forms', formRouter);
 api.use('/therapy-plans', therapyPlanRouter);
 api.use('/therapy-plan-templates', therapyPlanTemplateRouter);
 api.use('/messages', messageRouter);
+api.use('/upload', uploadRouter);
 
 // Exchange rate proxy — avoids CORS issues calling cn.apihz.cn from the browser
 // Uses APIHZ_ID / APIHZ_KEY env vars; falls back to the shared public demo key (rate-limited).

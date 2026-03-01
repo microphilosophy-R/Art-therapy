@@ -2,17 +2,16 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  MapPin, Clock, Video, Star, Shield, ChevronLeft, Calendar,
+  MapPin, Clock, Video, Star, Shield, ChevronLeft, Calendar, QrCode, Globe, X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getTherapist } from '../api/therapists';
 import { Avatar } from '../components/ui/Avatar';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { StarRating } from '../components/ui/StarRating';
 import { PageLoader } from '../components/ui/Spinner';
-import { formatPrice, getSpecialtyColor } from '../utils/formatters';
+import { getSpecialtyColor } from '../utils/formatters';
 import { useAuthStore } from '../store/authStore';
 import { PriceDisplay } from '../components/ui/PriceDisplay';
 import { listTherapyPlans } from '../api/therapyPlans';
@@ -21,6 +20,7 @@ import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
+import { cn } from '../utils/cn';
 
 export const TherapistProfile = () => {
   const { t, i18n } = useTranslation();
@@ -28,6 +28,7 @@ export const TherapistProfile = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'schedule' | 'about' | 'reviews'>('schedule');
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const { data: therapist, isLoading } = useQuery({
     queryKey: ['therapist', id],
@@ -56,8 +57,12 @@ export const TherapistProfile = () => {
     );
   }
 
-  const { user, bio, specialties, sessionPrice, sessionLength, locationCity,
-    rating, reviewCount, isAccepting, refundPolicy } = therapist;
+  const {
+    user, bio, specialties, sessionPrice, sessionLength, locationCity,
+    rating, reviewCount, isAccepting, refundPolicy, featuredImageUrl,
+    socialMediaLink, qrCodeUrl,
+    galleryImages, consultEnabled, hourlyConsultFee,
+  } = therapist;
 
   const handleBook = () => {
     if (!isAuthenticated) {
@@ -87,230 +92,320 @@ export const TherapistProfile = () => {
         title: displayTitle,
         start: evt.startTime,
         end: evt.endTime || undefined,
-        backgroundColor: isSensitive ? '#14b8a6' : '#8b5cf6', // Different colors for visual distinction
+        backgroundColor: isSensitive ? '#14b8a6' : '#8b5cf6',
         borderColor: isSensitive ? '#14b8a6' : '#8b5cf6',
       };
     });
   });
 
   return (
-    <div className="bg-stone-50 min-h-screen">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6"
-        >
-          <ChevronLeft className="h-4 w-4" /> {t('therapists.profile.back')}
-        </button>
+    <div className="bg-stone-50 min-h-screen pb-20">
+      {/* Top bar */}
+      <div className="bg-white border-b border-stone-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-800 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t('therapists.profile.back')}
+          </button>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Main column */}
           <div className="lg:col-span-2 space-y-6">
+
             {/* Profile header card */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-start gap-5">
-                  <Avatar
-                    firstName={user.firstName}
-                    lastName={user.lastName}
-                    src={user.avatarUrl}
-                    size="xl"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div>
-                        <h1 className="text-2xl font-bold text-stone-900">
-                          {user.firstName} {user.lastName}
-                        </h1>
-                        <div className="flex items-center gap-2 mt-1">
-                          {rating !== undefined && (
-                            <>
-                              <StarRating rating={rating} />
-                              <span className="text-sm text-stone-500">
-                                {rating.toFixed(1)} ({reviewCount ?? 0} {t('therapists.profile.reviews')})
-                              </span>
-                            </>
-                          )}
-                        </div>
+            <Card className="border border-stone-200 shadow-sm rounded-2xl overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex flex-col sm:flex-row gap-0">
+                  {/* Portrait */}
+                  <div className="sm:w-48 shrink-0">
+                    {featuredImageUrl ? (
+                      <img
+                        src={featuredImageUrl}
+                        alt={`${user.firstName} ${user.lastName}`}
+                        className="w-full h-64 sm:h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-64 sm:h-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center">
+                        <Avatar
+                          firstName={user.firstName}
+                          lastName={user.lastName}
+                          src={user.avatarUrl}
+                          size="xl"
+                          className="h-20 w-20 ring-4 ring-white/30"
+                        />
                       </div>
-                      {isAccepting ? (
-                        <Badge variant="success">{t('therapists.profile.acceptingClients')}</Badge>
-                      ) : (
-                        <Badge variant="warning">{t('therapists.profile.notAccepting')}</Badge>
-                      )}
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 p-6 space-y-4">
+                    <div>
+                      <h1 className="text-2xl font-semibold text-stone-900">
+                        {user.firstName} {user.lastName}
+                      </h1>
+                      <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                        {rating !== undefined && (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                            <span className="font-medium text-stone-800">{rating.toFixed(1)}</span>
+                            <span className="text-stone-400">({reviewCount ?? 0})</span>
+                          </div>
+                        )}
+                        <span className="flex items-center gap-1 text-sm text-stone-500">
+                          <MapPin className="h-3.5 w-3.5 text-teal-600" /> {locationCity}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-stone-500">
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="h-4 w-4" /> {locationCity}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" /> {t('therapists.profile.minSession', { n: sessionLength })}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Video className="h-4 w-4" /> {t('therapists.profile.videoAvailable')}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Shield className="h-4 w-4 text-teal-600" /> {t('therapists.profile.verified')}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 mt-4">
+                    <div className="flex flex-wrap gap-1.5">
                       {specialties.map((s) => (
-                        <span
-                          key={s}
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getSpecialtyColor(s)}`}
-                        >
+                        <span key={s} className={cn('px-2.5 py-1 rounded-lg text-xs font-medium', getSpecialtyColor(s))}>
                           {s}
                         </span>
                       ))}
                     </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-stone-600">
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100">
+                        <Clock className="h-3.5 w-3.5 text-teal-600" />
+                        {t('therapists.profile.minSession', { n: sessionLength })}
+                      </span>
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-stone-100">
+                        <Video className="h-3.5 w-3.5 text-teal-600" />
+                        {t('therapists.profile.videoAvailable')}
+                      </span>
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                        <Shield className="h-3.5 w-3.5" />
+                        {t('therapists.profile.verified')}
+                      </span>
+                      {isAccepting ? (
+                        <span className="px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                          {t('therapists.profile.acceptingClients')}
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-100">
+                          {t('therapists.profile.notAccepting')}
+                        </span>
+                      )}
+                    </div>
+
+                    {(socialMediaLink || qrCodeUrl) && (
+                      <div className="flex items-center gap-4 pt-1">
+                        {socialMediaLink && (
+                          <a href={socialMediaLink} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-teal-700 transition-colors">
+                            <Globe className="h-3.5 w-3.5" />
+                            {t('therapists.profile.socialMedia')}
+                          </a>
+                        )}
+                        {qrCodeUrl && (
+                          <button onClick={() => setShowQrModal(true)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-teal-700 transition-colors">
+                            <QrCode className="h-3.5 w-3.5" />
+                            {t('therapists.profile.qrCode')}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Tabs */}
-            <div className="border-b border-stone-200">
-              <nav className="flex gap-6">
+            {/* Content Tabs */}
+            <div className="space-y-4">
+              <div className="flex gap-6 border-b border-stone-200">
                 {(['schedule', 'about', 'reviews'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`pb-3 text-sm font-medium capitalize transition-colors ${activeTab === tab
-                      ? 'border-b-2 border-teal-600 text-teal-600'
-                      : 'text-stone-500 hover:text-stone-700'
-                      }`}
+                    className={cn(
+                      'pb-3 text-sm font-semibold transition-colors relative',
+                      activeTab === tab ? 'text-stone-900' : 'text-stone-400 hover:text-stone-600'
+                    )}
                   >
                     {tabLabels[tab]}
+                    {activeTab === tab && (
+                      <div className="absolute bottom-0 left-0 w-full h-0.5 bg-teal-600 rounded-full" />
+                    )}
                   </button>
                 ))}
-              </nav>
-            </div>
+              </div>
 
-            {activeTab === 'schedule' && (
-              <Card>
-                <CardContent className="p-6">
-                  {plansLoading ? (
-                    <div className="flex justify-center py-10"><PageLoader /></div>
-                  ) : (
-                    <div className="calendar-container">
-                      <FullCalendar
-                        plugins={[timeGridPlugin, dayGridPlugin]}
-                        initialView="timeGridWeek"
-                        locale={i18n.language.startsWith('zh') ? zhCnLocale : undefined}
-                        headerToolbar={{
-                          left: 'prev,next today',
-                          center: 'title',
-                          right: 'dayGridMonth,timeGridWeek',
-                        }}
-                        events={calendarEvents}
-                        height="auto"
-                        nowIndicator
-                        slotMinTime="07:00:00"
-                        slotMaxTime="21:00:00"
-                        eventContent={(arg) => (
-                          <div className="overflow-hidden px-1 text-xs leading-tight">
-                            <div className="font-semibold truncate">{arg.event.title}</div>
-                          </div>
-                        )}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+              <div>
+                {activeTab === 'schedule' && (
+                  <Card className="border border-stone-200 shadow-sm rounded-2xl">
+                    <CardContent className="p-6">
+                      {plansLoading ? (
+                        <div className="flex justify-center py-16"><PageLoader /></div>
+                      ) : (
+                        <FullCalendar
+                          plugins={[timeGridPlugin, dayGridPlugin]}
+                          initialView="timeGridWeek"
+                          locale={i18n.language.startsWith('zh') ? zhCnLocale : undefined}
+                          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
+                          events={calendarEvents}
+                          height="auto"
+                          nowIndicator
+                          slotMinTime="07:00:00"
+                          slotMaxTime="21:00:00"
+                          eventContent={(arg) => (
+                            <div className="overflow-hidden px-1.5 py-0.5 text-xs leading-tight rounded">
+                              <div className="font-semibold truncate">{arg.event.title}</div>
+                            </div>
+                          )}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
 
-            {activeTab === 'about' && (
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="font-semibold text-stone-900 mb-3">{t('therapists.profile.aboutSection')}</h2>
-                  <p className="text-stone-600 leading-relaxed text-sm">{bio}</p>
-
-                  {refundPolicy && (
-                    <div className="mt-6 p-4 rounded-lg bg-teal-50 border border-teal-100">
-                      <h3 className="text-sm font-semibold text-teal-800 mb-1">
-                        {t('therapists.profile.cancellationPolicy')}
-                      </h3>
-                      <p className="text-sm text-teal-700">{refundPolicy.policyDescription}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === 'reviews' && (
-              <Card>
-                <CardContent className="p-6">
-                  {reviewCount && reviewCount > 0 ? (
-                    <div className="flex items-center gap-3 mb-6">
-                      <span className="text-4xl font-bold text-stone-900">
-                        {rating?.toFixed(1)}
-                      </span>
+                {activeTab === 'about' && (
+                  <Card className="border border-stone-200 shadow-sm rounded-2xl">
+                    <CardContent className="p-6 space-y-6">
                       <div>
-                        <StarRating rating={rating ?? 0} />
-                        <p className="text-sm text-stone-500 mt-0.5">{reviewCount} {t('therapists.profile.reviews')}</p>
+                        <h2 className="text-base font-semibold text-stone-900 mb-3">
+                          {t('therapists.profile.aboutSection')}
+                        </h2>
+                        <p className="text-sm text-stone-600 leading-relaxed whitespace-pre-wrap">{bio}</p>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 text-stone-400">
-                      <Star className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">{t('therapists.profile.noReviews')}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+
+                      {galleryImages && galleryImages.length > 0 && (
+                        <div>
+                          <h2 className="text-base font-semibold text-stone-900 mb-3">
+                            {t('therapists.profile.gallery')}
+                          </h2>
+                          <div className="grid grid-cols-3 gap-2">
+                            {galleryImages.map((img) => (
+                              <div key={img.id} className="aspect-square rounded-xl overflow-hidden bg-stone-100">
+                                <img src={img.url} alt="" className="h-full w-full object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {refundPolicy && (
+                        <div className="p-4 rounded-xl bg-stone-50 border border-stone-200">
+                          <h3 className="text-sm font-semibold text-stone-800 mb-1.5">
+                            {t('therapists.profile.cancellationPolicy')}
+                          </h3>
+                          <p className="text-sm text-stone-600 leading-relaxed">{refundPolicy.policyDescription}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <Card className="border border-stone-200 shadow-sm rounded-2xl">
+                    <CardContent className="p-6">
+                      {reviewCount && reviewCount > 0 ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4 pb-4 border-b border-stone-100">
+                            <span className="text-4xl font-bold text-stone-900">{rating?.toFixed(1)}</span>
+                            <div>
+                              <StarRating rating={rating ?? 0} />
+                              <p className="text-sm text-stone-500 mt-0.5">{reviewCount} {t('therapists.profile.reviews')}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-16">
+                          <Star className="h-10 w-10 mx-auto mb-3 text-stone-200" />
+                          <p className="text-sm text-stone-400">{t('therapists.profile.noReviews')}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Right column — booking card */}
-          <div>
-            <Card className="sticky top-24">
-              <CardContent className="p-6">
-                <div className="text-center mb-5">
+          {/* Booking sidebar */}
+          <div className="lg:sticky lg:top-8 space-y-4">
+            <Card className="border border-stone-200 shadow-sm rounded-2xl">
+              <CardContent className="p-6 space-y-5">
+                <div>
+                  <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-1">
+                    {t('therapists.profile.perSession')}
+                  </p>
                   <PriceDisplay
                     cnyAmount={sessionPrice}
-                    className="text-3xl font-bold text-stone-900"
+                    className="text-3xl font-semibold text-stone-900"
                   />
-                  <span className="text-stone-500 text-sm"> {t('therapists.profile.perSession')}</span>
                 </div>
 
                 <Button
-                  className="w-full"
-                  size="lg"
+                  className="w-full rounded-xl text-sm font-semibold"
                   disabled={!isAccepting}
                   onClick={handleBook}
                 >
                   <Calendar className="h-4 w-4" />
                   {isAccepting ? t('therapists.profile.bookSession') : t('therapists.profile.notAvailable')}
                 </Button>
-
                 {!isAuthenticated && isAccepting && (
-                  <p className="text-xs text-center text-stone-400 mt-3">
+                  <p className="text-xs text-center text-stone-400">
                     {t('therapists.profile.signInToBook')}
                   </p>
                 )}
 
-                <div className="mt-5 space-y-2 text-sm text-stone-500">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-teal-600 shrink-0" />
-                    {t('therapists.profile.minuteSession', { n: sessionLength })}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Video className="h-4 w-4 text-teal-600 shrink-0" />
-                    {t('therapists.profile.videoOrInPerson')}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-teal-600 shrink-0" />
-                    {t('therapists.profile.securePayment')}
-                  </div>
+                <div className="space-y-2 pt-2 border-t border-stone-100">
+                  {[
+                    { icon: Clock, text: t('therapists.profile.minuteSession', { n: sessionLength }) },
+                    { icon: Video, text: t('therapists.profile.videoOrInPerson') },
+                    { icon: Shield, text: t('therapists.profile.securePayment') },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 text-sm text-stone-600">
+                      <item.icon className="h-4 w-4 text-teal-600 shrink-0" />
+                      {item.text}
+                    </div>
+                  ))}
                 </div>
+
+                {consultEnabled && (
+                  <div className="pt-3 border-t border-stone-100 space-y-1">
+                    <p className="text-xs font-medium text-teal-700 flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" />
+                      {t('therapists.profile.consultAvailable')}
+                    </p>
+                    {hourlyConsultFee && (
+                      <p className="text-xs text-stone-500">
+                        {t('therapists.profile.hourlyFee', { fee: Number(hourlyConsultFee).toFixed(0) })}
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-xs w-full shadow-xl space-y-4 text-center">
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-semibold text-stone-900">{t('therapists.profile.qrCode')}</h3>
+              <button onClick={() => setShowQrModal(false)} className="p-1.5 rounded-full hover:bg-stone-100 transition-colors">
+                <X className="h-4 w-4 text-stone-500" />
+              </button>
+            </div>
+            <div className="aspect-square w-full rounded-xl overflow-hidden border border-stone-100 bg-stone-50 p-3">
+              <img src={qrCodeUrl!} alt="QR Code" className="w-full h-full object-contain" />
+            </div>
+            <p className="text-xs text-stone-400">{t('therapists.profile.socialMedia')}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

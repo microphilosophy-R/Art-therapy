@@ -116,3 +116,7 @@
 2026-02-28T09:16:42.404Z - [UploadService] Local file deleted: C:\art therapy app\server\uploads\plan-attachments\cmm5zpjo30005rrvybwar7l5w.pdf
 2026-02-28T09:57:34.945Z - [ConflictDetection] Conflicts found for therapist cmm65asxk0007hbp6g9vglt19: [{"type":"plan","id":"cmm65aszt001nhbp6zh2yzxtt","title":"Individual Anxiety Management","startTime":"2026-03-07T02:00:00.000Z"}]
 2026-02-28T09:57:35.022Z - [TherapyPlanController] Submit blocked by conflict for plan cmm65at0d0020hbp6khlvrxw8: Plan: "Individual Anxiety Management"
+2026-03-01T00:31:11.226Z - [UploadService] uploadAsset type=therapist-file id=b32419af-ef04-4429-9a42-de1109d29068.png
+2026-03-01T00:31:11.227Z - [UploadService] saveLocalFile: therapists/b32419af-ef04-4429-9a42-de1109d29068.png
+2026-03-01T00:31:11.288Z - [UploadService] Creating subfolder: C:\art therapy app\server\uploads\therapists
+2026-03-01T00:31:11.364Z - [UploadService] File saved locally at: C:\art therapy app\server\uploads\therapists\b32419af-ef04-4429-9a42-de1109d29068.png. URL: http://localhost:3001/uploads/therapists/b32419af-ef04-4429-9a42-de1109d29068.png

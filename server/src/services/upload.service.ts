@@ -47,148 +47,74 @@ const saveLocalFile = async (fileBuffer: Buffer, subfolder: string, filename: st
   }
 };
 
-export const uploadAvatar = async (fileBuffer: Buffer, userId: string): Promise<string> => {
-  logToFile(`[UploadService] uploadAvatar: ${userId}`);
-  if (!isCloudinaryConfigured()) {
-    return saveLocalFile(fileBuffer, 'avatars', `${userId}.jpg`);
-  }
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        { folder: 'avatars', public_id: userId, overwrite: true, transformation: [{ width: 200, height: 200, crop: 'fill' }] },
-        (error, result) => {
-          if (error || !result) {
-            logToFile(`[UploadService] Cloudinary uploadAvatar failed: ${error?.message}`);
-            return reject(error ?? new Error('Upload failed'));
-          }
-          resolve(result.secure_url);
-        }
-      )
-      .end(fileBuffer);
-  });
+export type AssetType =
+  | 'avatar'
+  | 'artwork'
+  | 'poster'
+  | 'video'
+  | 'plan-image'
+  | 'plan-pdf'
+  | 'therapist-file'
+  | 'therapist-portrait'
+  | 'therapist-gallery'
+  | 'therapist-cert'
+  | 'therapist-qr';
+
+const ASSET_CONFIG: Record<AssetType, {
+  folder: string;
+  resourceType: 'image' | 'video' | 'raw' | 'auto';
+  localExt: string;
+  publicIdPrefix?: string;
+  transformation?: object[];
+}> = {
+  'avatar':         { folder: 'avatars',         resourceType: 'image', localExt: 'jpg', transformation: [{ width: 200, height: 200, crop: 'fill' }] },
+  'artwork':        { folder: 'artwork',          resourceType: 'image', localExt: 'jpg' },
+  'poster':         { folder: 'plan-posters',     resourceType: 'image', localExt: 'jpg', transformation: [{ width: 800, height: 450, crop: 'fill' }] },
+  'video':          { folder: 'plan-videos',      resourceType: 'video', localExt: 'mp4' },
+  'plan-image':     { folder: 'plan-images',      resourceType: 'image', localExt: 'jpg', publicIdPrefix: 'plan-image-' },
+  'plan-pdf':           { folder: 'plan-attachments',      resourceType: 'raw',   localExt: 'pdf', publicIdPrefix: 'plan-pdf-' },
+  'therapist-file':     { folder: 'therapists',            resourceType: 'auto',  localExt: '' },
+  'therapist-portrait': { folder: 'therapists/portraits',  resourceType: 'image', localExt: '' },
+  'therapist-gallery':  { folder: 'therapists/gallery',    resourceType: 'image', localExt: '' },
+  'therapist-cert':     { folder: 'therapists/certificates', resourceType: 'auto', localExt: '' },
+  'therapist-qr':       { folder: 'therapists/qr-codes',   resourceType: 'image', localExt: '' },
 };
 
-export const uploadArtwork = async (fileBuffer: Buffer, noteId: string): Promise<string> => {
-  logToFile(`[UploadService] uploadArtwork: ${noteId}`);
-  if (!isCloudinaryConfigured()) {
-    return saveLocalFile(fileBuffer, 'artwork', `${noteId}.jpg`);
-  }
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        { folder: 'artwork', public_id: noteId, overwrite: true },
-        (error, result) => {
-          if (error || !result) {
-            logToFile(`[UploadService] Cloudinary uploadArtwork failed: ${error?.message}`);
-            return reject(error ?? new Error('Upload failed'));
-          }
-          resolve(result.secure_url);
-        }
-      )
-      .end(fileBuffer);
-  });
-};
+export const uploadAsset = async (
+  fileBuffer: Buffer,
+  type: AssetType,
+  id: string,
+): Promise<string> => {
+  const cfg = ASSET_CONFIG[type];
+  logToFile(`[UploadService] uploadAsset type=${type} id=${id}`);
 
-export const uploadPoster = async (fileBuffer: Buffer, planId: string): Promise<string> => {
-  logToFile(`[UploadService] uploadPoster: ${planId}`);
+  const publicId = cfg.publicIdPrefix ? `${cfg.publicIdPrefix}${id}` : id;
+
   if (!isCloudinaryConfigured()) {
-    return saveLocalFile(fileBuffer, 'plan-posters', `${planId}.jpg`);
+    const localFilename = type === 'therapist-file'
+      ? id
+      : `${publicId}.${cfg.localExt}`;
+    return saveLocalFile(fileBuffer, cfg.folder, localFilename);
   }
+
   return new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
         {
-          folder: 'plan-posters',
-          public_id: planId,
+          resource_type: cfg.resourceType,
+          folder: cfg.folder,
+          public_id: type === 'therapist-file' ? path.parse(id).name : publicId,
           overwrite: true,
-          transformation: [{ width: 800, height: 450, crop: 'fill' }],
+          ...(cfg.transformation ? { transformation: cfg.transformation } : {}),
+          ...(type === 'video' ? { quality: 'auto' } : {}),
         },
         (error, result) => {
           if (error || !result) {
-            logToFile(`[UploadService] Cloudinary uploadPoster failed: ${error?.message}`);
+            logToFile(`[UploadService] Cloudinary uploadAsset failed (${type}): ${error?.message}`);
             return reject(error ?? new Error('Upload failed'));
           }
           resolve(result.secure_url);
-        }
-      )
-      .end(fileBuffer);
-  });
-};
-
-export const uploadVideo = async (fileBuffer: Buffer, planId: string): Promise<string> => {
-  logToFile(`[UploadService] uploadVideo: ${planId}`);
-  if (!isCloudinaryConfigured()) {
-    return saveLocalFile(fileBuffer, 'plan-videos', `${planId}.mp4`);
-  }
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        {
-          resource_type: 'video',
-          folder: 'plan-videos',
-          public_id: planId,
-          overwrite: true,
-          quality: 'auto',
         },
-        (error, result) => {
-          if (error || !result) {
-            logToFile(`[UploadService] Cloudinary uploadVideo failed: ${error?.message}`);
-            return reject(error ?? new Error('Upload failed'));
-          }
-          resolve(result.secure_url);
-        }
-      )
-      .end(fileBuffer);
-  });
-};
-
-export const uploadPlanImage = async (fileBuffer: Buffer, imageId: string): Promise<string> => {
-  logToFile(`[UploadService] uploadPlanImage: ${imageId}`);
-  if (!isCloudinaryConfigured()) {
-    return saveLocalFile(fileBuffer, 'plan-images', `plan-image-${imageId}.jpg`);
-  }
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        {
-          resource_type: 'image',
-          folder: 'plan-images',
-          public_id: `plan-image-${imageId}`,
-          overwrite: true,
-        },
-        (error, result) => {
-          if (error || !result) {
-            logToFile(`[UploadService] Cloudinary uploadPlanImage failed: ${error?.message}`);
-            return reject(error ?? new Error('Upload failed'));
-          }
-          resolve(result.secure_url);
-        }
-      )
-      .end(fileBuffer);
-  });
-};
-
-export const uploadPdf = async (fileBuffer: Buffer, planId: string): Promise<string> => {
-  logToFile(`[UploadService] uploadPdf: ${planId}`);
-  if (!isCloudinaryConfigured()) {
-    return saveLocalFile(fileBuffer, 'plan-attachments', `${planId}.pdf`);
-  }
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        {
-          resource_type: 'raw',
-          folder: 'plan-attachments',
-          public_id: `plan-pdf-${planId}`,
-          overwrite: true,
-        },
-        (error, result) => {
-          if (error || !result) {
-            logToFile(`[UploadService] Cloudinary uploadPdf failed: ${error?.message}`);
-            return reject(error ?? new Error('Upload failed'));
-          }
-          resolve(result.secure_url);
-        }
       )
       .end(fileBuffer);
   });
@@ -219,19 +145,15 @@ export const deleteAsset = async (url: string | null | undefined): Promise<void>
 
     // 2. Cloudinary case
     if (url.includes('cloudinary.com') && isCloudinaryConfigured()) {
-      // Basic public_id extraction for our known folders
-      // Cloudinary URL: https://res.cloudinary.com/cloud_name/image/upload/v12345/folder/id.jpg
-      // We extract the part after /upload/v[number]/ excluding the extension
       const parts = url.split('/');
       const fileNameWithExt = parts.pop();
       const folder = parts.pop();
       if (fileNameWithExt && folder) {
         const publicId = `${folder}/${fileNameWithExt.split('.')[0]}`;
 
-        // Determine resource type
-        let resource_type: "image" | "video" | "raw" = "image";
-        if (url.includes('/video/upload/')) resource_type = "video";
-        if (url.includes('/raw/upload/')) resource_type = "raw";
+        let resource_type: 'image' | 'video' | 'raw' = 'image';
+        if (url.includes('/video/upload/')) resource_type = 'video';
+        if (url.includes('/raw/upload/')) resource_type = 'raw';
 
         const result = await cloudinary.uploader.destroy(publicId, { resource_type });
         logToFile(`[UploadService] Cloudinary asset deleted (${resource_type}): ${publicId}. Result: ${result.result}`);
@@ -240,6 +162,5 @@ export const deleteAsset = async (url: string | null | undefined): Promise<void>
     }
   } catch (err: any) {
     logToFile(`[UploadService] deleteAsset failed for ${url}: ${err.message}`);
-    // We don't throw here to avoid failing higher-level operations if cleanup fails
   }
 };

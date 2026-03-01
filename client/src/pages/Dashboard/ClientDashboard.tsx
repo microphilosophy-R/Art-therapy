@@ -44,6 +44,7 @@ export const ClientDashboard = () => {
     queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     refetchInterval: 30000,
+    enabled: !!user,
   });
   const unreadCount = unreadData?.count ?? 0;
 

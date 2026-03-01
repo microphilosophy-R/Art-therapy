@@ -112,6 +112,16 @@ enum MessageTrigger {
   PLAN_STARTED
   PLAN_FINISHED
   PLAN_CANCELLED_BY_THERAPIST
+  PROFILE_SUBMITTED
+  PROFILE_APPROVED
+  PROFILE_REJECTED
+}
+
+enum ProfileStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
 
 model User {
@@ -156,14 +166,40 @@ model TherapistProfile {
   stripeAccountId     String?
   stripeAccountStatus StripeAccountStatus @default(NOT_CONNECTED)
 
+  // Profile approval workflow
+  profileStatus   ProfileStatus @default(DRAFT)
+  rejectionReason String?
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+
+  // Consult feature
+  consultEnabled   Boolean  @default(false)
+  certificateUrl   String?
+  hourlyConsultFee Decimal? @db.Decimal(10, 2)
+
   appointments  Appointment[]
   availability  Availability[]
   reviews       Review[]
   refundPolicy  RefundPolicy?
   therapyPlans  TherapyPlan[]
+  galleryImages TherapistGalleryImage[]
+  featuredImageUrl String?
+  socialMediaLink  String?
+  qrCodeUrl        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TherapistGalleryImage {
+  id          String           @id @default(cuid())
+  therapistId String
+  therapist   TherapistProfile @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  url         String
+  order       Int              @default(0)
+  createdAt   DateTime         @default(now())
+
+  @@index([therapistId])
 }
 
 model Appointment {

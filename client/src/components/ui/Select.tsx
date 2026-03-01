@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn';
 interface SelectOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
@@ -36,7 +37,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         >
           {placeholder && <option value="">{placeholder}</option>}
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>{opt.label}</option>
           ))}
         </select>
         {error && <p className="text-xs text-rose-500">{error}</p>}

@@ -141,3 +141,50 @@ export const notifyTherapistOnSignupCancelled = async (
     },
   });
 };
+
+/**
+ * Notify all admins that a therapist has submitted their profile for review.
+ */
+export const notifyAdminsOnProfileSubmitted = async (
+  profileId: string,
+  therapistName: string,
+): Promise<void> => {
+  const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+  if (admins.length === 0) return;
+  await prisma.message.createMany({
+    data: admins.map((admin) => ({
+      recipientId: admin.id,
+      body: `👤 New therapist profile submitted for review: ${therapistName}`,
+      trigger: 'PROFILE_SUBMITTED' as const,
+    })),
+  });
+};
+
+/**
+ * Notify the therapist that their profile has been approved.
+ */
+export const notifyTherapistOnProfileApproved = async (therapistUserId: string): Promise<void> => {
+  await prisma.message.create({
+    data: {
+      recipientId: therapistUserId,
+      body: `✅ Your therapist profile has been approved! You are now visible to clients.`,
+      trigger: 'PROFILE_APPROVED',
+    },
+  });
+};
+
+/**
+ * Notify the therapist that their profile has been rejected.
+ */
+export const notifyTherapistOnProfileRejected = async (
+  therapistUserId: string,
+  reason: string,
+): Promise<void> => {
+  await prisma.message.create({
+    data: {
+      recipientId: therapistUserId,
+      body: `❌ Your therapist profile was not approved. Reason: ${reason}`,
+      trigger: 'PROFILE_REJECTED',
+    },
+  });
+};

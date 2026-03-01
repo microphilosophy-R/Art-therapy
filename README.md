@@ -76,13 +76,42 @@ graph TD
 Personal consultations are private agreements between a client and a therapist, managed via the Appointment system:
 
 1. **Request**: CLIENT picks a slot from the Therapist's availability. Status becomes `PENDING`.
-2. **Deadline**: System enforces an **Acceptance Deadline** (24 hours before start). 
+2. **Deadline**: System enforces an **Acceptance Deadline** (24 hours before start).
    - If the Therapist doesn't Accept/Confirm in time, the appointment is auto-cancelled.
    - Client is notified and refunded if payment was processed.
 3. **Accept**: Therapist confirms the slot. Status becomes `CONFIRMED`.
 4. **Active**: At the start time, status becomes `IN_PROGRESS`.
 5. **Completion**: Therapist marks as `COMPLETED`. Session notes are privately saved.
 6. **Visibility**: Personal consults are **never** visible in the public gallery.
+
+### Therapist Profile Approval Workflow
+
+All therapist profiles go through an admin approval process before becoming publicly visible:
+
+```
+DRAFT → PENDING_REVIEW → APPROVED
+                       → REJECTED → (edit & resubmit) → PENDING_REVIEW
+```
+
+| Status | Description |
+|---|---|
+| `DRAFT` | Initial state. Profile is invisible to the public and other therapists. |
+| `PENDING_REVIEW` | Therapist submitted for review. Admin is notified. |
+| `APPROVED` | Profile is live and visible in the therapist directory. |
+| `REJECTED` | Admin rejected with a reason. Therapist can edit and resubmit. |
+
+**Key rules:**
+- Any edit to an `APPROVED` profile resets it to `DRAFT` (requires re-submission).
+- Therapists with `DRAFT`, `PENDING_REVIEW`, or `REJECTED` profiles do **not** appear in `/therapists` directory or search results.
+- The profile wizard (4 steps: Basic Info → Consultations → Media → Preview & Submit) guides therapists through the process.
+
+### Consult Feature (`consultEnabled`)
+
+Therapists can optionally enable personal and group consultations in their profile wizard:
+
+- **Disabled (default)**: `PERSONAL_CONSULT` and `GROUP_CONSULT` plan types are locked in the plan creation wizard.
+- **Enabled**: Therapist uploads a professional certificate and sets an hourly consult fee. Both plan types become available.
+- The backend enforces this guard — `POST /therapy-plans` returns `403` if the therapist attempts to create a consult plan without `consultEnabled = true`.
 
 ---
 
@@ -1224,3 +1253,17 @@ Role-specific guides for end users are located in the [`docs/`](docs/) directory
 | Client Manual | Clients booking sessions and signing up for group plans | [`docs/manual-client.md`](docs/manual-client.md) |
 | Therapist Manual | Therapists managing their profile, plans, and clients | [`docs/manual-therapist.md`](docs/manual-therapist.md) |
 | Administrator Manual | Platform administrators reviewing plans and managing users | [`docs/manual-admin.md`](docs/manual-admin.md) |
+
+## Troubleshooting
+
+### Uploading Files Causes `ERR_CONNECTION_RESET`
+When running the development server locally, saving uploaded files to the `uploads/` directory can cause `tsx watch` (or `nodemon`) to detect file changes and instantly restart the server, dropping the upload connection. 
+To fix this, ensure the development script ignores the uploads directory:
+```json
+// server/package.json
+"scripts": {
+  "dev": "tsx watch --ignore \"uploads/**\" src/server.ts"
+}
+```
+This common fix has already been applied, but if you encounter this error in a similar project or with a different watch tool, ignoring the upload output directory is usually the solution.
+

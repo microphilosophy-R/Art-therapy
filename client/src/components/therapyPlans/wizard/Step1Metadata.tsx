@@ -29,6 +29,7 @@ export interface Step1Props {
     posterFile: File | null;
     setPosterFile: (file: File | null) => void;
     isLoading?: boolean;
+    consultEnabled?: boolean;
 }
 
 export const Step1Metadata = ({
@@ -40,12 +41,13 @@ export const Step1Metadata = ({
     posterFile,
     setPosterFile,
     isLoading,
+    consultEnabled = false,
 }: Step1Props) => {
     const { t } = useTranslation();
 
     const planTypeOptions = [
-        { value: 'PERSONAL_CONSULT', label: t('common.planType.PERSONAL_CONSULT') },
-        { value: 'GROUP_CONSULT', label: t('common.planType.GROUP_CONSULT') },
+        { value: 'PERSONAL_CONSULT', label: t('common.planType.PERSONAL_CONSULT'), disabled: !consultEnabled },
+        { value: 'GROUP_CONSULT', label: t('common.planType.GROUP_CONSULT'), disabled: !consultEnabled },
         { value: 'ART_SALON', label: t('common.planType.ART_SALON') },
         { value: 'WELLNESS_RETREAT', label: t('common.planType.WELLNESS_RETREAT') },
     ];
@@ -67,6 +69,7 @@ export const Step1Metadata = ({
     return (
         <div className="space-y-6">
             {/* Plan type */}
+        <div className="space-y-1">
             <Select
                 label={t('therapyPlans.form.type')}
                 options={planTypeOptions}
@@ -78,6 +81,12 @@ export const Step1Metadata = ({
                 }}
                 error={errors.type}
             />
+            {!consultEnabled && (
+                <p className="text-xs text-amber-600">
+                    {t('profile.wizard.consultDisabledHint')}
+                </p>
+            )}
+        </div>
 
             {/* Type-specific fields */}
             {values.type === 'PERSONAL_CONSULT' && (

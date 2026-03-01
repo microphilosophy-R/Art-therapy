@@ -263,7 +263,18 @@
       "securePayment": "Stripe 安全支付",
       "minSession": "{{n}} 分钟疗程",
       "videoAvailable": "支持视频",
-      "verified": "认证治疗师"
+      "verified": "认证治疗师",
+      "featuredImage": "特色展示图 (横版)",
+      "socialMedia": "社交媒体链接 (小红书/微博等)",
+      "qrCode": "社交媒体二维码",
+      "featuredImageHint": "建议比例 16:9，展示您的专业形象或工作空间",
+      "specialtiesHint": "选择您的专业领域 (多选)",
+      "editProfile": "设置个人公开主页",
+      "saveSuccess": "资料已更新",
+      "scheduleTab": "日程",
+      "gallery": "作品展示",
+      "consultAvailable": "提供咨询服务",
+      "hourlyFee": "¥{{fee}}/小时咨询"
     },
     "card": {
       "full": "已满",
@@ -922,6 +933,57 @@
       "complaint1": "美国卫生与公众服务部 — 民权办公室 (OCR)：www.hhs.gov/ocr/complaints",
       "complaint2": "联邦贸易委员会 (FTC)：reportfraud.ftc.gov",
       "noRetaliation": "提出投诉不会导致报复。"
+    }
+  },
+  "profile": {
+    "wizard": {
+      "step1": "基本信息",
+      "step2": "咨询设置",
+      "step3": "媒体资料",
+      "step4": "预览与提交",
+      "locationCity": "城市",
+      "sessionPrice": "单次价格",
+      "sessionLength": "单次时长",
+      "isAccepting": "当前接受新客户",
+      "bio": "个人简介",
+      "specialties": "专业领域",
+      "enableConsult": "开启个人/团体咨询",
+      "enableConsultDesc": "允许您创建个人咨询和团体咨询计划，需要上传有效证书。",
+      "basicFees": "基本费用",
+      "hourlyConsultFee": "每小时咨询费",
+      "certificate": "专业证书",
+      "certificateUploaded": "证书已上传",
+      "uploadCertificate": "上传证书（PDF 或图片）",
+      "certificateHint": "请上传您的执照或资质证书文件。",
+      "uploadFeatured": "上传封面图片",
+      "submitForReview": "提交资料审核",
+      "pendingDesc": "您的资料正在审核中，审核完成后将通知您。",
+      "approvedDesc": "您的资料已通过审核，客户可以查看您的主页。",
+      "consultDisabledHint": "请在个人资料中开启咨询功能，以解锁个人咨询和团体咨询计划类型。"
+    },
+    "status": {
+      "DRAFT": "草稿",
+      "PENDING_REVIEW": "待审核",
+      "APPROVED": "已通过",
+      "REJECTED": "已拒绝"
+    },
+    "gallery": {
+      "title": "图片集",
+      "add": "添加图片",
+      "images": "张图片"
+    }
+  },
+  "admin": {
+    "profiles": {
+      "tabLabel": "资料审核",
+      "title": "待审核资料",
+      "pending": "待审核",
+      "empty": "暂无待审核资料。",
+      "approve": "通过",
+      "reject": "拒绝",
+      "confirmReject": "确认拒绝",
+      "rejectReasonPlaceholder": "请说明拒绝原因...",
+      "consultEnabled": "已开启咨询"
     }
   }
 }

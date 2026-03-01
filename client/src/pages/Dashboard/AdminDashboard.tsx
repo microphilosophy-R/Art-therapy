@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../../store/authStore';
 import { useTranslation } from 'react-i18next';
 import {
   Users, DollarSign, Calendar, TrendingUp, Shield,
-  RotateCcw, ChevronLeft, ChevronRight, XCircle,
+  RotateCcw, ChevronLeft, ChevronRight, XCircle, CheckCircle, UserCheck,
 } from 'lucide-react';
 
 import { listAdminUsers, updateUserRole, getAdminPlatformStats } from '../../api/admin';
 import { getAdminPaymentStats } from '../../api/payments';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
 import { getUnreadCount } from '../../api/messages';
+import { getPendingProfiles, reviewProfile } from '../../api/therapists';
 import { AdminPlansTab } from './tabs/AdminPlansTab';
 import { MessagesTab } from './tabs/MessagesTab';
 
@@ -22,7 +24,7 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
 
-type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages';
+type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages' | 'profiles';
 
 const ROLE_OPTION_VALUES: UserRole[] = ['CLIENT', 'THERAPIST', 'ADMIN'];
 
@@ -442,18 +444,152 @@ const RevenueTab = () => {
   );
 };
 
+// ─── Profiles Tab ─────────────────────────────────────────────────────────────
+
+const AdminProfilesTab = () => {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const { data: profiles, isLoading } = useQuery({
+    queryKey: ['admin-pending-profiles'],
+    queryFn: getPendingProfiles,
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, action, rejectionReason }: { id: string; action: 'APPROVE' | 'REJECT'; rejectionReason?: string }) =>
+      reviewProfile(id, { action, rejectionReason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-pending-profiles'] });
+      setRejectId(null);
+      setRejectReason('');
+    },
+  });
+
+  if (isLoading) return <div className="p-10"><PageLoader /></div>;
+
+  const list = profiles ?? [];
+
+  return (
+    <Card>
+      <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+        <h2 className="font-semibold text-stone-900">{t('admin.profiles.title')}</h2>
+        <span className="text-xs text-stone-400">{list.length} {t('admin.profiles.pending')}</span>
+      </div>
+
+      {list.length === 0 ? (
+        <div className="px-6 py-12 text-center text-stone-400">
+          <UserCheck className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p>{t('admin.profiles.empty')}</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-stone-100">
+          {list.map((profile) => (
+            <div key={profile.id} className="px-6 py-5">
+              <div className="flex items-start gap-4">
+                {profile.featuredImageUrl ? (
+                  <img src={profile.featuredImageUrl} alt="" className="h-14 w-14 rounded-xl object-cover shrink-0" />
+                ) : (
+                  <div className="h-14 w-14 rounded-xl bg-stone-100 flex items-center justify-center shrink-0">
+                    <UserCheck className="h-6 w-6 text-stone-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-stone-900">
+                    {profile.user?.firstName} {profile.user?.lastName}
+                  </p>
+                  <p className="text-xs text-stone-500 mt-0.5">{profile.user?.email}</p>
+                  <p className="text-sm text-stone-600 mt-1 line-clamp-2">{profile.bio}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(profile.specialties ?? []).slice(0, 5).map((s) => (
+                      <span key={s} className="px-2 py-0.5 rounded-full bg-stone-100 text-xs text-stone-600">{s}</span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
+                    <span>{profile.locationCity}</span>
+                    <span>¥{Number(profile.sessionPrice).toFixed(0)}/{t('therapists.card.perSession')}</span>
+                    {profile.consultEnabled && (
+                      <span className="text-teal-600 font-medium">{t('admin.profiles.consultEnabled')}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => reviewMutation.mutate({ id: profile.id, action: 'APPROVE' })}
+                    loading={reviewMutation.isPending && reviewMutation.variables?.id === profile.id && reviewMutation.variables?.action === 'APPROVE'}
+                    className="bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    {t('admin.profiles.approve')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => { setRejectId(profile.id); setRejectReason(''); }}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    {t('admin.profiles.reject')}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Reject reason input */}
+              {rejectId === profile.id && (
+                <div className="mt-4 pl-18 space-y-2">
+                  <textarea
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder={t('admin.profiles.rejectReasonPlaceholder')}
+                    rows={2}
+                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-rose-400 focus:ring-rose-400 focus:outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      disabled={!rejectReason.trim()}
+                      loading={reviewMutation.isPending && reviewMutation.variables?.action === 'REJECT'}
+                      onClick={() => reviewMutation.mutate({ id: profile.id, action: 'REJECT', rejectionReason: rejectReason })}
+                    >
+                      {t('admin.profiles.confirmReject')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setRejectId(null)}>
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const AdminDashboard = () => {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   const { data: unreadData } = useQuery({
     queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     refetchInterval: 30000,
+    enabled: !!user,
   });
   const unreadCount = unreadData?.count ?? 0;
+
+  const { data: pendingProfilesData } = useQuery({
+    queryKey: ['admin-pending-profiles'],
+    queryFn: getPendingProfiles,
+    refetchInterval: 60000,
+  });
+  const pendingProfileCount = (pendingProfilesData ?? []).length;
 
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'overview', label: t('dashboard.admin.overview') },
@@ -461,6 +597,7 @@ export const AdminDashboard = () => {
     { id: 'appointments', label: t('dashboard.admin.appointments') },
     { id: 'revenue', label: t('dashboard.admin.revenue') },
     { id: 'plans', label: t('dashboard.admin.plans') },
+    { id: 'profiles', label: t('admin.profiles.tabLabel'), badge: pendingProfileCount },
     { id: 'messages', label: t('dashboard.admin.messages'), badge: unreadCount },
   ];
 
@@ -508,6 +645,7 @@ export const AdminDashboard = () => {
         {activeTab === 'appointments' && <AppointmentsTab />}
         {activeTab === 'revenue' && <RevenueTab />}
         {activeTab === 'plans' && <AdminPlansTab />}
+        {activeTab === 'profiles' && <AdminProfilesTab />}
         {activeTab === 'messages' && <MessagesTab />}
       </div>
     </div>

@@ -31,7 +31,7 @@ export const TherapistCard = ({ therapist }: TherapistCardProps) => {
                 <h3 className="font-semibold text-stone-900">
                   {user.firstName} {user.lastName}
                 </h3>
-                {rating !== undefined && (
+                {rating != null && (
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <StarRating rating={rating} />
                     <span className="text-xs text-stone-500">

@@ -7,7 +7,21 @@ export const updateProfileSchema = z.object({
   sessionLength: z.number().int().positive().optional(),
   locationCity: z.string().min(1).optional(),
   isAccepting: z.boolean().optional(),
+  featuredImageUrl: z.string().url().optional().or(z.literal('')),
+  socialMediaLink: z.string().url().optional().or(z.literal('')),
+  qrCodeUrl: z.string().url().optional().or(z.literal('')),
+  consultEnabled: z.boolean().optional(),
+  certificateUrl: z.string().url().optional().or(z.literal('')),
+  hourlyConsultFee: z.number().positive().optional().nullable(),
 });
+
+export const reviewProfileSchema = z.object({
+  action: z.enum(['APPROVE', 'REJECT']),
+  rejectionReason: z.string().min(1).optional(),
+}).refine(
+  (d) => d.action !== 'REJECT' || !!d.rejectionReason,
+  { message: 'rejectionReason is required when rejecting', path: ['rejectionReason'] },
+);
 
 export const availabilitySchema = z.array(
   z.object({
@@ -30,4 +44,5 @@ export const therapistFiltersSchema = z.object({
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type ReviewProfileInput = z.infer<typeof reviewProfileSchema>;
 export type AvailabilityInput = z.infer<typeof availabilitySchema>;

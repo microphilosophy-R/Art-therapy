@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
-import { deleteAsset, uploadPoster, uploadVideo, uploadPlanImage, uploadPdf } from '../services/upload.service';
+import { deleteAsset, uploadAsset } from '../services/upload.service';
 import {
   notifyAdminsOnPlanSubmitted,
   notifyAllClientsOnPlanPublished,
@@ -85,6 +85,16 @@ export const createPlan = async (req: Request, res: Response) => {
     return res.status(404).json({ message: 'Therapist profile not found' });
   }
 
+  // Consult types require consultEnabled
+  if (
+    (body.type === 'PERSONAL_CONSULT' || body.type === 'GROUP_CONSULT') &&
+    !therapistProfile.consultEnabled
+  ) {
+    return res.status(403).json({
+      message: 'You must enable consultations in your profile before creating this plan type.',
+    });
+  }
+
   const plan = await prisma.therapyPlan.create({
     data: {
       therapistId: therapistProfile.id,
@@ -128,7 +138,15 @@ export const listPlans = async (req: Request, res: Response) => {
   } else if (user.role === 'THERAPIST') {
     // Therapists see only their own plans (all statuses)
     const profile = await prisma.therapistProfile.findUnique({ where: { userId: user.id } });
-    if (!profile) return res.status(404).json({ message: 'Therapist profile not found' });
+    if (!profile) {
+      return res.json({
+        data: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+      });
+    }
     where = { therapistId: profile.id };
   } else if (user.role === 'ADMIN') {
     // Admins see everything; optionally filter by status or type
@@ -497,7 +515,7 @@ export const uploadPlanPoster = async (req: Request, res: Response) => {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  const posterUrl = await uploadPoster(file.buffer, id);
+  const posterUrl = await uploadAsset(file.buffer, 'poster', id);
   const oldUrl = plan.posterUrl;
   await prisma.therapyPlan.update({ where: { id }, data: { posterUrl, defaultPosterId: null } });
 
@@ -526,7 +544,7 @@ export const uploadPlanVideo = async (req: Request, res: Response) => {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
-  const videoUrl = await uploadVideo(file.buffer, id);
+  const videoUrl = await uploadAsset(file.buffer, 'video', id);
   const oldUrl = plan.videoUrl;
   await prisma.therapyPlan.update({ where: { id }, data: { videoUrl } });
 
@@ -577,7 +595,7 @@ export const addPlanImage = async (req: Request, res: Response) => {
 
     let url: string;
     try {
-      url = await uploadPlanImage(file.buffer, imageRecord.id);
+      url = await uploadAsset(file.buffer, 'plan-image', imageRecord.id);
       logToFile(`[TherapyPlanController] Upload service returned URL: ${url}`);
     } catch (err: any) {
       logToFile(`[TherapyPlanController] Upload service failed: ${err.message}`);
@@ -682,7 +700,7 @@ export const addPlanPdf = async (req: Request, res: Response) => {
 
     let url: string;
     try {
-      url = await uploadPdf(file.buffer, pdfRecord.id);
+      url = await uploadAsset(file.buffer, 'plan-pdf', pdfRecord.id);
     } catch (err: any) {
       await prisma.therapyPlanPdf.delete({ where: { id: pdfRecord.id } }).catch(() => { });
       return res.status(500).json({ message: 'PDF upload failed. Please try again.' });

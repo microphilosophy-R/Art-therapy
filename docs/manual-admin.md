@@ -143,7 +143,7 @@ Before approving a plan, review it carefully to ensure the content is accurate, 
 4. Review the description, schedule, location, price, participant limit, and poster.
 5. If the plan meets platform standards, click "Approve".
 6. The plan status changes immediately to **PUBLISHED**.
-7. The plan becomes publicly visible at `/therapy-plans` and is available for client sign-ups.
+7. The plan becomes publicly visible at `/therapy-plans` and is available for client sign-ups via the **Standard Payment Workflow**.
 8. The therapist receives an in-app notification confirming approval.
 
 > **Note:** Approval is immediate. Once approved, the plan is live. If you identify an issue after approval, you may edit the plan or, in serious cases, cancel it (see Section 5.4).

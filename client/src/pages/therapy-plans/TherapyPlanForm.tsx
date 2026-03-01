@@ -114,6 +114,7 @@ interface TherapyPlanFormProps {
   onAddPdf?: (file: File) => void;
   onDeletePdf?: (id: string) => void;
   isAddingPdf?: boolean;
+  consultEnabled?: boolean;
 }
 
 export const TherapyPlanForm = ({
@@ -137,6 +138,7 @@ export const TherapyPlanForm = ({
   onDeletePdf,
   isAddingPdf,
   videoUploadPercent = 0,
+  consultEnabled = false,
 }: TherapyPlanFormProps) => {
   const { t } = useTranslation();
 
@@ -402,6 +404,7 @@ export const TherapyPlanForm = ({
             posterFile={posterFile}
             setPosterFile={setPosterFile}
             isLoading={isNextBusy}
+            consultEnabled={consultEnabled}
           />
         )}
         {currentStep === 2 && (

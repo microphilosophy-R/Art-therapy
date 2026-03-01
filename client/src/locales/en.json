@@ -262,7 +262,18 @@
       "securePayment": "Secure Stripe payment",
       "minSession": "{{n}} min sessions",
       "videoAvailable": "Video available",
-      "verified": "Verified therapist"
+      "verified": "Verified therapist",
+      "featuredImage": "Featured Profile Image (Horizontal)",
+      "socialMedia": "Social Media Link (Instagram/LinkedIn etc.)",
+      "qrCode": "Social Media QR Code",
+      "featuredImageHint": "Recommended ratio 16:9. Showcase your professional presence or workspace.",
+      "specialtiesHint": "Select your professional areas of expertise (multiple).",
+      "editProfile": "Manage Public Profile",
+      "saveSuccess": "Profile updated successfully",
+      "scheduleTab": "Schedule",
+      "gallery": "Gallery",
+      "consultAvailable": "Consultations available",
+      "hourlyFee": "¥{{fee}}/hr consult"
     },
     "card": {
       "full": "Full",
@@ -921,5 +932,56 @@
       "noRetaliation": "Filing a complaint will not result in retaliation."
     },
     "consentLabel": "By clicking below you confirm you have read and understood these terms."
+  },
+  "profile": {
+    "wizard": {
+      "step1": "Basic Info",
+      "step2": "Consultations",
+      "step3": "Media",
+      "step4": "Preview & Submit",
+      "locationCity": "City",
+      "sessionPrice": "Session Price",
+      "sessionLength": "Session Length",
+      "isAccepting": "Currently accepting new clients",
+      "bio": "Bio",
+      "specialties": "Specialties",
+      "enableConsult": "Enable personal & group consultations",
+      "enableConsultDesc": "Allows you to create Personal Consult and Group Consult plans. Requires a valid certificate.",
+      "basicFees": "Basic Fees",
+      "hourlyConsultFee": "Hourly Consult Fee",
+      "certificate": "Professional Certificate",
+      "certificateUploaded": "Certificate uploaded",
+      "uploadCertificate": "Upload certificate (PDF or image)",
+      "certificateHint": "Upload your professional license or certification document.",
+      "uploadFeatured": "Upload featured image",
+      "submitForReview": "Submit Profile for Review",
+      "pendingDesc": "Your profile is under review. You will be notified once approved.",
+      "approvedDesc": "Your profile is live and visible to clients.",
+      "consultDisabledHint": "Enable consultations in your profile to unlock Personal Consult and Group Consult plan types."
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING_REVIEW": "Pending Review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    },
+    "gallery": {
+      "title": "Gallery",
+      "add": "Add photo",
+      "images": "photos"
+    }
+  },
+  "admin": {
+    "profiles": {
+      "tabLabel": "Profiles",
+      "title": "Pending Profile Reviews",
+      "pending": "pending",
+      "empty": "No profiles awaiting review.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirmReject": "Confirm Reject",
+      "rejectReasonPlaceholder": "Explain why this profile is being rejected...",
+      "consultEnabled": "Consult enabled"
+    }
   }
 }

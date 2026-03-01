@@ -24,6 +24,7 @@ import {
 import { saveTherapyPlanAsTemplate } from '../../api/therapyPlanTemplates';
 import { draftsToApiPayload } from '../../components/therapyPlans/PlanSchedule';
 import { TherapyPlanForm, planToFormValues, type TherapyPlanFormValues, type StepChangePayload } from './TherapyPlanForm';
+import { getTherapist } from '../../api/therapists';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
@@ -61,6 +62,13 @@ export const EditTherapyPlan = () => {
 
   // Auto-save: track the plan ID created during step-by-step save in create mode
   const [autoSavePlanId, setAutoSavePlanId] = useState<string | null>(null);
+
+  const { data: myProfile } = useQuery({
+    queryKey: ['therapist', 'me'],
+    queryFn: () => getTherapist(user!.id),
+    enabled: !!user,
+  });
+  const consultEnabled = myProfile?.consultEnabled ?? false;
 
   // Create mode specific state
   const [formKey, setFormKey] = useState(0);
@@ -394,6 +402,7 @@ export const EditTherapyPlan = () => {
           onDeletePdf={!isCreateMode ? (pdfId) => deletePdfMutation.mutate(pdfId) : undefined}
           isAddingPdf={addPdfMutation.isPending}
           videoUploadPercent={videoUploadPercent}
+          consultEnabled={consultEnabled}
         />
       ) : plan ? (
         <>

@@ -319,39 +319,26 @@ Therapy plans allow you to create and manage group-based therapy offerings. Unli
 **To create a new plan:**
 
 1. Go to the **Plans** tab and click **Create New Plan**.
-2. Select the **Plan Type**: Group Consultation, Art Salon, or Wellness Retreat.
-3. Complete the required fields:
+2. The **Therapy Plan Wizard** will open, guiding you through three distinct steps:
 
-   **Title**
-   A clear, descriptive name for the plan (e.g., "Introduction to Expressive Art Therapy" or "Spring Wellness Retreat").
+   ### Step 1: Metadata & Basics
+   - **Title:** A clear, descriptive name for the plan.
+   - **Plan Type:** Select from Group Consultation, Art Salon, or Wellness Retreat.
+   - **Description:** A detailed introduction to the plan, its goals, and requirements.
+   - **Price Per Seat (CNY):** The amount each participant pays.
+   - **Maximum Participants:** The enrollment limit.
 
-   **Introduction / Description**
-   A full description of the plan: its goals, what participants can expect, your approach, and any preparation required. This is the main text clients read before signing up.
+   ### Step 2: Schedule & Format
+   - **Start & End Time:** Define the exact dates and times.
+   - **Location:** Enter a physical address or a video conference link.
+   - **Contact Info:** How clients can reach you with questions.
 
-   **Start Time and End Time**
-   The scheduled start and end date/time of the plan. For Wellness Retreats, these span multiple days.
+   ### Step 3: Media & Poster
+   - **Poster Image:** Choose from defaults or upload your own 16:9 thumbnail.
+   - **Video/Gallery (Optional):** Attach an introductory video link or upload gallery images to showcase past work.
+   - **Conflict Check:** Before saving, the system will verify if your new schedule overlaps with existing appointments or plans.
 
-   **Location**
-   Enter a physical address or an online meeting link, depending on the format of the session.
-
-   **Maximum Participants**
-   The maximum number of clients who can sign up. Once this number is reached, the sign-up closes automatically.
-
-   **Price Per Seat (CNY)**
-   The amount each participant pays to join the plan.
-
-   **Contact Information**
-   Provide contact details clients can use for questions about the plan.
-
-   **Poster Image**
-   Choose from the available default poster images or upload a custom image. This is the visual thumbnail shown to clients on the plans listing page.
-
-   **Scheduled Events (Wellness Retreats)**
-   For Wellness Retreats, add the individual sessions or activities within the programme, each with its own date, time, and description.
-
-4. Click **Save as Draft** to save your plan without submitting it. You can return and edit a draft at any time.
-
-   Alternatively, click **Save as Template** if you want to save this plan structure for reuse in future plans (see Section 7.9).
+4. Click **Save as Draft** to store your progress or **Submit for Review** to send it to the administrator.
 
 ### 7.3 Plan Lifecycle
 

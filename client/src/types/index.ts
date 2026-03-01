@@ -2,6 +2,15 @@ export type UserRole = 'CLIENT' | 'THERAPIST' | 'ADMIN';
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 export type SessionMedium = 'IN_PERSON' | 'VIDEO';
 export type StripeAccountStatus = 'NOT_CONNECTED' | 'ONBOARDING_IN_PROGRESS' | 'ACTIVE' | 'RESTRICTED' | 'DISABLED';
+export type ProfileStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
+
+export interface TherapistGalleryImage {
+  id: string;
+  therapistId: string;
+  url: string;
+  order: number;
+  createdAt: string;
+}
 export interface User {
   id: string;
   email: string;
@@ -36,6 +45,17 @@ export interface TherapistProfile {
   refundPolicy?: RefundPolicy;
   reviews?: Review[];
   reviewCount?: number;
+  featuredImageUrl?: string;
+  socialMediaLink?: string;
+  qrCodeUrl?: string;
+  profileStatus: ProfileStatus;
+  rejectionReason?: string | null;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  consultEnabled: boolean;
+  certificateUrl?: string | null;
+  hourlyConsultFee?: number | null;
+  galleryImages?: TherapistGalleryImage[];
 }
 export interface Appointment {
   id: string;

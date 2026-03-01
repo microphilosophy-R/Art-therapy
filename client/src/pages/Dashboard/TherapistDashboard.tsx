@@ -18,9 +18,10 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 import { TherapistPlansTab } from './tabs/TherapistPlansTab';
 import { MessagesTab } from './tabs/MessagesTab';
+import { TherapistProfileTab } from './tabs/TherapistProfileTab';
 import type { AppointmentStatus } from '../../types';
 
-type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar' | 'plans' | 'messages';
+type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar' | 'plans' | 'messages' | 'profile';
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   PENDING: '#fbbf24',
@@ -94,6 +95,7 @@ export const TherapistDashboard = () => {
     queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     refetchInterval: 30000,
+    enabled: !!user,
   });
   const unreadCount = unreadData?.count ?? 0;
 
@@ -175,13 +177,13 @@ export const TherapistDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
             <div className="flex gap-1 flex-wrap">
-              {(['plans', 'pending', 'upcoming', 'past', 'forms', 'calendar', 'messages'] as Tab[]).map((tabKey) => (
+              {(['plans', 'pending', 'upcoming', 'past', 'forms', 'calendar', 'messages', 'profile'] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
                   className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${tab === tabKey
-                      ? 'bg-teal-50 text-teal-700'
-                      : 'text-stone-500 hover:bg-stone-50'
+                    ? 'bg-teal-50 text-teal-700'
+                    : 'text-stone-500 hover:bg-stone-50'
                     }`}
                 >
                   {tabKey === 'forms'
@@ -196,7 +198,9 @@ export const TherapistDashboard = () => {
                             ? t('dashboard.therapist.plans')
                             : tabKey === 'messages'
                               ? t('dashboard.therapist.messages')
-                              : t('dashboard.therapist.past')}
+                              : tabKey === 'profile'
+                                ? t('nav.profile')
+                                : t('dashboard.therapist.past')}
                   {tabKey === 'pending' && pendingCount > 0 ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
                       {pendingCount}
@@ -227,6 +231,8 @@ export const TherapistDashboard = () => {
               <TherapistPlansTab />
             ) : tab === 'messages' ? (
               <MessagesTab />
+            ) : tab === 'profile' ? (
+              <TherapistProfileTab />
             ) : tab === 'calendar' ? (
               <div>
                 <div className="flex items-center gap-3 mb-4 flex-wrap">

@@ -19,23 +19,24 @@ import { useAuthStore } from '../../store/authStore';
 import { TherapistPlansTab } from './tabs/TherapistPlansTab';
 import { MessagesTab } from './tabs/MessagesTab';
 import { TherapistProfileTab } from './tabs/TherapistProfileTab';
+import { ShowcaseTab } from './tabs/ShowcaseTab';
 import type { AppointmentStatus } from '../../types';
 
-type Tab = 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar' | 'plans' | 'messages' | 'profile';
+type Tab = 'showcase' | 'pending' | 'upcoming' | 'past' | 'forms' | 'calendar' | 'plans' | 'messages' | 'profile';
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  PENDING:     '#fbbf24',
-  CONFIRMED:   '#14b8a6',
+  PENDING: '#fbbf24',
+  CONFIRMED: '#14b8a6',
   IN_PROGRESS: '#14b8a6',
-  CANCELLED:   '#f87171',
-  COMPLETED:   '#94a3b8',
+  CANCELLED: '#f87171',
+  COMPLETED: '#94a3b8',
 };
 
 export const TherapistDashboard = () => {
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>('plans');
+  const [tab, setTab] = useState<Tab>('showcase');
 
   const { data, isLoading } = useQuery({
     queryKey: ['appointments', 'therapist', tab],
@@ -115,11 +116,11 @@ export const TherapistDashboard = () => {
   }));
 
   const calendarLegendLabels: Record<AppointmentStatus, string> = {
-    PENDING:     t('dashboard.therapist.calendarLegend.pending'),
-    CONFIRMED:   t('dashboard.therapist.calendarLegend.confirmed'),
+    PENDING: t('dashboard.therapist.calendarLegend.pending'),
+    CONFIRMED: t('dashboard.therapist.calendarLegend.confirmed'),
     IN_PROGRESS: t('dashboard.therapist.calendarLegend.confirmed'),
-    CANCELLED:   t('dashboard.therapist.calendarLegend.cancelled'),
-    COMPLETED:   t('dashboard.therapist.calendarLegend.completed'),
+    CANCELLED: t('dashboard.therapist.calendarLegend.cancelled'),
+    COMPLETED: t('dashboard.therapist.calendarLegend.completed'),
   };
 
   return (
@@ -179,7 +180,7 @@ export const TherapistDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 flex-wrap gap-3">
             <div className="flex gap-1 flex-wrap">
-              {(['plans', 'pending', 'upcoming', 'past', 'forms', 'calendar', 'messages', 'profile'] as Tab[]).map((tabKey) => (
+              {(['showcase', 'plans', 'pending', 'upcoming', 'past', 'forms', 'calendar', 'messages', 'profile'] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
@@ -202,7 +203,9 @@ export const TherapistDashboard = () => {
                               ? t('dashboard.therapist.messages')
                               : tabKey === 'profile'
                                 ? t('nav.profile')
-                                : t('dashboard.therapist.past')}
+                                : tabKey === 'showcase'
+                                  ? t('school.artist.showcase.title', 'Showcase')
+                                  : t('dashboard.therapist.past')}
                   {tabKey === 'pending' && pendingCount > 0 ? (
                     <Badge variant="warning" className="ml-1.5 text-xs">
                       {pendingCount}
@@ -229,7 +232,9 @@ export const TherapistDashboard = () => {
           </div>
 
           <div className={tab === 'calendar' ? 'p-4' : 'p-6'}>
-            {tab === 'plans' ? (
+            {tab === 'showcase' ? (
+              <ShowcaseTab onEditProfile={() => setTab('profile')} />
+            ) : tab === 'plans' ? (
               <TherapistPlansTab />
             ) : tab === 'messages' ? (
               <MessagesTab />

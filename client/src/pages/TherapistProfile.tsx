@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   MapPin, Clock, Video, Star, Shield, ChevronLeft, Calendar, QrCode, Globe, X
@@ -21,13 +21,14 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { cn } from '../utils/cn';
+import { getPosterUrl } from '../utils/therapyPlanUtils';
 
 export const TherapistProfile = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'schedule' | 'about' | 'reviews'>('schedule');
+  const [activeTab, setActiveTab] = useState<'showcase' | 'schedule' | 'about' | 'reviews'>('showcase');
   const [showQrModal, setShowQrModal] = useState(false);
 
   const { data: therapist, isLoading } = useQuery({
@@ -72,7 +73,8 @@ export const TherapistProfile = () => {
     }
   };
 
-  const tabLabels: Record<'schedule' | 'about' | 'reviews', string> = {
+  const tabLabels: Record<'showcase' | 'schedule' | 'about' | 'reviews', string> = {
+    showcase: t('shop.artist.showcase.title', 'Showcase'),
     schedule: t('therapists.profile.scheduleTab', 'Schedule'),
     about: t('therapists.profile.about'),
     reviews: t('therapists.profile.reviewsTab'),
@@ -221,7 +223,7 @@ export const TherapistProfile = () => {
             {/* Content Tabs */}
             <div className="space-y-4">
               <div className="flex gap-6 border-b border-stone-200">
-                {(['schedule', 'about', 'reviews'] as const).map((tab) => (
+                {(['showcase', 'schedule', 'about', 'reviews'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -239,6 +241,30 @@ export const TherapistProfile = () => {
               </div>
 
               <div>
+                {activeTab === 'showcase' && (
+                  <div className="space-y-6">
+                    {/* Featured Plans Showcase */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {therapistPlansResponse?.data?.slice(0, 4).map((plan: TherapyPlan) => (
+                        <Link key={plan.id} to={`/therapy-plans/${plan.id}`} className="group relative aspect-[16/9] rounded-2xl overflow-hidden border border-stone-200">
+                          <img src={getPosterUrl(plan)} alt={plan.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <p className="text-white font-bold text-sm truncate">{plan.title}</p>
+                            <p className="text-white/70 text-[10px]">{t(`common.planType.${plan.type}`)}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    {(!therapistPlansResponse?.data || therapistPlansResponse.data.length === 0) && (
+                      <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-stone-200 text-stone-400">
+                        <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">{t('shop.artist.showcase.noPlans')}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {activeTab === 'schedule' && (
                   <Card className="border border-stone-200 shadow-sm rounded-2xl">
                     <CardContent className="p-6">

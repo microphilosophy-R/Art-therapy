@@ -55,7 +55,7 @@ export default function App() {
           <Route
             path="/book/:therapistId"
             element={
-              <ProtectedRoute roles={['CLIENT']}>
+              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST']}>
                 <BookAppointment />
               </ProtectedRoute>
             }
@@ -79,7 +79,7 @@ export default function App() {
           <Route
             path="/dashboard/client"
             element={
-              <ProtectedRoute roles={['CLIENT']}>
+              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST']}>
                 <ClientDashboard />
               </ProtectedRoute>
             }
@@ -139,7 +139,7 @@ export default function App() {
           <Route
             path="/therapy-plans/:id/signup"
             element={
-              <ProtectedRoute roles={['CLIENT']}>
+              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST']}>
                 <TherapyPlanSignup />
               </ProtectedRoute>
             }

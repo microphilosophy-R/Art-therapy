@@ -1028,13 +1028,20 @@
         }
       },
       "showcase": {
-        "preview": "This is how your profile appears to visitors",
-        "viewLive": "View Live Profile",
+        "title": "Showcase",
+        "preview": "This is a preview of how your profile appears to others.",
         "editProfile": "Edit Profile",
-        "products": "Products on Sale",
-        "noProducts": "No products listed yet. Add your first product in the Products tab.",
-        "commission": "Commission Status",
-        "portfolio": "Portfolio"
+        "viewLive": "View Live Profile",
+        "portfolio": "Portfolio",
+        "products": "Your Products",
+        "noProducts": "No products yet — add some in the Products tab.",
+        "plans": "Your Therapy Plans",
+        "noPlans": "No therapy plans yet — create some in the Plans tab.",
+        "buySomething": "Buy Something",
+        "bookAppointment": "Book an Appointment",
+        "shopLink": "Visit Shop",
+        "therapistLink": "Find Therapists",
+        "commission": "Commission Status"
       },
       "orders": {
         "title": "Manage Orders",

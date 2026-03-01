@@ -1030,13 +1030,20 @@
         }
       },
       "showcase": {
-        "preview": "这是访客看到您主页的样子",
-        "viewLive": "查看公开主页",
+        "title": "个人主页展示",
+        "preview": "这是您的公开主页预览。",
         "editProfile": "编辑资料",
-        "products": "在售作品",
-        "noProducts": "暂无商品。请在"商品"标签中添加您的第一件作品。",
-        "commission": "接单状态",
-        "portfolio": "作品集"
+        "viewLive": "查看公开主页",
+        "portfolio": "作品集",
+        "products": "您的作品",
+        "noProducts": "暂无作品 — 请在作品标签页中添加。",
+        "plans": "您的疗愈计划",
+        "noPlans": "暂无计划 — 请在计划标签页中创建。",
+        "buySomething": "购买艺术品",
+        "bookAppointment": "预约咨询",
+        "shopLink": "前往商店",
+        "therapistLink": "寻找治疗师",
+        "commission": "接单状态"
       },
       "orders": {
         "title": "管理订单",

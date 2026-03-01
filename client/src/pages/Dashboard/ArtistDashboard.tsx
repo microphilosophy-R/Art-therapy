@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { ArtistProfileTab } from '@/pages/Dashboard/tabs/ArtistProfileTab';
 import { ArtistProductsTab } from '@/pages/Dashboard/tabs/ArtistProductsTab';
 import { ArtistOrdersTab } from '@/pages/Dashboard/tabs/ArtistOrdersTab';
-import { ArtistShowcaseTab } from '@/pages/Dashboard/tabs/ArtistShowcaseTab';
+import { ShowcaseTab } from '@/pages/Dashboard/tabs/ShowcaseTab';
 
 type Tab = 'showcase' | 'profile' | 'products' | 'orders';
 
@@ -63,7 +63,7 @@ export const ArtistDashboard = () => {
                     </div>
 
                     <div className="p-6">
-                        {tab === 'showcase' && <ArtistShowcaseTab onEditProfile={() => setTab('profile')} />}
+                        {tab === 'showcase' && <ShowcaseTab onEditProfile={() => setTab('profile')} />}
                         {tab === 'profile' && <ArtistProfileTab />}
                         {tab === 'products' && <ArtistProductsTab />}
                         {tab === 'orders' && <ArtistOrdersTab />}

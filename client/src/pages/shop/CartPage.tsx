@@ -65,7 +65,10 @@ export const CartPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                 {/* Cart Items List */}
                 <div className="lg:col-span-2 space-y-6">
-                    {cartItems.map((item) => (
+                    {cartItems.map((item) => {
+                        const sellerUser = item.product.userProfile?.user ?? item.product.artist?.user;
+                        const sellerName = sellerUser?.firstName || 'Unknown Seller';
+                        return (
                         <div key={item.id} className="flex gap-6 border-b pb-6">
                             <Link to={`/shop/${item.productId}`} className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-lg overflow-hidden border">
                                 {item.product.images[0] ? (
@@ -91,7 +94,7 @@ export const CartPage = () => {
                                             {item.product.title}
                                         </Link>
                                         <p className="text-sm text-gray-500 mt-1">
-                                            {t('shop.product.by', { name: item.product.artist.user.firstName })}
+                                            {t('shop.product.by', { name: sellerName })}
                                         </p>
                                     </div>
                                     <div className="text-lg font-bold text-gray-900">
@@ -128,7 +131,8 @@ export const CartPage = () => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Order Summary */}

@@ -55,7 +55,10 @@ export const ShopPage = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {data?.map((product) => (
+                    {data?.map((product) => {
+                        const sellerUser = product.userProfile?.user ?? product.artist?.user;
+                        const sellerName = sellerUser?.firstName || 'Unknown Seller';
+                        return (
                         <Link key={product.id} to={`/shop/${product.id}`} className="group">
                             <Card className="h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
                                 <div className="aspect-square bg-gray-100 overflow-hidden relative">
@@ -82,7 +85,7 @@ export const ShopPage = () => {
                                     </div>
                                     <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{product.title}</h3>
                                     <p className="text-sm text-gray-500 mb-3 truncate">
-                                        {t('shop.product.by', { name: product.artist.user.firstName })}
+                                        {t('shop.product.by', { name: sellerName })}
                                     </p>
                                     <div className="flex justify-between items-center">
                                         <span className="font-bold text-lg text-gray-900">¥{Number(product.price).toFixed(2)}</span>
@@ -93,7 +96,8 @@ export const ShopPage = () => {
                                 </CardContent>
                             </Card>
                         </Link>
-                    ))}
+                        );
+                    })}
                     {data?.length === 0 && (
                         <div className="col-span-full py-20 text-center text-gray-500">
                             <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-300" />

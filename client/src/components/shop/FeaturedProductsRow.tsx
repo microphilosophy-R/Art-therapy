@@ -42,12 +42,18 @@ export const FeaturedProductsRow = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {products.map((product: any) => (
-                        <Link
-                            key={product.id}
-                            to={`/shop/${product.id}`}
-                            className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
-                        >
+                    {products.map((product: any) => {
+                        const sellerUser = product.userProfile?.user ?? product.artist?.user;
+                        const sellerName = sellerUser
+                            ? `${sellerUser.firstName} ${sellerUser.lastName}`.trim()
+                            : 'Unknown Seller';
+
+                        return (
+                            <Link
+                                key={product.id}
+                                to={`/shop/${product.id}`}
+                                className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
+                            >
                             <div className="aspect-square relative overflow-hidden bg-gray-100">
                                 {product.images?.[0] ? (
                                     <img
@@ -79,7 +85,7 @@ export const FeaturedProductsRow = () => {
                                     {product.title}
                                 </h3>
                                 <p className="text-xs text-gray-500 mb-4">
-                                    {t('shop.product.by', { name: `${product.artist.user.firstName} ${product.artist.user.lastName}` })}
+                                    {t('shop.product.by', { name: sellerName })}
                                 </p>
                                 <div className="mt-auto flex items-center justify-between">
                                     <span className="text-xl font-bold text-gray-900">¥{Number(product.price).toFixed(2)}</span>
@@ -88,8 +94,9 @@ export const FeaturedProductsRow = () => {
                                     </div>
                                 </div>
                             </div>
-                        </Link>
-                    ))}
+                            </Link>
+                        );
+                    })}
                 </div>
             </div>
         </section>

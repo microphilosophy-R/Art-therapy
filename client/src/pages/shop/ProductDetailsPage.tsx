@@ -50,6 +50,12 @@ export const ProductDetailsPage = () => {
             </div>
         );
     }
+    const sellerUser = product.userProfile?.user ?? product.artist?.user;
+    const sellerName = sellerUser
+        ? `${sellerUser.firstName} ${sellerUser.lastName}`.trim()
+        : 'Unknown Seller';
+    const sellerInitial = sellerUser?.firstName?.charAt(0) || '?';
+    const sellerAvatar = sellerUser?.avatarUrl ?? null;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -100,15 +106,15 @@ export const ProductDetailsPage = () => {
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{product.title}</h1>
                     <div className="flex items-center gap-4 mb-6">
                         <div className="flex items-center gap-2">
-                            {product.artist.user.avatarUrl ? (
-                                <img src={product.artist.user.avatarUrl} alt="Artist" className="w-6 h-6 rounded-full" />
+                            {sellerAvatar ? (
+                                <img src={sellerAvatar} alt="Artist" className="w-6 h-6 rounded-full" />
                             ) : (
                                 <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-xs text-bold">
-                                    {product.artist.user.firstName.charAt(0)}
+                                    {sellerInitial}
                                 </div>
                             )}
                             <span className="text-gray-600 text-sm">
-                                {t('shop.product.by', { name: `${product.artist.user.firstName} ${product.artist.user.lastName}` })}
+                                {t('shop.product.by', { name: sellerName })}
                             </span>
                         </div>
                     </div>

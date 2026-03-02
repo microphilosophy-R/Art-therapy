@@ -2,30 +2,43 @@ import api from './axios';
 
 export interface Product {
     id: string;
-    artistId: string;
+    artistId?: string;
+    userProfileId?: string;
     title: string;
     description: string;
     price: number;
     stock: number;
     category: string;
     images: { id: string; url: string; order: number }[];
-    artist: {
-        user: {
+    artist?: {
+        user?: {
             firstName: string;
             lastName: string;
             avatarUrl: string | null;
-        }
+        };
+    };
+    userProfile?: {
+        user?: {
+            firstName: string;
+            lastName: string;
+            avatarUrl: string | null;
+        };
     };
 }
 
 export const getProducts = async (params?: {
     category?: string;
     artistId?: string;
+    sellerId?: string;
     search?: string;
     page?: number;
     limit?: number;
 }) => {
-    const { data } = await api.get('/products', { params });
+    const normalized = {
+        ...params,
+        sellerId: params?.sellerId ?? params?.artistId,
+    };
+    const { data } = await api.get('/products', { params: normalized });
     return data.data as Product[];
 };
 

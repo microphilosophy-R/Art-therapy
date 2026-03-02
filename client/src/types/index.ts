@@ -1,4 +1,4 @@
-export type UserRole = 'CLIENT' | 'THERAPIST' | 'ADMIN' | 'ARTIST';
+export type UserRole = 'CLIENT' | 'THERAPIST' | 'ADMIN' | 'ARTIST' | 'MEMBER';
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'CANCELLED' | 'COMPLETED';
 export type SessionMedium = 'IN_PERSON' | 'VIDEO';
 export type StripeAccountStatus = 'NOT_CONNECTED' | 'ONBOARDING_IN_PROGRESS' | 'ACTIVE' | 'RESTRICTED' | 'DISABLED';
@@ -20,6 +20,7 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   createdAt: string;
+  approvedCertificates?: string[];
 }
 export interface RefundPolicy {
   id: string;

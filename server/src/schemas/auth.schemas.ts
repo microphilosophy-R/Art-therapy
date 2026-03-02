@@ -5,7 +5,7 @@ export const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
-  role: z.enum(['CLIENT', 'THERAPIST']).default('CLIENT'),
+  role: z.enum(['MEMBER', 'THERAPIST']).default('MEMBER'),
   phone: z.string().optional(),
 });
 

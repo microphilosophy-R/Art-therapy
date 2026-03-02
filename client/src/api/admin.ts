@@ -24,3 +24,25 @@ export const getAdminPlatformStats = async (): Promise<AdminPlatformStats> => {
   const { data } = await api.get('/admin/stats');
   return data;
 };
+
+export interface AdminCertificate {
+  id: string;
+  type: string;
+  status: string;
+  appliedAt: string;
+  rejectionReason?: string | null;
+  profile: { user: { id: string; firstName: string; lastName: string; email: string } };
+}
+
+export const listPendingCertificates = async (): Promise<AdminCertificate[]> => {
+  const { data } = await api.get('/admin/certificates');
+  return data;
+};
+
+export const reviewCertificate = async (
+  id: string,
+  payload: { action: 'APPROVE' | 'REJECT'; rejectionReason?: string }
+): Promise<AdminCertificate> => {
+  const { data } = await api.patch(`/admin/certificates/${id}`, payload);
+  return data;
+};

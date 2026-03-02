@@ -16,7 +16,7 @@ const schema = z.object({
   lastName:  z.string().min(1, 'Last name is required'),
   email:     z.string().email('Enter a valid email'),
   password:  z.string().min(8, 'Password must be at least 8 characters'),
-  role:      z.enum(['CLIENT', 'THERAPIST']),
+  role:      z.enum(['MEMBER', 'THERAPIST']),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -33,7 +33,7 @@ export const Register = () => {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: 'CLIENT' },
+    defaultValues: { role: 'MEMBER' },
   });
 
   const role = watch('role');
@@ -42,7 +42,7 @@ export const Register = () => {
     try {
       const res = await registerApi(data);
       setAuth(res.user, res.accessToken);
-      navigate(data.role === 'THERAPIST' ? '/dashboard/therapist' : '/dashboard/client');
+      navigate(data.role === 'THERAPIST' ? '/dashboard/therapist' : '/dashboard/member');
     } catch {
       setError('root', { message: t('auth.register.registrationFailed') });
     }
@@ -72,7 +72,7 @@ export const Register = () => {
               <div>
                 <p className="text-sm font-medium text-stone-700 mb-2">{t('auth.register.iAm')}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {(['CLIENT', 'THERAPIST'] as const).map((r) => (
+                  {(['MEMBER', 'THERAPIST'] as const).map((r) => (
                     <label
                       key={r}
                       className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 cursor-pointer transition-colors ${
@@ -88,7 +88,7 @@ export const Register = () => {
                         className="sr-only"
                       />
                       <span className="text-sm font-medium">
-                        {r === 'CLIENT' ? t('auth.register.client') : t('auth.register.therapist')}
+                        {r === 'MEMBER' ? t('auth.register.member') : t('auth.register.therapist')}
                       </span>
                     </label>
                   ))}

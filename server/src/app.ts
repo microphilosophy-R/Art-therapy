@@ -27,6 +27,7 @@ import { artistRouter } from './routes/artist.routes';
 import { productRouter } from './routes/shop/product.routes';
 import { cartRouter } from './routes/shop/cart.routes';
 import { orderRouter } from './routes/shop/order.routes';
+import { memberRouter } from './routes/member.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 
 const app = express();
@@ -81,6 +82,7 @@ api.use('/artists', artistRouter);
 api.use('/products', productRouter);
 api.use('/cart', cartRouter);
 api.use('/orders', orderRouter);
+api.use('/member', memberRouter);
 
 // Exchange rate proxy — avoids CORS issues calling cn.apihz.cn from the browser
 // Uses APIHZ_ID / APIHZ_KEY env vars; falls back to the shared public demo key (rate-limited).

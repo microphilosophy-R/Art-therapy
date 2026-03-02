@@ -32,6 +32,7 @@ import { saveAsTemplate } from '../controllers/therapyPlanTemplate.controller';
 import { saveAsTemplateSchema } from '../schemas/therapyPlanTemplate.schemas';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
+import { requireCertificate } from '../middleware/requireCertificate';
 import { validate } from '../middleware/validate';
 import { optionalAuthenticate } from '../middleware/optionalAuthenticate';
 import {
@@ -98,16 +99,17 @@ therapyPlanRouter.get(
 therapyPlanRouter.get('/:id/ics', optionalAuthenticate, exportPlanIcs);
 therapyPlanRouter.get('/:id', optionalAuthenticate, getPlan);
 
-// ─── Therapist ────────────────────────────────────────────────────────────────
+// ─── Therapist / MEMBER with THERAPIST cert ───────────────────────────────────
 therapyPlanRouter.post(
   '/',
   authenticate,
-  authorize('THERAPIST'),
+  authorize('THERAPIST', 'MEMBER'),
+  requireCertificate('THERAPIST'),
   validate(createTherapyPlanSchema),
   createPlan,
 );
-therapyPlanRouter.delete('/:id', authenticate, authorize('THERAPIST'), deletePlan);
-therapyPlanRouter.post('/:id/submit', authenticate, authorize('THERAPIST'), submitForReview);
+therapyPlanRouter.delete('/:id', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), deletePlan);
+therapyPlanRouter.post('/:id/submit', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), submitForReview);
 
 // ─── Therapist or Admin ───────────────────────────────────────────────────────
 therapyPlanRouter.patch(
@@ -193,10 +195,10 @@ therapyPlanRouter.post(
 );
 
 // ─── Lifecycle (Therapist owner) ──────────────────────────────────────────────
-therapyPlanRouter.post('/:id/close-signup', authenticate, authorize('THERAPIST'), closeSignup);
-therapyPlanRouter.post('/:id/start', authenticate, authorize('THERAPIST'), startPlan);
-therapyPlanRouter.post('/:id/finish', authenticate, authorize('THERAPIST'), finishPlan);
-therapyPlanRouter.post('/:id/to-gallery', authenticate, authorize('THERAPIST'), movePlanToGallery);
+therapyPlanRouter.post('/:id/close-signup', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), closeSignup);
+therapyPlanRouter.post('/:id/start', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), startPlan);
+therapyPlanRouter.post('/:id/finish', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), finishPlan);
+therapyPlanRouter.post('/:id/to-gallery', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), movePlanToGallery);
 
 // ─── Cancel plan (Therapist owner or Admin) ───────────────────────────────────
 therapyPlanRouter.post(
@@ -206,13 +208,13 @@ therapyPlanRouter.post(
   cancelPlan,
 );
 
-// ─── Sign-up (Client) ─────────────────────────────────────────────────────────
-therapyPlanRouter.get('/:id/signup/status', authenticate, authorize('CLIENT'), getSignupStatus);
+// ─── Sign-up (Client or MEMBER) ───────────────────────────────────────────────
+therapyPlanRouter.get('/:id/signup/status', authenticate, authorize('CLIENT', 'MEMBER'), getSignupStatus);
 therapyPlanRouter.post(
   '/:id/signup',
   authenticate,
-  authorize('CLIENT'),
+  authorize('CLIENT', 'MEMBER'),
   validate(planSignupSchema),
   signUpForPlan,
 );
-therapyPlanRouter.delete('/:id/signup', authenticate, authorize('CLIENT'), cancelSignup);
+therapyPlanRouter.delete('/:id/signup', authenticate, authorize('CLIENT', 'MEMBER'), cancelSignup);

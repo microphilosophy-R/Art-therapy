@@ -46,23 +46,10 @@ export const register = async (req: Request, res: Response) => {
     },
   });
 
-  // Create empty therapist profile if role is THERAPIST
-  if (user.role === 'THERAPIST') {
-    await prisma.therapistProfile.create({
-      data: {
-        userId: user.id,
-        bio: '',
-        specialties: [],
-        sessionPrice: 0,
-        sessionLength: 50,
-        locationCity: '',
-      },
-    });
-  } else if (user.role === 'MEMBER') {
+  // Create UserProfile for MEMBER and THERAPIST roles
+  if (user.role === 'MEMBER' || user.role === 'THERAPIST') {
     await prisma.userProfile.create({
-      data: {
-        userId: user.id,
-      },
+      data: { userId: user.id },
     });
   }
 
@@ -100,7 +87,7 @@ export const login = async (req: Request, res: Response) => {
   if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
   let approvedCertificates: string[] | undefined;
-  if (user.role === 'MEMBER' && user.userProfile) {
+  if (user.userProfile) {
     approvedCertificates = user.userProfile.certificates
       .filter((cert: any) => cert.status === 'APPROVED')
       .map((cert: any) => cert.type);
@@ -139,7 +126,7 @@ export const refresh = async (req: Request, res: Response) => {
     if (!user) return res.status(401).json({ message: 'User not found' });
 
     let approvedCertificates: string[] | undefined;
-    if (user.role === 'MEMBER' && user.userProfile) {
+    if (user.userProfile) {
       approvedCertificates = user.userProfile.certificates
         .filter((cert: any) => cert.status === 'APPROVED')
         .map((cert: any) => cert.type);
@@ -172,7 +159,10 @@ export const logout = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.id },
-    include: { therapistProfile: true },
+    include: {
+      therapistProfile: true,
+      userProfile: { include: { certificates: true } },
+    },
   });
   if (!user) return res.status(404).json({ message: 'User not found' });
 

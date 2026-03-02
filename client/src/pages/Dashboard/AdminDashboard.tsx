@@ -7,7 +7,7 @@ import {
   RotateCcw, ChevronLeft, ChevronRight, XCircle, CheckCircle, UserCheck,
 } from 'lucide-react';
 
-import { listAdminUsers, updateUserRole, getAdminPlatformStats } from '../../api/admin';
+import { listAdminUsers, updateUserRole, getAdminPlatformStats, listPendingCertificates, reviewCertificate } from '../../api/admin';
 import { getAdminPaymentStats } from '../../api/payments';
 import { getAppointments, updateAppointmentStatus } from '../../api/appointments';
 import { getUnreadCount } from '../../api/messages';
@@ -24,7 +24,7 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
 
-type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages' | 'profiles';
+type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages' | 'profiles' | 'certificates';
 
 const ROLE_OPTION_VALUES: UserRole[] = ['CLIENT', 'THERAPIST', 'ARTIST', 'ADMIN'];
 
@@ -570,6 +570,92 @@ const AdminProfilesTab = () => {
   );
 };
 
+// ─── Certificates Tab ─────────────────────────────────────────────────────────
+
+const AdminCertificatesTab = () => {
+  const qc = useQueryClient();
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const { data: certs, isLoading } = useQuery({
+    queryKey: ['admin-pending-certificates'],
+    queryFn: listPendingCertificates,
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, action, rejectionReason }: { id: string; action: 'APPROVE' | 'REJECT'; rejectionReason?: string }) =>
+      reviewCertificate(id, { action, rejectionReason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-pending-certificates'] });
+      setRejectId(null);
+      setRejectReason('');
+    },
+  });
+
+  if (isLoading) return <div className="p-10"><PageLoader /></div>;
+  const list = certs ?? [];
+
+  return (
+    <Card>
+      <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+        <h2 className="font-semibold text-stone-900">Certificate Applications</h2>
+        <span className="text-xs text-stone-400">{list.length} pending</span>
+      </div>
+      {list.length === 0 ? (
+        <div className="px-6 py-12 text-center text-stone-400">
+          <UserCheck className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p>No pending certificate applications</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-stone-100">
+          {list.map((cert) => (
+            <div key={cert.id} className="px-6 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-medium text-stone-900">
+                    {cert.profile.user.firstName} {cert.profile.user.lastName}
+                    <span className="ml-2 text-xs text-stone-400">{cert.profile.user.email}</span>
+                  </p>
+                  <p className="text-sm text-stone-500 mt-0.5">
+                    Certificate: <span className="font-medium">{cert.type}</span>
+                  </p>
+                </div>
+                {rejectId !== cert.id && (
+                  <div className="flex gap-2 shrink-0">
+                    <Button size="sm" variant="outline" onClick={() => setRejectId(cert.id)}>
+                      <XCircle className="h-4 w-4 mr-1" /> Reject
+                    </Button>
+                    <Button size="sm" onClick={() => reviewMutation.mutate({ id: cert.id, action: 'APPROVE' })}>
+                      <CheckCircle className="h-4 w-4 mr-1" /> Approve
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {rejectId === cert.id && (
+                <div className="mt-3 space-y-2">
+                  <textarea
+                    className="w-full border border-stone-200 rounded-lg p-2 text-sm"
+                    rows={2}
+                    placeholder="Rejection reason"
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="danger" onClick={() => reviewMutation.mutate({ id: cert.id, action: 'REJECT', rejectionReason: rejectReason })}>
+                      Confirm Reject
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setRejectId(null)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const AdminDashboard = () => {
@@ -592,6 +678,13 @@ export const AdminDashboard = () => {
   });
   const pendingProfileCount = (pendingProfilesData ?? []).length;
 
+  const { data: pendingCertsData } = useQuery({
+    queryKey: ['admin-pending-certificates'],
+    queryFn: listPendingCertificates,
+    refetchInterval: 60000,
+  });
+  const pendingCertCount = (pendingCertsData ?? []).length;
+
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'overview', label: t('dashboard.admin.overview') },
     { id: 'users', label: t('dashboard.admin.users') },
@@ -599,6 +692,7 @@ export const AdminDashboard = () => {
     { id: 'revenue', label: t('dashboard.admin.revenue') },
     { id: 'plans', label: t('dashboard.admin.plans') },
     { id: 'profiles', label: t('admin.profiles.tabLabel'), badge: pendingProfileCount },
+    { id: 'certificates', label: 'Certificates', badge: pendingCertCount },
     { id: 'messages', label: t('dashboard.admin.messages'), badge: unreadCount },
   ];
 
@@ -647,6 +741,7 @@ export const AdminDashboard = () => {
         {activeTab === 'revenue' && <RevenueTab />}
         {activeTab === 'plans' && <AdminPlansTab />}
         {activeTab === 'profiles' && <AdminProfilesTab />}
+        {activeTab === 'certificates' && <AdminCertificatesTab />}
         {activeTab === 'messages' && <MessagesTab />}
       </div>
     </div>

@@ -12,6 +12,7 @@ import { ClientDashboard } from './pages/Dashboard/ClientDashboard';
 import { TherapistDashboard } from './pages/Dashboard/TherapistDashboard';
 import { AdminDashboard } from './pages/Dashboard/AdminDashboard';
 import { ArtistDashboard } from '@/pages/Dashboard/ArtistDashboard';
+import { MemberDashboard } from './pages/Dashboard/MemberDashboard';
 import { UserProfile } from './pages/UserProfile';
 import { PrivacyTerms } from './pages/PrivacyTerms';
 import { ComposeForm } from './pages/forms/ComposeForm';
@@ -55,7 +56,7 @@ export default function App() {
           <Route
             path="/book/:therapistId"
             element={
-              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST']}>
+              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST', 'MEMBER']}>
                 <BookAppointment />
               </ProtectedRoute>
             }
@@ -108,6 +109,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/dashboard/member"
+            element={
+              <ProtectedRoute roles={['MEMBER']}>
+                <MemberDashboard />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Gallery */}
           <Route path="/gallery" element={<Gallery />} />
@@ -139,7 +148,7 @@ export default function App() {
           <Route
             path="/therapy-plans/:id/signup"
             element={
-              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST']}>
+              <ProtectedRoute roles={['CLIENT', 'ARTIST', 'THERAPIST', 'MEMBER']}>
                 <TherapyPlanSignup />
               </ProtectedRoute>
             }
@@ -147,7 +156,7 @@ export default function App() {
           <Route
             path="/therapy-plans/create"
             element={
-              <ProtectedRoute roles={['THERAPIST']}>
+              <ProtectedRoute roles={['THERAPIST', 'MEMBER']}>
                 <EditTherapyPlan />
               </ProtectedRoute>
             }
@@ -155,7 +164,7 @@ export default function App() {
           <Route
             path="/therapy-plans/:id/edit"
             element={
-              <ProtectedRoute roles={['THERAPIST', 'ADMIN']}>
+              <ProtectedRoute roles={['THERAPIST', 'MEMBER', 'ADMIN']}>
                 <EditTherapyPlan />
               </ProtectedRoute>
             }

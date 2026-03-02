@@ -9,6 +9,8 @@ import {
   ArtSalonSubType,
   TherapyPlanStatus,
   ProductCategory,
+  CertificateType,
+  CertificateStatus,
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -45,8 +47,13 @@ async function main() {
   await prisma.webhookEvent.deleteMany();
   await prisma.refundPolicy.deleteMany();
   await prisma.availability.deleteMany();
-  await prisma.therapistGalleryImage.deleteMany();
+  await prisma.galleryImage.deleteMany();
   await prisma.therapistProfile.deleteMany();
+
+  // New unified profile tables
+  await prisma.userCertificate.deleteMany();
+  await prisma.userProfile.deleteMany();
+
   // Shop tables
   await prisma.productPayment.deleteMany();
   await prisma.orderItem.deleteMany();
@@ -175,7 +182,7 @@ async function main() {
   console.log('✓ Therapist profiles created');
 
   // ─── Gallery Images ───────────────────────────────────────────────────────
-  await prisma.therapistGalleryImage.createMany({
+  await prisma.galleryImage.createMany({
     data: [
       { therapistId: profile2.id, url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400', order: 0 },
       { therapistId: profile2.id, url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400', order: 1 },
@@ -729,6 +736,44 @@ async function main() {
 
   console.log('✓ Sample cart items created');
 
+  // ─── New MEMBER System (Side-by-Side Test) ───────────────────────────────
+  const memberUser = await prisma.user.create({
+    data: {
+      email: 'member@arttherapy.dev',
+      passwordHash,
+      role: Role.MEMBER,
+      firstName: 'Jamie',
+      lastName: 'Doe',
+    }
+  });
+
+  const memberProfile = await prisma.userProfile.create({
+    data: {
+      userId: memberUser.id,
+      bio: 'A multidisciplinary therapist and artificer using painting and pottery to explore healing.',
+      locationCity: 'Seattle, WA',
+      certificates: {
+        create: [
+          { type: CertificateType.THERAPIST, status: CertificateStatus.APPROVED },
+          { type: CertificateType.ARTIFICER, status: CertificateStatus.APPROVED }
+        ]
+      }
+    }
+  });
+
+  await prisma.product.create({
+    data: {
+      userProfileId: memberProfile.id,
+      title: 'Therapeutic Ceramic Bowl',
+      description: 'Hand-crafted bowl used for mindful eating practices.',
+      price: 45.00,
+      stock: 5,
+      category: ProductCategory.CRAFTS,
+    }
+  });
+
+  console.log('✓ MEMBER test profile and product created');
+
   console.log('\n✅ Seed complete!\n');
   console.log('Test accounts — password for all: password123');
   console.log('─────────────────────────────────────────────────');
@@ -740,6 +785,7 @@ async function main() {
   console.log('Client 2:     client2@arttherapy.dev     (Jordan Kim)');
   console.log('Artist 1:     artist@arttherapy.dev      (Li Wei)');
   console.log('Artist 2:     artist2@arttherapy.dev     (Mei Zhang)');
+  console.log('Member 1:     member@arttherapy.dev      (Jamie Doe)');
 }
 
 main()

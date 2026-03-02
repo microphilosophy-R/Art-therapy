@@ -9,6 +9,7 @@ interface AccessTokenPayload {
   firstName: string;
   lastName: string;
   jti: string;
+  approvedCertificates?: string[];
 }
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
@@ -33,6 +34,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       role: payload.role as any,
       firstName: payload.firstName,
       lastName: payload.lastName,
+      approvedCertificates: payload.approvedCertificates as any,
     };
     next();
   } catch {

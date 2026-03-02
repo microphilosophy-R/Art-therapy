@@ -11,9 +11,17 @@ const REFRESH_SECRET = () => process.env.JWT_REFRESH_SECRET!;
 const ACCESS_TTL = () => process.env.JWT_ACCESS_EXPIRES_IN ?? '15m';
 const REFRESH_TTL_DAYS = 7;
 
-const signAccess = (user: { id: string; email: string; role: string; firstName: string; lastName: string }) =>
+const signAccess = (user: { id: string; email: string; role: string; firstName: string; lastName: string; approvedCertificates?: string[] }) =>
   jwt.sign(
-    { sub: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName, jti: uuidv4() },
+    {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      jti: uuidv4(),
+      approvedCertificates: user.approvedCertificates
+    },
     ACCESS_SECRET(),
     { expiresIn: ACCESS_TTL() as any }
   );
@@ -50,6 +58,12 @@ export const register = async (req: Request, res: Response) => {
         locationCity: '',
       },
     });
+  } else if (user.role === 'MEMBER') {
+    await prisma.userProfile.create({
+      data: {
+        userId: user.id,
+      },
+    });
   }
 
   const accessToken = signAccess(user);
@@ -70,13 +84,29 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body as LoginInput;
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      userProfile: {
+        include: {
+          certificates: true
+        }
+      }
+    }
+  });
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
-  const accessToken = signAccess(user);
+  let approvedCertificates: string[] | undefined;
+  if (user.role === 'MEMBER' && user.userProfile) {
+    approvedCertificates = user.userProfile.certificates
+      .filter((cert: any) => cert.status === 'APPROVED')
+      .map((cert: any) => cert.type);
+  }
+
+  const accessToken = signAccess({ ...user, approvedCertificates });
   const refreshToken = signRefresh(user.id);
 
   res.cookie('refreshToken', refreshToken, {
@@ -98,10 +128,24 @@ export const refresh = async (req: Request, res: Response) => {
 
   try {
     const payload = jwt.verify(token, REFRESH_SECRET()) as { sub: string };
-    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: {
+        userProfile: {
+          include: { certificates: true }
+        }
+      }
+    });
     if (!user) return res.status(401).json({ message: 'User not found' });
 
-    const accessToken = signAccess(user);
+    let approvedCertificates: string[] | undefined;
+    if (user.role === 'MEMBER' && user.userProfile) {
+      approvedCertificates = user.userProfile.certificates
+        .filter((cert: any) => cert.status === 'APPROVED')
+        .map((cert: any) => cert.type);
+    }
+
+    const accessToken = signAccess({ ...user, approvedCertificates });
     res.json({ accessToken });
   } catch {
     res.status(401).json({ message: 'Invalid refresh token' });

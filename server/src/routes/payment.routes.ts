@@ -5,14 +5,15 @@ import {
 } from '../controllers/payment.controller';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
+import { requireCertificate } from '../middleware/requireCertificate';
 import { validate } from '../middleware/validate';
 import { createPaymentIntentSchema } from '../schemas/payment.schemas';
 
 export const paymentRouter = Router();
 
-paymentRouter.post('/create-intent', authenticate, authorize('CLIENT'), validate(createPaymentIntentSchema), createPaymentIntent);
-paymentRouter.get('/connect/status', authenticate, authorize('THERAPIST'), getConnectStatus);
-paymentRouter.post('/connect/onboard', authenticate, authorize('THERAPIST'), startConnectOnboarding);
+paymentRouter.post('/create-intent', authenticate, authorize('MEMBER'), validate(createPaymentIntentSchema), createPaymentIntent);
+paymentRouter.get('/connect/status', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), getConnectStatus);
+paymentRouter.post('/connect/onboard', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), startConnectOnboarding);
 paymentRouter.get('/connect/return', connectReturn);
 paymentRouter.get('/connect/refresh', connectRefresh);
 paymentRouter.get('/appointment/:id', authenticate, getPaymentByAppointment);

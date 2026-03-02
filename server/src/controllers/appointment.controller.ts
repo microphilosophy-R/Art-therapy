@@ -46,6 +46,7 @@ const checkAndAutoCancel = async (appt: any): Promise<any> => {
  */
 const maybeSendDeadlineWarning = async (appt: any): Promise<void> => {
   if (appt.status !== 'PENDING') return;
+  if (!appt.therapist?.userId) return;
 
   const warnMs = new Date(appt.startTime).getTime() - WARN_DEADLINE_HOURS * 60 * 60 * 1000;
   if (Date.now() < warnMs) return;
@@ -114,12 +115,10 @@ export const createAppointment = async (req: Request, res: Response) => {
 export const listAppointments = async (req: Request, res: Response) => {
   const { status, page = 1, limit = 20 } = req.query as any;
   const user = req.user!;
+  const isTherapist = user.approvedCertificates?.includes('THERAPIST' as any);
 
   const where: any = {
-    ...(user.role === 'CLIENT' ? { clientId: user.id } : {}),
-    ...(user.role === 'THERAPIST'
-      ? { therapist: { userId: user.id } }
-      : {}),
+    ...(user.role === 'ADMIN' ? {} : (isTherapist ? { therapist: { userId: user.id } } : { clientId: user.id })),
     ...(status ? { status: { in: Array.isArray(status) ? status : [status] } } : {}),
   };
 
@@ -151,7 +150,7 @@ export const getAppointment = async (req: Request, res: Response) => {
 
   const userId = req.user!.id;
   const isClient = appt.clientId === userId;
-  const isTherapist = appt.therapist.userId === userId;
+  const isTherapist = appt.therapist?.userId === userId;
   const isAdmin = req.user!.role === 'ADMIN';
 
   if (!isClient && !isTherapist && !isAdmin) {
@@ -198,7 +197,7 @@ export const updateAppointmentStatus = async (req: Request, res: Response) => {
   });
   if (!appt) return res.status(404).json({ message: 'Appointment not found' });
 
-  const isTherapist = appt.therapist.userId === req.user!.id;
+  const isTherapist = appt.therapist?.userId === req.user!.id;
   const isAdmin = req.user!.role === 'ADMIN';
   if (!isTherapist && !isAdmin) return res.status(403).json({ message: 'Forbidden' });
 
@@ -238,7 +237,7 @@ export const createNote = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!appt) return res.status(404).json({ message: 'Not found' });
-  if (appt.therapist.userId !== req.user!.id) return res.status(403).json({ message: 'Forbidden' });
+  if (appt.therapist?.userId !== req.user!.id) return res.status(403).json({ message: 'Forbidden' });
 
   const note = await prisma.sessionNote.upsert({
     where: { appointmentId: req.params.id },

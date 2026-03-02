@@ -22,14 +22,17 @@ async function getValidatedAppointment(appointmentId: string, userId: string) {
   if (appointment.clientId !== userId) throw new Error('Forbidden');
   if (appointment.status !== 'PENDING') throw new Error('Appointment is not in PENDING status');
   if (appointment.payment) throw new Error('Payment record already exists for this appointment');
+  if (!appointment.therapist) throw new Error('Therapist profile not found');
 
   return appointment;
 }
 
 export const createAlipayOrder = async (appointmentId: string, userId: string) => {
   const appointment = await getValidatedAppointment(appointmentId, userId);
+  if (!appointment.therapist) throw new Error('Therapist profile not found');
+  const therapist = appointment.therapist;
 
-  const totalCents = Math.round(Number(appointment.therapist.sessionPrice) * 100);
+  const totalCents = Math.round(Number(therapist.sessionPrice) * 100);
   const platformFee = Math.round(totalCents * PLATFORM_FEE_PERCENT / 100);
   const therapistPayout = totalCents - platformFee;
   const totalYuan = (totalCents / 100).toFixed(2);
@@ -38,7 +41,7 @@ export const createAlipayOrder = async (appointmentId: string, userId: string) =
   const returnUrl = process.env.ALIPAY_RETURN_URL || 'http://localhost:5173/booking/confirmation';
   const notifyUrl = process.env.ALIPAY_NOTIFY_URL || 'http://localhost:3001/webhooks/alipay';
 
-  const subject = `Art therapy session with ${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`;
+  const subject = `Art therapy session with ${therapist.user.firstName} ${therapist.user.lastName}`;
 
   const payUrl = alipay!.exec('alipay.trade.page.pay', {
     returnUrl,
@@ -82,7 +85,7 @@ export const createPlanAlipayOrder = async (participantId: string, userId: strin
 
   const totalYuan = (participant.payment.amount / 100).toFixed(2);
   const outTradeNo = generateOrderId();
-  const returnUrl = process.env.ALIPAY_RETURN_URL || 'http://localhost:5173/dashboard/client';
+  const returnUrl = process.env.ALIPAY_RETURN_URL || 'http://localhost:5173/dashboard/member';
   const notifyUrl = process.env.ALIPAY_NOTIFY_URL || 'http://localhost:3001/webhooks/alipay';
 
   const subject = `Therapy Plan: ${participant.plan.title}`;
@@ -196,8 +199,8 @@ export const handleAlipayNotification = async (params: Record<string, string>) =
     await sendAppointmentConfirmation({
       clientName: `${appointment.client.firstName} ${appointment.client.lastName}`,
       clientEmail: appointment.client.email,
-      therapistName: `${appointment.therapist.user.firstName} ${appointment.therapist.user.lastName}`,
-      therapistEmail: appointment.therapist.user.email,
+      therapistName: `${appointment.therapist?.user?.firstName ?? ''} ${appointment.therapist?.user?.lastName ?? ''}`.trim(),
+      therapistEmail: appointment.therapist?.user?.email ?? '',
       date: appointment.startTime.toDateString(),
       time: appointment.startTime.toTimeString().slice(0, 5),
       medium: appointment.medium,

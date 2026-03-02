@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+﻿import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, XCircle, Calendar, Clock, Video, MapPin, LayoutDashboard } from 'lucide-react';
@@ -109,7 +109,7 @@ export const BookingConfirmation = () => {
                   <Clock className="h-4 w-4" /> {t('booking.confirmation.time')}
                 </span>
                 <span className="font-medium text-stone-900">
-                  {formatTime(startTime)} – {formatTime(endTime)}
+                  {formatTime(startTime)} 鈥?{formatTime(endTime)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -136,7 +136,7 @@ export const BookingConfirmation = () => {
         </Card>
 
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
-          <Link to="/dashboard/client" className="flex-1">
+          <Link to="/dashboard/member" className="flex-1">
             <Button className="w-full" size="lg">
               <LayoutDashboard className="h-4 w-4" /> {t('booking.confirmation.goToDashboard')}
             </Button>
@@ -151,3 +151,5 @@ export const BookingConfirmation = () => {
     </div>
   );
 };
+
+

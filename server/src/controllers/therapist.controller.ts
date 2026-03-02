@@ -79,8 +79,8 @@ export const getTherapist = async (req: Request, res: Response) => {
   // Visibility: non-APPROVED profiles are only visible to the owner or admin
   if (profile.profileStatus !== 'APPROVED') {
     if (!requester) return res.status(404).json({ message: 'Therapist not found' });
-    if (requester.role === 'CLIENT') return res.status(404).json({ message: 'Therapist not found' });
-    if (requester.role === 'THERAPIST' && profile.userId !== requester.id) {
+    const requesterHasTherapistCert = requester.approvedCertificates?.includes('THERAPIST' as any);
+    if (requester.role !== 'ADMIN' && (!requesterHasTherapistCert || profile.userId !== requester.id)) {
       return res.status(403).json({ message: 'Forbidden' });
     }
   }
@@ -151,7 +151,8 @@ export const updateProfile = async (req: Request, res: Response) => {
   let profile = await prisma.therapistProfile.findUnique({ where: { userId } });
 
   if (!profile) {
-    if (req.user!.role === 'THERAPIST') {
+    const hasTherapistCert = req.user!.approvedCertificates?.includes('THERAPIST' as any);
+    if (hasTherapistCert) {
       const created = await prisma.therapistProfile.create({
         data: { ...(body as any), userId, profileStatus: 'DRAFT' },
         include: PROFILE_INCLUDE,
@@ -279,7 +280,7 @@ export const addGalleryImage = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Maximum of 9 gallery images allowed' });
   }
 
-  const imageRecord = await prisma.therapistGalleryImage.create({
+  const imageRecord = await prisma.galleryImage.create({
     data: { therapistId: profile.id, url: '', order: profile.galleryImages.length },
   });
 
@@ -287,11 +288,11 @@ export const addGalleryImage = async (req: Request, res: Response) => {
   try {
     url = await uploadAsset(file.buffer, 'therapist-gallery', `gallery-${imageRecord.id}.jpg`);
   } catch (err: any) {
-    await prisma.therapistGalleryImage.delete({ where: { id: imageRecord.id } }).catch(() => {});
+    await prisma.galleryImage.delete({ where: { id: imageRecord.id } }).catch(() => {});
     return res.status(500).json({ message: 'Image upload failed. Please try again.' });
   }
 
-  const updated = await prisma.therapistGalleryImage.update({
+  const updated = await prisma.galleryImage.update({
     where: { id: imageRecord.id },
     data: { url },
   });
@@ -303,17 +304,17 @@ export const deleteGalleryImage = async (req: Request, res: Response) => {
   const { id, imageId } = req.params;
   const userId = req.user!.id;
 
-  const image = await prisma.therapistGalleryImage.findUnique({
+  const image = await prisma.galleryImage.findUnique({
     where: { id: imageId },
     include: { therapist: true },
   });
-  if (!image || image.therapist.id !== id) return res.status(404).json({ message: 'Image not found' });
-  if (image.therapist.userId !== userId && req.user!.role !== 'ADMIN') {
+  if (!image || image.therapist?.id !== id) return res.status(404).json({ message: 'Image not found' });
+  if (image.therapist?.userId !== userId && req.user!.role !== 'ADMIN') {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
   await deleteAsset(image.url);
-  await prisma.therapistGalleryImage.delete({ where: { id: imageId } });
+  await prisma.galleryImage.delete({ where: { id: imageId } });
 
   res.status(204).send();
 };
@@ -341,7 +342,7 @@ export const reorderGalleryImages = async (req: Request, res: Response) => {
 
   await prisma.$transaction(
     order.map((imgId, idx) =>
-      prisma.therapistGalleryImage.update({ where: { id: imgId }, data: { order: idx } })
+      prisma.galleryImage.update({ where: { id: imgId }, data: { order: idx } })
     )
   );
 

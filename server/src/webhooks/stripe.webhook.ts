@@ -80,6 +80,7 @@ async function handleEvent(event: Stripe.Event) {
         include: { client: true, therapist: { include: { user: true } } },
       });
       if (appt) {
+        if (!appt.therapist?.user) break;
         await sendAppointmentConfirmation({
           clientName: `${appt.client.firstName} ${appt.client.lastName}`,
           clientEmail: appt.client.email,

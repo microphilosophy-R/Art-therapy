@@ -244,7 +244,7 @@ export const EditTherapyPlan = () => {
     const pid = isCreateMode ? autoSavePlanId! : id!;
     try {
       await submitTherapyPlanForReview(pid);
-      navigate('/dashboard/therapist');
+      navigate('/dashboard/member');
     } catch (err: any) {
       setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
       throw err; // re-throw so TherapyPlanForm keeps isSubmittingForReview=true on failure
@@ -252,11 +252,11 @@ export const EditTherapyPlan = () => {
   };
 
   const handleSaveDraftAndExit = () => {
-    navigate('/dashboard/therapist');
+    navigate('/dashboard/member');
   };
 
   const handleExit = () => {
-    navigate('/dashboard/therapist');
+    navigate('/dashboard/member');
   };
 
   // ── Access checks ─────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ export const EditTherapyPlan = () => {
 
   const isOwner = isCreateMode ? true : plan?.therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
-  const isTherapist = user?.role === 'THERAPIST';
+  const isTherapist = !!user?.approvedCertificates?.includes('THERAPIST');
 
   const canEdit = isCreateMode ||
     isAdmin ||

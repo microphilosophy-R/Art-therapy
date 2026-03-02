@@ -70,11 +70,11 @@ export const deleteProduct = async (id: string) => {
 
 // Order Endpoints
 export const getArtistOrders = async () => {
-    const { data } = await api.get('/orders/artist/orders');
+    const { data } = await api.get('/orders/seller/orders');
     return data as Order[];
 };
 
 export const fulfillOrder = async (orderId: string, fulfillmentData: { carrierName: string, trackingNumber: string }) => {
-    const { data } = await api.post(`/orders/artist/orders/${orderId}/fulfill`, fulfillmentData);
+    const { data } = await api.post(`/orders/seller/orders/${orderId}/fulfill`, fulfillmentData);
     return data as Order;
 };

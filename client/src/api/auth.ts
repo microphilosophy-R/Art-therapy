@@ -11,7 +11,7 @@ export interface RegisterPayload {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'CLIENT' | 'THERAPIST';
+  role?: 'MEMBER';
 }
 
 export interface AuthResponse {

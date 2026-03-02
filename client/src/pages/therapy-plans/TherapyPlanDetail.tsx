@@ -47,6 +47,7 @@ export const TherapyPlanDetail = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('alipay');
   const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
+  const hasTherapistCert = !!user?.approvedCertificates?.includes('THERAPIST');
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['therapy-plan', id],
@@ -112,9 +113,9 @@ export const TherapyPlanDetail = () => {
     ? plan.images.map((img) => img.url)
     : [posterUrl];
 
-  const isOwner = user?.role === 'THERAPIST' && therapist?.userId === user?.id;
+  const isOwner = hasTherapistCert && therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
-  const isClient = user?.role === 'CLIENT';
+  const isClient = user?.role === 'MEMBER' && !hasTherapistCert;
   const canEdit = isAdmin || (isOwner && (plan.status === 'DRAFT' || plan.status === 'REJECTED'));
   const canSubmit = isOwner && (plan.status === 'DRAFT' || plan.status === 'REJECTED');
   const canArchive = (isOwner || isAdmin) && plan.status === 'PUBLISHED';
@@ -127,7 +128,7 @@ export const TherapyPlanDetail = () => {
   const now = new Date();
   const isPastSignupDeadline = (new Date(plan.startTime).getTime() - now.getTime()) < 12 * 60 * 60 * 1000;
 
-  const canSignUp = (!user || isClient) && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled && !isPendingPayment && !isPastSignupDeadline;
+  const canSignUp = (user?.role === 'MEMBER' || !user) && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled && !isPendingPayment && !isPastSignupDeadline;
   const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && (isEnrolled || isPendingPayment);
 
   const priceDisplay = plan.price != null

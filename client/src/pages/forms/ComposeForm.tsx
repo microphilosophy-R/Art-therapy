@@ -49,7 +49,7 @@ export function ComposeForm() {
     queryKey: ['admin-clients'],
     queryFn: async () => {
       const { data } = await api.get<PaginatedResponse<User>>('/admin/users', { params: { limit: 100 } });
-      return data.data.filter((u) => u.role === 'CLIENT');
+      return data.data.filter((u) => u.role === 'MEMBER');
     },
   });
 
@@ -78,7 +78,7 @@ export function ComposeForm() {
       }
       return form;
     },
-    onSuccess: () => navigate('/dashboard/therapist'),
+    onSuccess: () => navigate('/dashboard/member'),
   });
 
   const addQuestion = () => {

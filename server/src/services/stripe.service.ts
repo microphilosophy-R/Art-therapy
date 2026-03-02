@@ -15,6 +15,7 @@ export const createPaymentIntent = async (appointmentId: string, userId: string)
   if (appointment.clientId !== userId) throw new Error('Forbidden');
   if (appointment.status !== 'PENDING') throw new Error('Appointment is not in PENDING status');
   if (appointment.payment) throw new Error('Payment intent already exists');
+  if (!appointment.therapist) throw new Error('Therapist profile not found');
   if (appointment.therapist.stripeAccountStatus !== 'ACTIVE') {
     throw new Error('Therapist Stripe account is not active');
   }

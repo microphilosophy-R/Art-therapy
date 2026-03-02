@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -45,7 +45,7 @@ export const TherapyPlanSignup = () => {
                 setSignupResult({ participantId: data.participant.id, payment: data.payment });
             } else {
                 // Free plan, direct success
-                navigate('/dashboard/client');
+                navigate('/dashboard/member');
             }
         },
     });
@@ -61,7 +61,7 @@ export const TherapyPlanSignup = () => {
     ];
 
     const handlePaymentSuccess = () => {
-        navigate('/dashboard/client');
+        navigate('/dashboard/member');
     };
 
     const handlePaymentError = (msg: string) => {
@@ -69,7 +69,7 @@ export const TherapyPlanSignup = () => {
     };
 
     const priceDisplay = plan.price != null
-        ? `¥${Number(plan.price).toFixed(2)}`
+        ? `楼${Number(plan.price).toFixed(2)}`
         : null;
 
     return (
@@ -216,7 +216,7 @@ export const TherapyPlanSignup = () => {
                                         <Clock className="h-4 w-4" /> {t('therapyPlans.detail.time')}
                                     </span>
                                     <span className="font-medium text-stone-900">
-                                        {plan.startTime ? formatTime(plan.startTime) : ''} – {plan.endTime ? formatTime(plan.endTime) : ''}
+                                        {plan.startTime ? formatTime(plan.startTime) : ''} 鈥?{plan.endTime ? formatTime(plan.endTime) : ''}
                                     </span>
                                 </div>
                                 {plan.location && (
@@ -302,3 +302,5 @@ export const TherapyPlanSignup = () => {
         </div>
     );
 };
+
+

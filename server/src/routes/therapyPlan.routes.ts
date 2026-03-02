@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+﻿import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import {
   createPlan,
@@ -88,7 +88,7 @@ const pdfUpload = multer({
 
 export const therapyPlanRouter = Router();
 
-// ─── Public / optional-auth ───────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Public / optional-auth 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.get(
   '/',
   optionalAuthenticate,
@@ -99,36 +99,39 @@ therapyPlanRouter.get(
 therapyPlanRouter.get('/:id/ics', optionalAuthenticate, exportPlanIcs);
 therapyPlanRouter.get('/:id', optionalAuthenticate, getPlan);
 
-// ─── Therapist / MEMBER with THERAPIST cert ───────────────────────────────────
+// 鈹€鈹€鈹€ Therapist / MEMBER with THERAPIST cert 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/',
   authenticate,
-  authorize('THERAPIST', 'MEMBER'),
+  authorize('MEMBER', 'ADMIN'),
   requireCertificate('THERAPIST'),
   validate(createTherapyPlanSchema),
   createPlan,
 );
-therapyPlanRouter.delete('/:id', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), deletePlan);
-therapyPlanRouter.post('/:id/submit', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), submitForReview);
+therapyPlanRouter.delete('/:id', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlan);
+therapyPlanRouter.post('/:id/submit', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), submitForReview);
 
-// ─── Therapist or Admin ───────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Therapist or Admin 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.patch(
   '/:id',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   validate(updateTherapyPlanSchema),
   updatePlan,
 );
 therapyPlanRouter.post(
   '/:id/archive',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   archivePlan,
 );
 therapyPlanRouter.post(
   '/:id/poster',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   imageUpload.single('poster'),
   multerErrorHandler,
   uploadPlanPoster,
@@ -137,55 +140,60 @@ therapyPlanRouter.post(
 therapyPlanRouter.post(
   '/:id/video',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   videoUpload.single('video'),
   multerErrorHandler,
   uploadPlanVideo,
 );
 
-// ─── Gallery images (Therapist or Admin) ──────────────────────────────────────
+// 鈹€鈹€鈹€ Gallery images (Therapist or Admin) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/images',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   imageUpload.single('image'),
   multerErrorHandler,
   addPlanImage,
 );
-therapyPlanRouter.delete('/:id/images/:imageId', authenticate, authorize('THERAPIST', 'ADMIN'), deletePlanImage);
-therapyPlanRouter.patch('/:id/images/order', authenticate, authorize('THERAPIST', 'ADMIN'), reorderPlanImages);
+therapyPlanRouter.delete('/:id/images/:imageId', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlanImage);
+therapyPlanRouter.patch('/:id/images/order', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), reorderPlanImages);
 
-// ─── PDF attachment (Therapist or Admin) ──────────────────────────────────────
+// 鈹€鈹€鈹€ PDF attachment (Therapist or Admin) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/pdfs',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   pdfUpload.single('pdf'),
   multerErrorHandler,
   addPlanPdf,
 );
-therapyPlanRouter.delete('/:id/pdfs/:pdfId', authenticate, authorize('THERAPIST', 'ADMIN'), deletePlanPdf);
-therapyPlanRouter.patch('/:id/pdfs/order', authenticate, authorize('THERAPIST', 'ADMIN'), reorderPlanPdfs);
+therapyPlanRouter.delete('/:id/pdfs/:pdfId', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlanPdf);
+therapyPlanRouter.patch('/:id/pdfs/order', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), reorderPlanPdfs);
 
-// ─── Therapist or Admin (events) ─────────────────────────────────────────────
+// 鈹€鈹€鈹€ Therapist or Admin (events) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.put(
   '/:id/events',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   validate(upsertPlanEventsSchema),
   upsertPlanEvents,
 );
 
-// ─── Save as template ────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Save as template 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/save-as-template',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   validate(saveAsTemplateSchema),
   saveAsTemplate,
 );
 
-// ─── Admin ────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Admin 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/review',
   authenticate,
@@ -194,27 +202,30 @@ therapyPlanRouter.post(
   reviewPlan,
 );
 
-// ─── Lifecycle (Therapist owner) ──────────────────────────────────────────────
-therapyPlanRouter.post('/:id/close-signup', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), closeSignup);
-therapyPlanRouter.post('/:id/start', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), startPlan);
-therapyPlanRouter.post('/:id/finish', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), finishPlan);
-therapyPlanRouter.post('/:id/to-gallery', authenticate, authorize('THERAPIST', 'MEMBER'), requireCertificate('THERAPIST'), movePlanToGallery);
+// 鈹€鈹€鈹€ Lifecycle (Therapist owner) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+therapyPlanRouter.post('/:id/close-signup', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), closeSignup);
+therapyPlanRouter.post('/:id/start', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), startPlan);
+therapyPlanRouter.post('/:id/finish', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), finishPlan);
+therapyPlanRouter.post('/:id/to-gallery', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), movePlanToGallery);
 
-// ─── Cancel plan (Therapist owner or Admin) ───────────────────────────────────
+// 鈹€鈹€鈹€ Cancel plan (Therapist owner or Admin) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/cancel-plan',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   cancelPlan,
 );
 
-// ─── Sign-up (Client or MEMBER) ───────────────────────────────────────────────
-therapyPlanRouter.get('/:id/signup/status', authenticate, authorize('CLIENT', 'MEMBER'), getSignupStatus);
+// 鈹€鈹€鈹€ Sign-up (Client or MEMBER) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+therapyPlanRouter.get('/:id/signup/status', authenticate, authorize('MEMBER'), getSignupStatus);
 therapyPlanRouter.post(
   '/:id/signup',
   authenticate,
-  authorize('CLIENT', 'MEMBER'),
+  authorize('MEMBER'),
   validate(planSignupSchema),
   signUpForPlan,
 );
-therapyPlanRouter.delete('/:id/signup', authenticate, authorize('CLIENT', 'MEMBER'), cancelSignup);
+therapyPlanRouter.delete('/:id/signup', authenticate, authorize('MEMBER'), cancelSignup);
+
+

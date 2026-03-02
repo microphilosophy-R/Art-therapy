@@ -18,8 +18,8 @@ interface ShowcaseTabProps {
 export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
     const { t } = useTranslation();
     const { user } = useAuthStore();
-    const isArtist = user?.role === 'ARTIST';
-    const isTherapist = user?.role === 'THERAPIST';
+    const isArtist = !!user?.approvedCertificates?.includes('ARTIFICER');
+    const isTherapist = !!user?.approvedCertificates?.includes('THERAPIST');
 
     const { data: artistProfile, isLoading: artistLoading } = useQuery({
         queryKey: ['artist-profile', 'me'],
@@ -55,7 +55,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
     const bio = isArtist ? (artistProfile as any)?.bio : (therapistProfile as any)?.bio;
     const portfolioUrl = isArtist ? (artistProfile as any)?.portfolioUrl : (therapistProfile as any)?.socialMediaLink;
     const profileId = isArtist ? artistProfileId : therapistProfileId;
-    const liveLink = isArtist ? `/artists/${profileId}` : `/therapists/${profileId}`;
+    const liveLink = isArtist ? `/shop` : `/therapists/${profileId}`;
 
     return (
         <div className="max-w-4xl">

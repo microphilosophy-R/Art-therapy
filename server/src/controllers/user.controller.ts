@@ -20,6 +20,9 @@ export const listUsers = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   const { role } = req.body;
+  if (!['ADMIN', 'MEMBER'].includes(role)) {
+    return res.status(400).json({ message: 'role must be ADMIN or MEMBER' });
+  }
   const user = await prisma.user.update({
     where: { id: req.params.id },
     data: { role },

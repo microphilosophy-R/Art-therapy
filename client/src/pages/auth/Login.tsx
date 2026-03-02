@@ -36,9 +36,7 @@ export const Login = () => {
       const res = await login(data);
       setAuth(res.user, res.accessToken);
       const dashboard =
-        res.user.role === 'THERAPIST' ? '/dashboard/therapist'
-        : res.user.role === 'ADMIN'   ? '/dashboard/admin'
-        : '/dashboard/client';
+        res.user.role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/member';
       navigate(from === '/' ? dashboard : from, { replace: true });
     } catch {
       setError('root', { message: t('auth.login.invalidCredentials') });

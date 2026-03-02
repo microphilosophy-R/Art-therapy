@@ -22,6 +22,7 @@ export const startScheduledJobs = () => {
       });
 
       for (const appt of upcoming) {
+        if (!appt.therapist?.user) continue;
         await sendAppointmentReminder({
           clientName: `${appt.client.firstName} ${appt.client.lastName}`,
           clientEmail: appt.client.email,

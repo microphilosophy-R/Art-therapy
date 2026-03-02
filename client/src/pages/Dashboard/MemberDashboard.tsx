@@ -11,7 +11,7 @@ const CERT_LABELS: Record<CertificateType, string> = {
 
 const CERT_LINKS: Record<CertificateType, { label: string; to: string }> = {
   THERAPIST: { label: 'Create Therapy Plan', to: '/therapy-plans/create' },
-  ARTIFICER: { label: 'Manage Products', to: '/dashboard/artist' },
+  ARTIFICER: { label: 'Manage Products', to: '/dashboard/member' },
   COUNSELOR: { label: 'Consult Settings', to: '/profile' },
 };
 

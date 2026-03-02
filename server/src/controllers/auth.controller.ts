@@ -41,17 +41,12 @@ export const register = async (req: Request, res: Response) => {
       passwordHash,
       firstName: body.firstName,
       lastName: body.lastName,
-      role: body.role as any,
+      role: 'MEMBER',
       phone: body.phone,
     },
   });
 
-  // Create UserProfile for MEMBER and THERAPIST roles
-  if (user.role === 'MEMBER' || user.role === 'THERAPIST') {
-    await prisma.userProfile.create({
-      data: { userId: user.id },
-    });
-  }
+  await prisma.userProfile.create({ data: { userId: user.id } });
 
   const accessToken = signAccess(user);
   const refreshToken = signRefresh(user.id);

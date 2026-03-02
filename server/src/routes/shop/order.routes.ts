@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate';
 import { authorize } from '../../middleware/authorize';
+import { requireCertificate } from '../../middleware/requireCertificate';
 import { validate } from '../../middleware/validate';
 import { OrderController } from '../../controllers/shop/order.controller';
 
@@ -13,8 +14,8 @@ router.post('/', validate(OrderController.createOrderSchema), OrderController.cr
 router.get('/my-orders', OrderController.getMyOrders);
 router.get('/:id', OrderController.getOrderById);
 
-// Artist order routes (to view and fulfill orders for their products)
-router.get('/artist/orders', authorize('ARTIST'), OrderController.getArtistOrders);
-router.post('/artist/orders/:id/fulfill', authorize('ARTIST'), validate(OrderController.fulfillOrderSchema), OrderController.fulfillOrder);
+// Seller order routes (to view and fulfill orders for their products)
+router.get('/seller/orders', authorize('MEMBER', 'ADMIN'), requireCertificate('ARTIFICER'), OrderController.getArtistOrders);
+router.post('/seller/orders/:id/fulfill', authorize('MEMBER', 'ADMIN'), requireCertificate('ARTIFICER'), validate(OrderController.fulfillOrderSchema), OrderController.fulfillOrder);
 
 export { router as orderRouter };

@@ -40,7 +40,7 @@ export function FormDetail() {
     mutationFn: () => archiveForm(id!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sent-forms'] });
-      navigate('/dashboard/therapist');
+      navigate('/dashboard/member');
     },
   });
 

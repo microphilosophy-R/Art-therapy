@@ -25,14 +25,14 @@ export const notifyAdminsOnPlanSubmitted = async (
 };
 
 /**
- * Send a notification message to every CLIENT when a plan is approved and published.
+ * Send a notification message to every MEMBER when a plan is approved and published.
  */
 export const notifyAllClientsOnPlanPublished = async (
   planId: string,
   planTitle: string,
 ): Promise<void> => {
   const clients = await prisma.user.findMany({
-    where: { role: 'CLIENT' },
+    where: { role: 'MEMBER' },
     select: { id: true },
   });
   if (clients.length === 0) return;

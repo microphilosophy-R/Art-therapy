@@ -16,7 +16,6 @@ const schema = z.object({
   lastName:  z.string().min(1, 'Last name is required'),
   email:     z.string().email('Enter a valid email'),
   password:  z.string().min(8, 'Password must be at least 8 characters'),
-  role:      z.enum(['MEMBER', 'THERAPIST']),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -28,21 +27,17 @@ export const Register = () => {
   const {
     register,
     handleSubmit,
-    watch,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { role: 'MEMBER' },
   });
-
-  const role = watch('role');
 
   const onSubmit = async (data: FormData) => {
     try {
       const res = await registerApi(data);
       setAuth(res.user, res.accessToken);
-      navigate(data.role === 'THERAPIST' ? '/dashboard/therapist' : '/dashboard/member');
+      navigate('/dashboard/member');
     } catch {
       setError('root', { message: t('auth.register.registrationFailed') });
     }
@@ -67,34 +62,6 @@ export const Register = () => {
                   {errors.root.message}
                 </div>
               )}
-
-              {/* Role toggle */}
-              <div>
-                <p className="text-sm font-medium text-stone-700 mb-2">{t('auth.register.iAm')}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['MEMBER', 'THERAPIST'] as const).map((r) => (
-                    <label
-                      key={r}
-                      className={`flex items-center justify-center gap-2 rounded-lg border-2 p-3 cursor-pointer transition-colors ${
-                        role === r
-                          ? 'border-teal-500 bg-teal-50 text-teal-700'
-                          : 'border-stone-200 text-stone-600 hover:border-stone-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        {...register('role')}
-                        value={r}
-                        className="sr-only"
-                      />
-                      <span className="text-sm font-medium">
-                        {r === 'MEMBER' ? t('auth.register.member') : t('auth.register.therapist')}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label={t('auth.register.firstName')}

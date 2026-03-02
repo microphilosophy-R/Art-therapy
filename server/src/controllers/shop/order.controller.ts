@@ -120,20 +120,20 @@ export const getOrderById = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Ensure user owns the order, OR user is an artist who has products in this order.
+    // Ensure user owns the order, OR user is a seller who has products in this order.
     // We'll do a simple check: is it the buyer?
     if (order.userId === req.user!.id) {
         return res.json(order);
     }
 
-    // If not buyer, check if artist
-    const artistProfile = await prisma.artistProfile.findUnique({
+    // If not buyer, check if seller
+    const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
     });
 
-    if (artistProfile) {
-        const hasArtistProduct = order.items.some(item => item.product.artistId === artistProfile.id);
-        if (hasArtistProduct) {
+    if (userProfile) {
+        const hasSellerProduct = order.items.some(item => item.product.userProfileId === userProfile.id);
+        if (hasSellerProduct) {
             return res.json(order);
         }
     }
@@ -141,23 +141,23 @@ export const getOrderById = async (req: Request, res: Response) => {
     return res.status(403).json({ message: 'Not authorized to view this order' });
 };
 
-// --- Artist Endpoints ---
+// --- Seller Endpoints ---
 
 export const getArtistOrders = async (req: Request, res: Response) => {
-    const artistProfile = await prisma.artistProfile.findUnique({
+    const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
     });
 
-    if (!artistProfile) {
-        return res.status(403).json({ message: 'Artist profile required' });
+    if (!userProfile) {
+        return res.status(403).json({ message: 'Seller profile required' });
     }
 
-    // Find orders that contain ANY products from this artist
+    // Find orders that contain any products from this seller
     const orders = await prisma.order.findMany({
         where: {
             items: {
                 some: {
-                    product: { artistId: artistProfile.id }
+                    product: { userProfileId: userProfile.id }
                 }
             }
         },
@@ -178,12 +178,12 @@ export const fulfillOrder = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { carrierName, trackingNumber } = req.body as z.infer<typeof fulfillOrderSchema>;
 
-    const artistProfile = await prisma.artistProfile.findUnique({
+    const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
     });
 
-    if (!artistProfile) {
-        return res.status(403).json({ message: 'Artist profile required' });
+    if (!userProfile) {
+        return res.status(403).json({ message: 'Seller profile required' });
     }
 
     const order = await prisma.order.findUnique({
@@ -195,11 +195,11 @@ export const fulfillOrder = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Validate this artist owns all products in this order. 
+    // Validate this seller owns all products in this order.
     // In a real marketplace, we might split orders by seller, but we'll assume a simplified flow.
-    const hasOtherArtistProducts = order.items.some(item => item.product.artistId !== artistProfile.id);
-    if (hasOtherArtistProducts) {
-        return res.status(403).json({ message: 'Cannot fulfill order containing products from other artists. Support for split orders is currently unavailable.' });
+    const hasOtherSellerProducts = order.items.some(item => item.product.userProfileId !== userProfile.id);
+    if (hasOtherSellerProducts) {
+        return res.status(403).json({ message: 'Cannot fulfill order containing products from other sellers. Support for split orders is currently unavailable.' });
     }
 
     if (order.status !== 'PAID') {

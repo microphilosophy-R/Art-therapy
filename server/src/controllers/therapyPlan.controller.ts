@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '../lib/prisma';
@@ -73,7 +73,7 @@ const logToFile = (msg: string) => {
   }
 };
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Create 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const createPlan = async (req: Request, res: Response) => {
   const body = req.body as CreateTherapyPlanInput;
@@ -120,7 +120,7 @@ export const createPlan = async (req: Request, res: Response) => {
   res.status(201).json(plan);
 };
 
-// ─── List ─────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ List 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const listPlans = async (req: Request, res: Response) => {
   const query = req.query as unknown as ListTherapyPlansQuery;
@@ -128,14 +128,15 @@ export const listPlans = async (req: Request, res: Response) => {
   const limit = Number(query.limit) || 12;
   const skip = (page - 1) * limit;
   const user = req.user;
+  const userHasTherapistCert = user?.approvedCertificates?.includes('THERAPIST' as any);
 
   let where: any = {};
 
-  if (!user || user.role === 'CLIENT') {
+  if (!user || (user.role === 'MEMBER' && !userHasTherapistCert)) {
     // Public and clients see plans that are in any active/visible lifecycle status
     const publicStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY'];
     where = { status: { in: query.status ? [query.status] : publicStatuses } };
-  } else if (user.role === 'THERAPIST') {
+  } else if (user.role === 'MEMBER' && userHasTherapistCert) {
     // Therapists see only their own plans (all statuses)
     const profile = await prisma.therapistProfile.findUnique({ where: { userId: user.id } });
     if (!profile) {
@@ -188,11 +189,12 @@ export const listPlans = async (req: Request, res: Response) => {
   });
 };
 
-// ─── Get single ───────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Get single 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const getPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.user;
+  const userHasTherapistCert = user?.approvedCertificates?.includes('THERAPIST' as any);
 
   const plan = await prisma.therapyPlan.findUnique({
     where: { id },
@@ -204,9 +206,9 @@ export const getPlan = async (req: Request, res: Response) => {
   const publicStatuses = new Set(['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY']);
   if (!publicStatuses.has(plan.status)) {
     if (!user) return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'CLIENT') return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'THERAPIST') {
-      if (plan.therapist.userId !== user.id) {
+    if (user.role === 'MEMBER' && !userHasTherapistCert) return res.status(404).json({ message: 'Plan not found' });
+    if (user.role === 'MEMBER' && userHasTherapistCert) {
+      if (plan.therapist?.userId !== user.id) {
         return res.status(403).json({ message: 'Forbidden' });
       }
     }
@@ -216,12 +218,13 @@ export const getPlan = async (req: Request, res: Response) => {
   res.json(plan);
 };
 
-// ─── Update ───────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Update 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const updatePlan = async (req: Request, res: Response) => {
   const { id } = req.params;
   const body = req.body as UpdateTherapyPlanInput;
   const user = req.user!;
+  const userHasTherapistCert = user.approvedCertificates?.includes('THERAPIST' as any);
 
   const plan = await prisma.therapyPlan.findUnique({
     where: { id },
@@ -229,8 +232,8 @@ export const updatePlan = async (req: Request, res: Response) => {
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  if (user.role === 'THERAPIST') {
-    if (plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && userHasTherapistCert) {
+    if (plan.therapist?.userId !== user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     const editableStatuses = ['DRAFT', 'REJECTED', 'IN_GALLERY'];
@@ -263,9 +266,9 @@ export const updatePlan = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Submit for review ───────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Submit for review 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-// ─── Conflict detection helper ────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Conflict detection helper 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const CONFLICT_PLAN_STATUSES = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'] as const;
 
@@ -341,7 +344,7 @@ const checkPlanConflicts = async (
   return { hasConflict: conflicts.length > 0, conflicts };
 };
 
-// ─── Submit for review ───────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Submit for review 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const submitForReview = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -351,7 +354,7 @@ export const submitForReview = async (req: Request, res: Response) => {
     include: { therapist: { include: { user: true } } },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.therapist.userId !== req.user!.id) {
+  if (plan.therapist?.userId !== req.user!.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
   if (plan.status !== 'DRAFT' && plan.status !== 'REJECTED') {
@@ -359,7 +362,7 @@ export const submitForReview = async (req: Request, res: Response) => {
   }
 
   const { hasConflict, conflicts } = await checkPlanConflicts(
-    plan.therapistId,
+    plan.therapistId ?? "",
     plan.startTime,
     plan.endTime ?? null,
     id,
@@ -376,13 +379,13 @@ export const submitForReview = async (req: Request, res: Response) => {
     include: THERAPIST_PLAN_INCLUDE,
   });
 
-  const therapistName = `${plan.therapist.user.firstName} ${plan.therapist.user.lastName}`;
+  const therapistName = `${plan.therapist?.user?.firstName} ${plan.therapist?.user?.lastName}`;
   await notifyAdminsOnPlanSubmitted(plan.id, plan.title, therapistName);
 
   res.json(updated);
 };
 
-// ─── Review (Admin: approve or reject) ───────────────────────────────────────
+// 鈹€鈹€鈹€ Review (Admin: approve or reject) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const reviewPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -424,8 +427,11 @@ export const reviewPlan = async (req: Request, res: Response) => {
     include: THERAPIST_PLAN_INCLUDE,
   });
 
+  const ownerUserId = plan.therapist?.userId;
+  if (!ownerUserId) return res.status(400).json({ message: 'Plan owner not found' });
+
   await notifyTherapistOnRejection(
-    plan.therapist.userId,
+    ownerUserId,
     plan.id,
     plan.title,
     body.rejectionReason!,
@@ -434,7 +440,7 @@ export const reviewPlan = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Archive ──────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Archive 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const archivePlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -448,7 +454,7 @@ export const archivePlan = async (req: Request, res: Response) => {
   if (plan.status !== 'PUBLISHED') {
     return res.status(400).json({ message: 'Only PUBLISHED plans can be archived' });
   }
-  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -461,7 +467,7 @@ export const archivePlan = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Delete ───────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Delete 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const deletePlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -471,7 +477,7 @@ export const deletePlan = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.therapist.userId !== req.user!.id) {
+  if (plan.therapist?.userId !== req.user!.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
   if (plan.status !== 'DRAFT' && plan.status !== 'CANCELLED') {
@@ -497,7 +503,7 @@ export const deletePlan = async (req: Request, res: Response) => {
   res.status(204).send();
 };
 
-// ─── Upload custom poster ─────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Upload custom poster 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const uploadPlanPoster = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -511,7 +517,7 @@ export const uploadPlanPoster = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -526,7 +532,7 @@ export const uploadPlanPoster = async (req: Request, res: Response) => {
   res.json({ posterUrl });
 };
 
-// ─── Upload plan video ────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Upload plan video 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const uploadPlanVideo = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -540,7 +546,7 @@ export const uploadPlanVideo = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -555,7 +561,7 @@ export const uploadPlanVideo = async (req: Request, res: Response) => {
   res.json({ videoUrl });
 };
 
-// ─── Gallery image management ─────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Gallery image management 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const addPlanImage = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -578,7 +584,7 @@ export const addPlanImage = async (req: Request, res: Response) => {
       logToFile(`[TherapyPlanController] Plan ${id} not found`);
       return res.status(404).json({ message: 'Plan not found' });
     }
-    if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
       logToFile(`[TherapyPlanController] User ${user.id} Forbidden for plan ${id}`);
       return res.status(403).json({ message: 'Forbidden' });
     }
@@ -628,7 +634,7 @@ export const deletePlanImage = async (req: Request, res: Response) => {
     include: { plan: { include: { therapist: true } } },
   });
   if (!image || image.planId !== id) return res.status(404).json({ message: 'Image not found' });
-  if (user.role === 'THERAPIST' && image.plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && image.plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -650,7 +656,7 @@ export const reorderPlanImages = async (req: Request, res: Response) => {
     include: { therapist: true, images: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -668,7 +674,7 @@ export const reorderPlanImages = async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Order updated' });
 };
 
-// ─── PDF attachment management ────────────────────────────────────────────────
+// 鈹€鈹€鈹€ PDF attachment management 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const addPlanPdf = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -687,7 +693,7 @@ export const addPlanPdf = async (req: Request, res: Response) => {
       include: { therapist: true, pdfs: true },
     });
     if (!plan) return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     if (plan.pdfs.length >= 6) {
@@ -726,7 +732,7 @@ export const deletePlanPdf = async (req: Request, res: Response) => {
     include: { plan: { include: { therapist: true } } },
   });
   if (!pdf || pdf.planId !== id) return res.status(404).json({ message: 'PDF not found' });
-  if (user.role === 'THERAPIST' && pdf.plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && pdf.plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -748,7 +754,7 @@ export const reorderPlanPdfs = async (req: Request, res: Response) => {
     include: { therapist: true, pdfs: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER' && plan.therapist?.userId !== user.id) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -766,7 +772,7 @@ export const reorderPlanPdfs = async (req: Request, res: Response) => {
   res.status(200).json({ message: 'Order updated' });
 };
 
-// ─── Upsert plan events ───────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Upsert plan events 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const upsertPlanEvents = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -779,8 +785,8 @@ export const upsertPlanEvents = async (req: Request, res: Response) => {
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  if (user.role === 'THERAPIST') {
-    if (plan.therapist.userId !== user.id) {
+  if (user.role === 'MEMBER') {
+    if (plan.therapist?.userId !== user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     if (plan.status !== 'DRAFT' && plan.status !== 'REJECTED') {
@@ -825,7 +831,7 @@ export const upsertPlanEvents = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Export plan schedule as iCalendar (.ics) ─────────────────────────────────
+// 鈹€鈹€鈹€ Export plan schedule as iCalendar (.ics) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const exportPlanIcs = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -840,14 +846,15 @@ export const exportPlanIcs = async (req: Request, res: Response) => {
   // Visibility: only PUBLISHED plans are public; others require owner or admin
   if (plan.status !== 'PUBLISHED') {
     if (!user) return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'CLIENT') return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'THERAPIST' && plan.therapist.userId !== user.id) {
+    const userHasTherapistCert = user.approvedCertificates?.includes('THERAPIST' as any);
+    if (user.role === 'MEMBER' && !userHasTherapistCert) return res.status(404).json({ message: 'Plan not found' });
+    if (user.role === 'MEMBER' && userHasTherapistCert && plan.therapist?.userId !== user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
   }
 
   const dtstamp = new Date();
-  const therapistUser = plan.therapist.user;
+  const therapistUser = plan.therapist?.user;
   const organizerName = therapistUser
     ? `${therapistUser.firstName} ${therapistUser.lastName}`
     : undefined;
@@ -873,7 +880,7 @@ export const exportPlanIcs = async (req: Request, res: Response) => {
 
     icsEvents.push({
       uid: `${evt.id}@luyin.xyz`,
-      summary: evt.title ? `${plan.title} — ${evt.title}` : plan.title,
+      summary: evt.title ? `${plan.title} 鈥?${evt.title}` : plan.title,
       description: plan.introduction,
       location: plan.location,
       dtstart: new Date(evt.startTime),
@@ -895,7 +902,7 @@ export const exportPlanIcs = async (req: Request, res: Response) => {
   res.send(icsContent);
 };
 
-// ─── Lifecycle helpers ────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Lifecycle helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const requirePlanOwner = async (id: string, userId: string, allowAdmin = true) => {
   const plan = await prisma.therapyPlan.findUnique({
@@ -905,7 +912,7 @@ const requirePlanOwner = async (id: string, userId: string, allowAdmin = true) =
   return plan;
 };
 
-// ─── Close sign-ups ───────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Close sign-ups 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const closeSignup = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -916,7 +923,7 @@ export const closeSignup = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.therapist.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
+  if (plan.therapist?.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
   if (plan.status !== 'PUBLISHED') {
     return res.status(400).json({ message: 'Plan must be PUBLISHED to close sign-ups' });
   }
@@ -929,7 +936,7 @@ export const closeSignup = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Start plan ───────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Start plan 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const startPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -946,7 +953,7 @@ export const startPlan = async (req: Request, res: Response) => {
     },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.therapist.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
+  if (plan.therapist?.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
   if (plan.status !== 'SIGN_UP_CLOSED') {
     return res.status(400).json({ message: 'Sign-ups must be closed before starting the plan' });
   }
@@ -963,7 +970,7 @@ export const startPlan = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Finish plan ──────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Finish plan 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const finishPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -974,7 +981,7 @@ export const finishPlan = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.therapist.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
+  if (plan.therapist?.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
   if (plan.status !== 'IN_PROGRESS') {
     return res.status(400).json({ message: 'Plan must be IN_PROGRESS to finish' });
   }
@@ -987,7 +994,7 @@ export const finishPlan = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Move to gallery ──────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Move to gallery 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const movePlanToGallery = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -998,7 +1005,7 @@ export const movePlanToGallery = async (req: Request, res: Response) => {
     include: { therapist: true },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.therapist.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
+  if (plan.therapist?.userId !== user.id) return res.status(403).json({ message: 'Forbidden' });
   if (plan.status !== 'FINISHED') {
     return res.status(400).json({ message: 'Plan must be FINISHED to move to gallery' });
   }
@@ -1011,7 +1018,7 @@ export const movePlanToGallery = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Cancel plan (therapist or admin) ────────────────────────────────────────
+// 鈹€鈹€鈹€ Cancel plan (therapist or admin) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const cancelPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -1029,7 +1036,7 @@ export const cancelPlan = async (req: Request, res: Response) => {
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  const isOwner = plan.therapist.userId === user.id;
+  const isOwner = plan.therapist?.userId === user.id;
   if (!isOwner && user.role !== 'ADMIN') return res.status(403).json({ message: 'Forbidden' });
 
   const cancellableStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
@@ -1060,7 +1067,7 @@ export const cancelPlan = async (req: Request, res: Response) => {
   res.json(updated);
 };
 
-// ─── Sign up for plan (client) ────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Sign up for plan (client) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const signUpForPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -1135,7 +1142,9 @@ export const signUpForPlan = async (req: Request, res: Response) => {
   }
 
   const clientName = `${(req as any).userFullName ?? user.id}`;
-  await notifyTherapistOnSignup(plan.therapist.userId, id, plan.title, clientName);
+  const signupOwnerUserId = plan.therapist?.userId;
+  if (!signupOwnerUserId) return res.status(400).json({ message: 'Plan owner not found' });
+  await notifyTherapistOnSignup(signupOwnerUserId, id, plan.title, clientName);
 
   res.status(201).json({ participant, payment });
 };
@@ -1153,7 +1162,7 @@ export const getSignupStatus = async (req: Request, res: Response) => {
   res.json({ participant, payment: participant.payment });
 };
 
-// ─── Cancel sign-up (client) ──────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Cancel sign-up (client) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const cancelSignup = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -1180,8 +1189,10 @@ export const cancelSignup = async (req: Request, res: Response) => {
   await refundPlanPayment(participant.id, false);
 
   const clientName = `${(req as any).userFullName ?? user.id}`;
+  const cancelOwnerUserId = participant.plan.therapist?.userId;
+  if (!cancelOwnerUserId) return res.status(400).json({ message: 'Plan owner not found' });
   await notifyTherapistOnSignupCancelled(
-    participant.plan.therapist.userId,
+    cancelOwnerUserId,
     id,
     participant.plan.title,
     clientName,
@@ -1189,3 +1200,4 @@ export const cancelSignup = async (req: Request, res: Response) => {
 
   res.status(204).send();
 };
+

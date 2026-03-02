@@ -8,10 +8,10 @@ export const createForm = async (req: Request, res: Response) => {
   const body = req.body as CreateFormInput;
   const senderId = req.user!.id;
 
-  // Verify recipient exists and is a CLIENT
+  // Verify recipient exists and is a MEMBER
   const recipient = await prisma.user.findUnique({ where: { id: body.recipientId } });
   if (!recipient) return res.status(404).json({ message: 'Recipient not found' });
-  if (recipient.role !== 'CLIENT') return res.status(400).json({ message: 'Recipient must be a client' });
+  if (recipient.role !== 'MEMBER') return res.status(400).json({ message: 'Recipient must be a member' });
 
   const form = await prisma.clientForm.create({
     data: {

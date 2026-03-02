@@ -75,7 +75,7 @@ export const saveAsTemplate = async (req: Request, res: Response) => {
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  const isOwner = plan.therapist.userId === req.user!.id;
+  const isOwner = plan.therapist?.userId === req.user!.id;
   const isAdmin = req.user!.role === 'ADMIN';
   if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Forbidden' });
 

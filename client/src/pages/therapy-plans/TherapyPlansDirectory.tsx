@@ -28,7 +28,7 @@ export const TherapyPlansDirectory = () => {
   const [selectedType, setSelectedType] = useState<TherapyPlanType | ''>('');
   const [page, setPage] = useState(1);
 
-  const isTherapist = user?.role === 'THERAPIST';
+  const isTherapist = !!user?.approvedCertificates?.includes('THERAPIST');
 
   const { data, isLoading } = useQuery({
     queryKey: ['therapy-plans', { type: selectedType, page }],

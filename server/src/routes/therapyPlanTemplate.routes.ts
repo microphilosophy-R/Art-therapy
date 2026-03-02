@@ -6,6 +6,7 @@ import {
 } from '../controllers/therapyPlanTemplate.controller';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
+import { requireCertificate } from '../middleware/requireCertificate';
 import { validate } from '../middleware/validate';
 import {
   createTemplateSchema,
@@ -17,7 +18,8 @@ export const therapyPlanTemplateRouter = Router();
 therapyPlanTemplateRouter.get(
   '/',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   validate(listTemplatesSchema, 'query'),
   listTemplates,
 );
@@ -25,7 +27,8 @@ therapyPlanTemplateRouter.get(
 therapyPlanTemplateRouter.post(
   '/',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   validate(createTemplateSchema),
   createTemplate,
 );
@@ -33,6 +36,7 @@ therapyPlanTemplateRouter.post(
 therapyPlanTemplateRouter.delete(
   '/:id',
   authenticate,
-  authorize('THERAPIST', 'ADMIN'),
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
   deleteTemplate,
 );

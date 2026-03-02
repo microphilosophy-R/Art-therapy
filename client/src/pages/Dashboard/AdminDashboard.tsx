@@ -26,12 +26,11 @@ import type { UserRole, AppointmentStatus } from '../../types';
 
 type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages' | 'profiles' | 'certificates';
 
-const ROLE_OPTION_VALUES: UserRole[] = ['CLIENT', 'THERAPIST', 'ARTIST', 'ADMIN'];
+const ROLE_OPTION_VALUES: UserRole[] = ['MEMBER', 'ADMIN'];
 
 const roleBadgeVariant = (role: UserRole) => {
   if (role === 'ADMIN') return 'danger' as const;
-  if (role === 'THERAPIST') return 'info' as const;
-  if (role === 'ARTIST') return 'warning' as const;
+  if (role === 'MEMBER') return 'info' as const;
   return 'default' as const;
 };
 
@@ -262,7 +261,7 @@ const AppointmentsTab = () => {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-100">
                 <tr>
-                  {[t('common.role.CLIENT'), t('common.role.THERAPIST'), t('dashboard.admin.tableHeaders.dateTime'), t('dashboard.admin.tableHeaders.format'), t('dashboard.admin.tableHeaders.status'), t('dashboard.admin.tableHeaders.actions')].map((h) => (
+                  {[t('common.role.MEMBER'), t('common.role.MEMBER'), t('dashboard.admin.tableHeaders.dateTime'), t('dashboard.admin.tableHeaders.format'), t('dashboard.admin.tableHeaders.status'), t('dashboard.admin.tableHeaders.actions')].map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
                       {h}
                     </th>

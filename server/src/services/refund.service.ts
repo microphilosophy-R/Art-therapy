@@ -16,6 +16,7 @@ export const processAppointmentRefund = async (
   if (!appointment?.payment) return null;
   if (appointment.payment.status !== 'SUCCEEDED') return null;
   if (!appointment.payment.stripeChargeId) return null;
+  if (!appointment.therapist) return null;
 
   const hoursUntil =
     (new Date(appointment.startTime).getTime() - Date.now()) / (1000 * 60 * 60);

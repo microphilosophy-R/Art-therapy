@@ -40,13 +40,13 @@ export const startConnectOnboarding = async (req: Request, res: Response) => {
 export const connectReturn = async (req: Request, res: Response) => {
   // Stripe redirects here after onboarding. Sync status and redirect to client dashboard.
   const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';
-  res.redirect(`${clientUrl}/dashboard/therapist`);
+  res.redirect(`${clientUrl}/dashboard/member`);
 };
 
 export const connectRefresh = async (req: Request, res: Response) => {
   // Stripe redirects here when onboarding link expires. Re-generate and redirect.
   const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';
-  res.redirect(`${clientUrl}/dashboard/therapist?reconnect=1`);
+  res.redirect(`${clientUrl}/dashboard/member?reconnect=1`);
 };
 
 export const getPaymentByAppointment = async (req: Request, res: Response) => {

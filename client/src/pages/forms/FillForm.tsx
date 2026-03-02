@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { CheckCircle, AlertCircle, ChevronLeft } from 'lucide-react';
@@ -22,7 +22,7 @@ export function FillForm() {
   const submitMutation = useMutation({
     mutationFn: () =>
       submitForm(id!, Object.entries(answers).map(([questionId, value]) => ({ questionId, value }))),
-    onSuccess: () => navigate('/dashboard/client'),
+    onSuccess: () => navigate('/dashboard/member'),
   });
 
   const handleSubmit = () => {
@@ -61,7 +61,7 @@ export function FillForm() {
           <CheckCircle className="h-12 w-12 text-teal-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-stone-900">{t('forms.fill.alreadySubmitted')}</h2>
           <p className="text-stone-500 mt-2">{t('forms.fill.alreadySubmittedDesc')}</p>
-          <Button className="mt-6" onClick={() => navigate('/dashboard/client')}>{t('forms.fill.backToDashboard')}</Button>
+          <Button className="mt-6" onClick={() => navigate('/dashboard/member')}>{t('forms.fill.backToDashboard')}</Button>
         </div>
       </div>
     );
@@ -193,3 +193,5 @@ function QuestionInput({ question: q, value, onChange }: { question: FormQuestio
 
   return null;
 }
+
+

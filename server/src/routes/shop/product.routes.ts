@@ -13,7 +13,7 @@ router.get('/:id', ProductController.getProductById);
 
 // Artist or MEMBER with ARTIFICER cert
 router.use(authenticate);
-router.use(authorize('ARTIST', 'MEMBER'));
+router.use(authorize('MEMBER', 'ADMIN'));
 router.use(requireCertificate('ARTIFICER'));
 
 router.post('/', validate(ProductController.createProductSchema), ProductController.createProduct);

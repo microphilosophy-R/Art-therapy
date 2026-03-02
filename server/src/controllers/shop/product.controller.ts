@@ -15,7 +15,7 @@ const createProductSchema = z.object({
 const updateProductSchema = createProductSchema.partial();
 
 export const getProducts = async (req: Request, res: Response) => {
-    const { category, artistId, search, page = '1', limit = '10' } = req.query;
+    const { category, sellerId, search, page = '1', limit = '10' } = req.query;
     const pageNumber = parseInt(page as string, 10);
     const pageSize = parseInt(limit as string, 10);
 
@@ -25,8 +25,8 @@ export const getProducts = async (req: Request, res: Response) => {
         where.category = category as ProductCategory;
     }
 
-    if (artistId) {
-        where.artistId = artistId as string;
+    if (sellerId) {
+        where.userProfileId = sellerId as string;
     }
 
     if (search) {
@@ -41,7 +41,7 @@ export const getProducts = async (req: Request, res: Response) => {
             where,
             include: {
                 images: { orderBy: { order: 'asc' } },
-                artist: {
+                userProfile: {
                     include: {
                         user: { select: { firstName: true, lastName: true, avatarUrl: true } }
                     }
@@ -72,7 +72,7 @@ export const getProductById = async (req: Request, res: Response) => {
         where: { id },
         include: {
             images: { orderBy: { order: 'asc' } },
-            artist: {
+            userProfile: {
                 include: {
                     user: { select: { firstName: true, lastName: true, avatarUrl: true } }
                 }
@@ -90,22 +90,17 @@ export const getProductById = async (req: Request, res: Response) => {
 export const createProduct = async (req: Request, res: Response) => {
     const data = req.body as z.infer<typeof createProductSchema>;
 
-    // Verify artist profile exists
-    const artistProfile = await prisma.artistProfile.findUnique({
+    const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
     });
 
-    if (!artistProfile) {
-        return res.status(403).json({ message: 'Artist profile required to create products' });
-    }
-
-    if (artistProfile.profileStatus !== 'APPROVED') {
-        return res.status(403).json({ message: 'Artist profile must be approved to create products' });
+    if (!userProfile) {
+        return res.status(403).json({ message: 'User profile required to create products' });
     }
 
     const product = await prisma.product.create({
         data: {
-            artistId: artistProfile.id,
+            userProfileId: userProfile.id,
             title: data.title,
             description: data.description,
             price: data.price,
@@ -128,12 +123,12 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
     const data = req.body as z.infer<typeof updateProductSchema>;
 
-    const artistProfile = await prisma.artistProfile.findUnique({
+    const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
     });
 
-    if (!artistProfile) {
-        return res.status(403).json({ message: 'Artist profile required' });
+    if (!userProfile) {
+        return res.status(403).json({ message: 'User profile required' });
     }
 
     const existingProduct = await prisma.product.findUnique({ where: { id } });
@@ -142,7 +137,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'Product not found' });
     }
 
-    if (existingProduct.artistId !== artistProfile.id) {
+    if (existingProduct.userProfileId !== userProfile.id) {
         return res.status(403).json({ message: 'Not authorized to update this product' });
     }
 
@@ -171,12 +166,12 @@ export const updateProduct = async (req: Request, res: Response) => {
 export const deleteProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
 
-    const artistProfile = await prisma.artistProfile.findUnique({
+    const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
     });
 
-    if (!artistProfile) {
-        return res.status(403).json({ message: 'Artist profile required' });
+    if (!userProfile) {
+        return res.status(403).json({ message: 'User profile required' });
     }
 
     const existingProduct = await prisma.product.findUnique({ where: { id } });
@@ -185,7 +180,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'Product not found' });
     }
 
-    if (existingProduct.artistId !== artistProfile.id) {
+    if (existingProduct.userProfileId !== userProfile.id) {
         return res.status(403).json({ message: 'Not authorized to delete this product' });
     }
 

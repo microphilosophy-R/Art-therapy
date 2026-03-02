@@ -31,10 +31,7 @@ export const Navbar = () => {
   };
 
   const dashboardPath =
-    user?.role === 'THERAPIST' ? '/dashboard/therapist'
-      : user?.role === 'ADMIN' ? '/dashboard/admin'
-        : user?.role === 'ARTIST' ? '/dashboard/artist'
-          : '/dashboard/client';
+    user?.role === 'ADMIN' ? '/dashboard/admin' : '/dashboard/member';
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -268,7 +265,7 @@ export const Navbar = () => {
                 >
                   {t('nav.profile')}
                 </Link>
-                {user?.role === 'CLIENT' && (
+                {user?.role === 'MEMBER' && (
                   <Link
                     to="/forms"
                     onClick={() => setMobileOpen(false)}

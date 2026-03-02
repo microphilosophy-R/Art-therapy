@@ -1,4 +1,4 @@
-/// <reference types="node" />
+﻿/// <reference types="node" />
 import 'dotenv/config';
 import {
   PrismaClient,
@@ -16,7 +16,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Date helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const daysFromNow = (days: number, hour = 10, minute = 0) => {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -25,9 +25,9 @@ const daysFromNow = (days: number, hour = 10, minute = 0) => {
 };
 
 async function main() {
-  console.log('🌱 Seeding database — wiping existing data first...');
+  console.log('馃尡 Seeding database 鈥?wiping existing data first...');
 
-  // ─── Clean slate (FK-safe deletion order) ─────────────────────────────────
+  // 鈹€鈹€鈹€ Clean slate (FK-safe deletion order) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   await prisma.planPayment.deleteMany();
   await prisma.therapyPlanParticipant.deleteMany();
   await prisma.therapyPlanEvent.deleteMany();
@@ -64,9 +64,9 @@ async function main() {
   await prisma.artistProfile.deleteMany();
   await prisma.user.deleteMany();
 
-  console.log('✓ All tables cleared');
+  console.log('鉁?All tables cleared');
 
-  // ─── Users ────────────────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Users 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const passwordHash = await bcrypt.hash('password123', 10);
 
   const admin = await prisma.user.create({
@@ -83,7 +83,7 @@ async function main() {
     data: {
       email: 'client@arttherapy.dev',
       passwordHash,
-      role: Role.CLIENT,
+      role: Role.MEMBER,
       firstName: 'Alex',
       lastName: 'Rivera',
       phone: '+1 555-0101',
@@ -94,7 +94,7 @@ async function main() {
     data: {
       email: 'client2@arttherapy.dev',
       passwordHash,
-      role: Role.CLIENT,
+      role: Role.MEMBER,
       firstName: 'Jordan',
       lastName: 'Kim',
     },
@@ -104,7 +104,7 @@ async function main() {
     data: {
       email: 'therapist@arttherapy.dev',
       passwordHash,
-      role: Role.THERAPIST,
+      role: Role.MEMBER,
       firstName: 'Sarah',
       lastName: 'Chen',
       phone: '+1 555-0202',
@@ -115,7 +115,7 @@ async function main() {
     data: {
       email: 'therapist2@arttherapy.dev',
       passwordHash,
-      role: Role.THERAPIST,
+      role: Role.MEMBER,
       firstName: 'Marcus',
       lastName: 'Webb',
     },
@@ -125,15 +125,15 @@ async function main() {
     data: {
       email: 'therapist3@arttherapy.dev',
       passwordHash,
-      role: Role.THERAPIST,
+      role: Role.MEMBER,
       firstName: 'Priya',
       lastName: 'Patel',
     },
   });
 
-  console.log('✓ Users created');
+  console.log('鉁?Users created');
 
-  // ─── Therapist Profiles ───────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Therapist Profiles 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const profile1 = await prisma.therapistProfile.create({
     data: {
       userId: therapist1User.id,
@@ -179,9 +179,9 @@ async function main() {
     },
   });
 
-  console.log('✓ Therapist profiles created');
+  console.log('鉁?Therapist profiles created');
 
-  // ─── Gallery Images ───────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Gallery Images 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   await prisma.galleryImage.createMany({
     data: [
       { therapistId: profile2.id, url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=400', order: 0 },
@@ -190,9 +190,9 @@ async function main() {
     ],
   });
 
-  console.log('✓ Gallery images created');
+  console.log('鉁?Gallery images created');
 
-  // ─── Availability ─────────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Availability 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   for (const day of [1, 2, 3, 4, 5]) {
     await prisma.availability.create({
       data: { therapistId: profile1.id, dayOfWeek: day, startTime: '09:00', endTime: '17:00' },
@@ -209,9 +209,9 @@ async function main() {
     });
   }
 
-  console.log('✓ Availability created');
+  console.log('鉁?Availability created');
 
-  // ─── Refund Policies ──────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Refund Policies 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   await prisma.refundPolicy.create({
     data: {
       therapistId: profile1.id,
@@ -240,9 +240,9 @@ async function main() {
     },
   });
 
-  console.log('✓ Refund policies created');
+  console.log('鉁?Refund policies created');
 
-  // ─── Reviews ──────────────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Reviews 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   await prisma.review.createMany({
     data: [
       {
@@ -272,9 +272,9 @@ async function main() {
     ],
   });
 
-  console.log('✓ Reviews created');
+  console.log('鉁?Reviews created');
 
-  // ─── Appointments ─────────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Appointments 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   // Past completed appointments
   await prisma.appointment.create({
     data: {
@@ -308,7 +308,7 @@ async function main() {
       endTime: daysFromNow(-3, 10, 50),
       status: AppointmentStatus.COMPLETED,
       medium: SessionMedium.IN_PERSON,
-      clientNotes: 'First session — grief counselling.',
+      clientNotes: 'First session 鈥?grief counselling.',
     },
   });
 
@@ -359,10 +359,10 @@ async function main() {
     },
   });
 
-  console.log('✓ Appointments created');
+  console.log('鉁?Appointments created');
 
-  // ─── Therapy Plans ────────────────────────────────────────────────────────
-  // Profile 1 — Sarah Chen
+  // 鈹€鈹€鈹€ Therapy Plans 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  // Profile 1 鈥?Sarah Chen
   // 1. PUBLISHED personal consult (upcoming)
   await prisma.therapyPlan.create({
     data: {
@@ -453,7 +453,7 @@ async function main() {
     },
   });
 
-  // Profile 2 — Marcus Webb
+  // Profile 2 鈥?Marcus Webb
   // 5. PUBLISHED group consult (upcoming)
   await prisma.therapyPlan.create({
     data: {
@@ -497,7 +497,7 @@ async function main() {
     },
   });
 
-  // Profile 3 — Priya Patel
+  // Profile 3 鈥?Priya Patel
   // 7. PUBLISHED art salon (upcoming, participants enrolled)
   await prisma.therapyPlan.create({
     data: {
@@ -506,7 +506,7 @@ async function main() {
       status: TherapyPlanStatus.PUBLISHED,
       title: 'Mindful Painting Salon',
       slogan: 'Be present. Paint freely.',
-      introduction: 'An open painting session focused on mindfulness. All skill levels welcome — bring curiosity, leave your inner critic at the door.',
+      introduction: 'An open painting session focused on mindfulness. All skill levels welcome 鈥?bring curiosity, leave your inner critic at the door.',
       startTime: daysFromNow(7, 13, 0),
       endTime: daysFromNow(7, 16, 0),
       location: 'Community Art Center, Room B, New York',
@@ -550,7 +550,7 @@ async function main() {
       therapistId: profile3.id,
       type: TherapyPlanType.PERSONAL_CONSULT,
       status: TherapyPlanStatus.DRAFT,
-      title: 'Couples Art Therapy — Pilot',
+      title: 'Couples Art Therapy 鈥?Pilot',
       introduction: 'A pilot 1-on-1 couples session combining art-based communication exercises with guided dialogue.',
       startTime: daysFromNow(28, 10, 0),
       location: 'Online via Zoom',
@@ -560,14 +560,14 @@ async function main() {
     },
   });
 
-  console.log('✓ Therapy plans created');
+  console.log('鉁?Therapy plans created');
 
-  // ─── Artist Users ─────────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Artist Users 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const artist1User = await prisma.user.create({
     data: {
       email: 'artist@arttherapy.dev',
       passwordHash,
-      role: Role.ARTIST,
+      role: Role.MEMBER,
       firstName: 'Li',
       lastName: 'Wei',
       phone: '+86 138-0013-8000',
@@ -578,15 +578,15 @@ async function main() {
     data: {
       email: 'artist2@arttherapy.dev',
       passwordHash,
-      role: Role.ARTIST,
+      role: Role.MEMBER,
       firstName: 'Mei',
       lastName: 'Zhang',
     },
   });
 
-  console.log('✓ Artist users created');
+  console.log('鉁?Artist users created');
 
-  // ─── Artist Profiles ──────────────────────────────────────────────────────
+  // 鈹€鈹€鈹€ Artist Profiles 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const artistProfile1 = await prisma.artistProfile.create({
     data: {
       userId: artist1User.id,
@@ -610,15 +610,15 @@ async function main() {
     },
   });
 
-  console.log('✓ Artist profiles created');
+  console.log('鉁?Artist profiles created');
 
-  // ─── Products ─────────────────────────────────────────────────────────────
-  // Artist 1 — Li Wei (painting / crafts)
+  // 鈹€鈹€鈹€ Products 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  // Artist 1 鈥?Li Wei (painting / crafts)
   await prisma.product.create({
     data: {
       artistId: artistProfile1.id,
-      title: '秋山水彩原画 / Autumn Mountain Watercolour',
-      description: '手工水彩原画，描绘秋日山间晨雾。使用专业水彩纸与颜料，适合装裱收藏。\n\nOriginal hand-painted watercolour on 300gsm cold-press paper. Depicts misty mountain peaks at dawn. Each piece is unique and signed by the artist. Suitable for framing.',
+      title: '绉嬪北姘村僵鍘熺敾 / Autumn Mountain Watercolour',
+      description: '鎵嬪伐姘村僵鍘熺敾锛屾弿缁樼鏃ュ北闂存櫒闆俱€備娇鐢ㄤ笓涓氭按褰╃焊涓庨鏂欙紝閫傚悎瑁呰１鏀惰棌銆俓n\nOriginal hand-painted watercolour on 300gsm cold-press paper. Depicts misty mountain peaks at dawn. Each piece is unique and signed by the artist. Suitable for framing.',
       price: 980.00,
       stock: 3,
       category: ProductCategory.PAINTING,
@@ -634,8 +634,8 @@ async function main() {
   await prisma.product.create({
     data: {
       artistId: artistProfile1.id,
-      title: '书法挂轴「静」/ Calligraphy Scroll — Stillness',
-      description: '手写书法挂轴，字为「静」，意为宁静与内心平和。宣纸墨书，配实木轴杆，可直接悬挂。\n\nHand-brushed Chinese calligraphy on Xuan paper mounted on a bamboo scroll. The character 静 (stillness) is rendered in a flowing semi-cursive style. Ready to hang.',
+      title: '涔︽硶鎸傝酱銆岄潤銆? Calligraphy Scroll 鈥?Stillness',
+      description: '鎵嬪啓涔︽硶鎸傝酱锛屽瓧涓恒€岄潤銆嶏紝鎰忎负瀹侀潤涓庡唴蹇冨钩鍜屻€傚绾稿ⅷ涔︼紝閰嶅疄鏈ㄨ酱鏉嗭紝鍙洿鎺ユ偓鎸傘€俓n\nHand-brushed Chinese calligraphy on Xuan paper mounted on a bamboo scroll. The character 闈?(stillness) is rendered in a flowing semi-cursive style. Ready to hang.',
       price: 560.00,
       stock: 5,
       category: ProductCategory.CRAFTS,
@@ -650,8 +650,8 @@ async function main() {
   await prisma.product.create({
     data: {
       artistId: artistProfile1.id,
-      title: '艺术疗愈手册 / Art Therapy Workbook',
-      description: '专为成人设计的艺术疗愈练习手册，包含30个引导性绘画与书写练习，帮助情绪整理与自我探索。配有插图与说明。\n\nA guided workbook with 30 structured art therapy exercises for adults. Covers emotion mapping, gratitude drawing, and expressive journalling. Illustrated throughout. A4 softcover, 120 pages.',
+      title: '鑹烘湳鐤楁剤鎵嬪唽 / Art Therapy Workbook',
+      description: '涓撲负鎴愪汉璁捐鐨勮壓鏈枟鎰堢粌涔犳墜鍐岋紝鍖呭惈30涓紩瀵兼€х粯鐢讳笌涔﹀啓缁冧範锛屽府鍔╂儏缁暣鐞嗕笌鑷垜鎺㈢储銆傞厤鏈夋彃鍥句笌璇存槑銆俓n\nA guided workbook with 30 structured art therapy exercises for adults. Covers emotion mapping, gratitude drawing, and expressive journalling. Illustrated throughout. A4 softcover, 120 pages.',
       price: 128.00,
       stock: 20,
       category: ProductCategory.OTHER,
@@ -664,12 +664,12 @@ async function main() {
     },
   });
 
-  // Artist 2 — Mei Zhang (digital art / merchandise)
+  // Artist 2 鈥?Mei Zhang (digital art / merchandise)
   const product4 = await prisma.product.create({
     data: {
       artistId: artistProfile2.id,
-      title: '《呼吸》数字版画 / "Breathe" Digital Art Print',
-      description: '数字插画版画，主题为正念呼吸。高品质哑光纸打印，A3尺寸，附签名证书。适合治疗室或家居装饰。\n\nHigh-resolution digital illustration printed on premium matte fine-art paper (A3). The piece visualises a mindful breath — gentle waves expanding outward from a single point. Signed certificate of authenticity included.',
+      title: '銆婂懠鍚搞€嬫暟瀛楃増鐢?/ "Breathe" Digital Art Print',
+      description: '鏁板瓧鎻掔敾鐗堢敾锛屼富棰樹负姝ｅ康鍛煎惛銆傞珮鍝佽川鍝戝厜绾告墦鍗帮紝A3灏哄锛岄檮绛惧悕璇佷功銆傞€傚悎娌荤枟瀹ゆ垨瀹跺眳瑁呴グ銆俓n\nHigh-resolution digital illustration printed on premium matte fine-art paper (A3). The piece visualises a mindful breath 鈥?gentle waves expanding outward from a single point. Signed certificate of authenticity included.',
       price: 320.00,
       stock: 15,
       category: ProductCategory.DIGITAL_ART,
@@ -685,8 +685,8 @@ async function main() {
   const product5 = await prisma.product.create({
     data: {
       artistId: artistProfile2.id,
-      title: '手工陶瓷疗愈马克杯 / Handmade Ceramic Therapy Mug',
-      description: '纯手工拉坯陶瓷马克杯，釉色温柔，握感舒适。每只独一无二，略有差异。容量约350ml，微波炉及洗碗机安全。\n\nHand-thrown ceramic mug in calming sage glaze. Each piece is unique with natural variations. Approx. 350ml capacity. Microwave and dishwasher safe. Designed to make everyday rituals feel intentional.',
+      title: '鎵嬪伐闄剁摲鐤楁剤椹厠鏉?/ Handmade Ceramic Therapy Mug',
+      description: '绾墜宸ユ媺鍧櫠鐡烽┈鍏嬫澂锛岄噳鑹叉俯鏌旓紝鎻℃劅鑸掗€傘€傛瘡鍙嫭涓€鏃犱簩锛岀暐鏈夊樊寮傘€傚閲忕害350ml锛屽井娉㈢倝鍙婃礂纰楁満瀹夊叏銆俓n\nHand-thrown ceramic mug in calming sage glaze. Each piece is unique with natural variations. Approx. 350ml capacity. Microwave and dishwasher safe. Designed to make everyday rituals feel intentional.',
       price: 198.00,
       stock: 8,
       category: ProductCategory.MERCHANDISE,
@@ -702,8 +702,8 @@ async function main() {
   await prisma.product.create({
     data: {
       artistId: artistProfile2.id,
-      title: '正念彩绘套装 / Mindfulness Watercolour Set',
-      description: '入门级水彩套装，专为艺术疗愈课程设计，包含12色固体水彩、两支画笔、调色盘及说明卡。适合无绘画基础的成人使用。\n\nA starter watercolour kit designed for art therapy sessions. Includes 12 solid pigment pans, 2 brushes, a ceramic palette, and a getting-started instruction card. Non-toxic, suitable for adults with no prior painting experience.',
+      title: '姝ｅ康褰╃粯濂楄 / Mindfulness Watercolour Set',
+      description: '鍏ラ棬绾ф按褰╁瑁咃紝涓撲负鑹烘湳鐤楁剤璇剧▼璁捐锛屽寘鍚?2鑹插浐浣撴按褰┿€佷袱鏀敾绗斻€佽皟鑹茬洏鍙婅鏄庡崱銆傞€傚悎鏃犵粯鐢诲熀纭€鐨勬垚浜轰娇鐢ㄣ€俓n\nA starter watercolour kit designed for art therapy sessions. Includes 12 solid pigment pans, 2 brushes, a ceramic palette, and a getting-started instruction card. Non-toxic, suitable for adults with no prior painting experience.',
       price: 158.00,
       stock: 0,
       category: ProductCategory.MERCHANDISE,
@@ -715,9 +715,9 @@ async function main() {
     },
   });
 
-  console.log('✓ Products created');
+  console.log('鉁?Products created');
 
-  // ─── Sample cart item for client1 ─────────────────────────────────────────
+  // 鈹€鈹€鈹€ Sample cart item for client1 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   await prisma.cartItem.create({
     data: {
       userId: client1.id,
@@ -734,9 +734,9 @@ async function main() {
     },
   });
 
-  console.log('✓ Sample cart items created');
+  console.log('鉁?Sample cart items created');
 
-  // ─── New MEMBER System (Side-by-Side Test) ───────────────────────────────
+  // 鈹€鈹€鈹€ New MEMBER System (Side-by-Side Test) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const memberUser = await prisma.user.create({
     data: {
       email: 'member@arttherapy.dev',
@@ -772,11 +772,11 @@ async function main() {
     }
   });
 
-  console.log('✓ MEMBER test profile and product created');
+  console.log('鉁?MEMBER test profile and product created');
 
-  console.log('\n✅ Seed complete!\n');
-  console.log('Test accounts — password for all: password123');
-  console.log('─────────────────────────────────────────────────');
+  console.log('\n鉁?Seed complete!\n');
+  console.log('Test accounts 鈥?password for all: password123');
+  console.log('鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€');
   console.log('Admin:        admin@arttherapy.dev');
   console.log('Therapist 1:  therapist@arttherapy.dev   (Sarah Chen)');
   console.log('Therapist 2:  therapist2@arttherapy.dev  (Marcus Webb)');
@@ -797,3 +797,4 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+

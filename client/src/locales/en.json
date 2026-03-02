@@ -31,9 +31,10 @@
     "previous": "Previous",
     "next": "Next",
     "role": {
+      "MEMBER": "Member",
+      "ADMIN": "Admin",
       "CLIENT": "Client",
       "THERAPIST": "Therapist",
-      "ADMIN": "Admin",
       "ARTIST": "Artist"
     },
     "errors": {

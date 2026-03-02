@@ -261,7 +261,7 @@ const AppointmentsTab = () => {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-100">
                 <tr>
-                  {[t('common.role.MEMBER'), t('common.role.MEMBER'), t('dashboard.admin.tableHeaders.dateTime'), t('dashboard.admin.tableHeaders.format'), t('dashboard.admin.tableHeaders.status'), t('dashboard.admin.tableHeaders.actions')].map((h) => (
+                  {tableHeaders.map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
                       {h}
                     </th>

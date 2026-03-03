@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('CLIENT', 'THERAPIST', 'ADMIN');
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'MEMBER');
 
 -- CreateEnum
 CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED');
@@ -29,20 +29,35 @@ CREATE TYPE "TherapyPlanType" AS ENUM ('PERSONAL_CONSULT', 'GROUP_CONSULT', 'ART
 CREATE TYPE "TherapyPlanStatus" AS ENUM ('DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED', 'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY', 'CANCELLED', 'ARCHIVED');
 
 -- CreateEnum
-CREATE TYPE "ParticipantStatus" AS ENUM ('SIGNED_UP', 'CANCELLED');
+CREATE TYPE "ParticipantStatus" AS ENUM ('PENDING_PAYMENT', 'SIGNED_UP', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "ArtSalonSubType" AS ENUM ('CALLIGRAPHY', 'PAINTING', 'DRAMA', 'YOGA', 'BOARD_GAMES', 'CULTURAL_CONVERSATION');
 
 -- CreateEnum
-CREATE TYPE "MessageTrigger" AS ENUM ('PLAN_SUBMITTED', 'PLAN_APPROVED', 'PLAN_REJECTED', 'MANUAL', 'APPOINTMENT_DEADLINE_WARNING', 'APPOINTMENT_AUTO_CANCELLED', 'PLAN_SIGNUP', 'PLAN_SIGNUP_CANCELLED', 'PLAN_STARTED', 'PLAN_FINISHED', 'PLAN_CANCELLED_BY_THERAPIST');
+CREATE TYPE "MessageTrigger" AS ENUM ('PLAN_SUBMITTED', 'PLAN_APPROVED', 'PLAN_REJECTED', 'MANUAL', 'APPOINTMENT_DEADLINE_WARNING', 'APPOINTMENT_AUTO_CANCELLED', 'PLAN_SIGNUP', 'PLAN_SIGNUP_CANCELLED', 'PLAN_STARTED', 'PLAN_FINISHED', 'PLAN_CANCELLED_BY_THERAPIST', 'PROFILE_SUBMITTED', 'PROFILE_APPROVED', 'PROFILE_REJECTED');
+
+-- CreateEnum
+CREATE TYPE "ProfileStatus" AS ENUM ('DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "ProductCategory" AS ENUM ('PAINTING', 'SCULPTURE', 'CRAFTS', 'DIGITAL_ART', 'MERCHANDISE', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "CertificateType" AS ENUM ('COUNSELOR', 'THERAPIST', 'ARTIFICER');
+
+-- CreateEnum
+CREATE TYPE "CertificateStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'REVOKED');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "passwordHash" TEXT NOT NULL,
-    "role" "Role" NOT NULL DEFAULT 'CLIENT',
+    "role" "Role" NOT NULL DEFAULT 'MEMBER',
     "firstName" TEXT NOT NULL,
     "lastName" TEXT NOT NULL,
     "nickname" TEXT,
@@ -58,29 +73,21 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
-CREATE TABLE "TherapistProfile" (
+CREATE TABLE "GalleryImage" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "bio" TEXT NOT NULL,
-    "specialties" TEXT[],
-    "sessionPrice" DECIMAL(10,2) NOT NULL,
-    "sessionLength" INTEGER NOT NULL,
-    "locationCity" TEXT NOT NULL,
-    "isAccepting" BOOLEAN NOT NULL DEFAULT true,
-    "rating" DOUBLE PRECISION,
-    "stripeAccountId" TEXT,
-    "stripeAccountStatus" "StripeAccountStatus" NOT NULL DEFAULT 'NOT_CONNECTED',
+    "userProfileId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "TherapistProfile_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "GalleryImage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Appointment" (
     "id" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
-    "therapistId" TEXT NOT NULL,
+    "userProfileId" TEXT NOT NULL,
     "startTime" TIMESTAMP(3) NOT NULL,
     "endTime" TIMESTAMP(3) NOT NULL,
     "status" "AppointmentStatus" NOT NULL DEFAULT 'PENDING',
@@ -106,7 +113,7 @@ CREATE TABLE "SessionNote" (
 -- CreateTable
 CREATE TABLE "Availability" (
     "id" TEXT NOT NULL,
-    "therapistId" TEXT NOT NULL,
+    "userProfileId" TEXT NOT NULL,
     "dayOfWeek" INTEGER NOT NULL,
     "startTime" TEXT NOT NULL,
     "endTime" TEXT NOT NULL,
@@ -118,7 +125,7 @@ CREATE TABLE "Availability" (
 CREATE TABLE "Review" (
     "id" TEXT NOT NULL,
     "clientId" TEXT NOT NULL,
-    "therapistId" TEXT NOT NULL,
+    "userProfileId" TEXT NOT NULL,
     "rating" INTEGER NOT NULL,
     "comment" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -154,7 +161,7 @@ CREATE TABLE "Payment" (
 -- CreateTable
 CREATE TABLE "RefundPolicy" (
     "id" TEXT NOT NULL,
-    "therapistId" TEXT NOT NULL,
+    "userProfileId" TEXT NOT NULL,
     "fullRefundHoursThreshold" INTEGER NOT NULL DEFAULT 24,
     "allowPartialRefund" BOOLEAN NOT NULL DEFAULT false,
     "partialRefundPercent" INTEGER,
@@ -230,7 +237,7 @@ CREATE TABLE "FormAnswer" (
 -- CreateTable
 CREATE TABLE "TherapyPlan" (
     "id" TEXT NOT NULL,
-    "therapistId" TEXT NOT NULL,
+    "userProfileId" TEXT NOT NULL,
     "type" "TherapyPlanType" NOT NULL,
     "status" "TherapyPlanStatus" NOT NULL DEFAULT 'DRAFT',
     "title" TEXT NOT NULL,
@@ -355,11 +362,152 @@ CREATE TABLE "Message" (
     CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Product" (
+    "id" TEXT NOT NULL,
+    "userProfileId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "price" DECIMAL(10,2) NOT NULL,
+    "stock" INTEGER NOT NULL DEFAULT 0,
+    "category" "ProductCategory" NOT NULL DEFAULT 'OTHER',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductImage" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CartItem" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 1,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CartItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Order" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "totalAmount" INTEGER NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "province" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "district" TEXT NOT NULL,
+    "addressDetail" TEXT NOT NULL,
+    "recipientName" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "carrierName" TEXT,
+    "trackingNumber" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderItem" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "price" INTEGER NOT NULL,
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductPayment" (
+    "id" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "provider" "PaymentProvider" NOT NULL DEFAULT 'ALIPAY',
+    "externalOrderId" TEXT,
+    "externalTradeNo" TEXT,
+    "stripePaymentIntentId" TEXT,
+    "amount" INTEGER NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'cny',
+    "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
+    "refundedAt" TIMESTAMP(3),
+    "refundAmount" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ProductPayment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserProfile" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "bio" TEXT,
+    "locationCity" TEXT,
+    "socialMediaLink" TEXT,
+    "portfolioUrl" TEXT,
+    "featuredImageUrl" TEXT,
+    "privateFields" JSONB,
+    "calendarVisible" BOOLEAN NOT NULL DEFAULT false,
+    "showcaseConfig" JSONB,
+    "birthday" TIMESTAMP(3),
+    "telephone" TEXT,
+    "region" TEXT,
+    "religion" TEXT,
+    "qrCodeUrl" TEXT,
+    "profileStatus" "ProfileStatus" NOT NULL DEFAULT 'DRAFT',
+    "rejectionReason" TEXT,
+    "submittedAt" TIMESTAMP(3),
+    "reviewedAt" TIMESTAMP(3),
+    "specialties" TEXT[],
+    "sessionPrice" DECIMAL(10,2),
+    "sessionLength" INTEGER,
+    "isAccepting" BOOLEAN NOT NULL DEFAULT true,
+    "rating" DOUBLE PRECISION,
+    "reviewCount" INTEGER NOT NULL DEFAULT 0,
+    "consultEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "hourlyConsultFee" DECIMAL(10,2),
+    "stripeAccountId" TEXT,
+    "stripeAccountStatus" "StripeAccountStatus" NOT NULL DEFAULT 'NOT_CONNECTED',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "UserProfile_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserCertificate" (
+    "id" TEXT NOT NULL,
+    "profileId" TEXT NOT NULL,
+    "type" "CertificateType" NOT NULL,
+    "status" "CertificateStatus" NOT NULL DEFAULT 'PENDING',
+    "certificateUrl" TEXT,
+    "certificateUrls" TEXT[],
+    "tosAcceptedAt" TIMESTAMP(3),
+    "rejectionReason" TEXT,
+    "appliedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "reviewedAt" TIMESTAMP(3),
+
+    CONSTRAINT "UserCertificate_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "TherapistProfile_userId_key" ON "TherapistProfile"("userId");
+CREATE INDEX "GalleryImage_userProfileId_idx" ON "GalleryImage"("userProfileId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SessionNote_appointmentId_key" ON "SessionNote"("appointmentId");
@@ -371,7 +519,7 @@ CREATE UNIQUE INDEX "Payment_appointmentId_key" ON "Payment"("appointmentId");
 CREATE UNIQUE INDEX "Payment_stripePaymentIntentId_key" ON "Payment"("stripePaymentIntentId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "RefundPolicy_therapistId_key" ON "RefundPolicy"("therapistId");
+CREATE UNIQUE INDEX "RefundPolicy_userProfileId_key" ON "RefundPolicy"("userProfileId");
 
 -- CreateIndex
 CREATE INDEX "TherapyPlan_status_idx" ON "TherapyPlan"("status");
@@ -380,7 +528,7 @@ CREATE INDEX "TherapyPlan_status_idx" ON "TherapyPlan"("status");
 CREATE INDEX "TherapyPlan_type_idx" ON "TherapyPlan"("type");
 
 -- CreateIndex
-CREATE INDEX "TherapyPlan_therapistId_idx" ON "TherapyPlan"("therapistId");
+CREATE INDEX "TherapyPlan_userProfileId_idx" ON "TherapyPlan"("userProfileId");
 
 -- CreateIndex
 CREATE INDEX "TherapyPlanEvent_planId_idx" ON "TherapyPlanEvent"("planId");
@@ -412,32 +560,65 @@ CREATE INDEX "Message_recipientId_isRead_idx" ON "Message"("recipientId", "isRea
 -- CreateIndex
 CREATE INDEX "Message_recipientId_idx" ON "Message"("recipientId");
 
+-- CreateIndex
+CREATE INDEX "Product_userProfileId_idx" ON "Product"("userProfileId");
+
+-- CreateIndex
+CREATE INDEX "Product_category_idx" ON "Product"("category");
+
+-- CreateIndex
+CREATE INDEX "ProductImage_productId_idx" ON "ProductImage"("productId");
+
+-- CreateIndex
+CREATE INDEX "CartItem_userId_idx" ON "CartItem"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CartItem_userId_productId_key" ON "CartItem"("userId", "productId");
+
+-- CreateIndex
+CREATE INDEX "Order_userId_idx" ON "Order"("userId");
+
+-- CreateIndex
+CREATE INDEX "Order_status_idx" ON "Order"("status");
+
+-- CreateIndex
+CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ProductPayment_orderId_key" ON "ProductPayment"("orderId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserProfile_userId_key" ON "UserProfile"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserCertificate_profileId_type_key" ON "UserCertificate"("profileId", "type");
+
 -- AddForeignKey
-ALTER TABLE "TherapistProfile" ADD CONSTRAINT "TherapistProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "GalleryImage" ADD CONSTRAINT "GalleryImage_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_therapistId_fkey" FOREIGN KEY ("therapistId") REFERENCES "TherapistProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SessionNote" ADD CONSTRAINT "SessionNote_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Availability" ADD CONSTRAINT "Availability_therapistId_fkey" FOREIGN KEY ("therapistId") REFERENCES "TherapistProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Availability" ADD CONSTRAINT "Availability_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Review" ADD CONSTRAINT "Review_therapistId_fkey" FOREIGN KEY ("therapistId") REFERENCES "TherapistProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "RefundPolicy" ADD CONSTRAINT "RefundPolicy_therapistId_fkey" FOREIGN KEY ("therapistId") REFERENCES "TherapistProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "RefundPolicy" ADD CONSTRAINT "RefundPolicy_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ClientForm" ADD CONSTRAINT "ClientForm_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -458,7 +639,7 @@ ALTER TABLE "FormAnswer" ADD CONSTRAINT "FormAnswer_responseId_fkey" FOREIGN KEY
 ALTER TABLE "FormAnswer" ADD CONSTRAINT "FormAnswer_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "FormQuestion"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "TherapyPlan" ADD CONSTRAINT "TherapyPlan_therapistId_fkey" FOREIGN KEY ("therapistId") REFERENCES "TherapistProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "TherapyPlan" ADD CONSTRAINT "TherapyPlan_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TherapyPlanEvent" ADD CONSTRAINT "TherapyPlanEvent_planId_fkey" FOREIGN KEY ("planId") REFERENCES "TherapyPlan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -489,3 +670,33 @@ ALTER TABLE "Message" ADD CONSTRAINT "Message_recipientId_fkey" FOREIGN KEY ("re
 
 -- AddForeignKey
 ALTER TABLE "Message" ADD CONSTRAINT "Message_planId_fkey" FOREIGN KEY ("planId") REFERENCES "TherapyPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Product" ADD CONSTRAINT "Product_userProfileId_fkey" FOREIGN KEY ("userProfileId") REFERENCES "UserProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CartItem" ADD CONSTRAINT "CartItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ProductPayment" ADD CONSTRAINT "ProductPayment_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserProfile" ADD CONSTRAINT "UserProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserCertificate" ADD CONSTRAINT "UserCertificate_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "UserProfile"("id") ON DELETE CASCADE ON UPDATE CASCADE;

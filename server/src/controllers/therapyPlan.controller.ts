@@ -24,7 +24,7 @@ import type {
 import { buildIcsCalendar, type IcsEvent } from '../services/ics.service';
 
 const THERAPIST_PLAN_INCLUDE = {
-  therapist: {
+  userProfile: {
     include: {
       user: {
         select: {
@@ -78,17 +78,17 @@ const logToFile = (msg: string) => {
 export const createPlan = async (req: Request, res: Response) => {
   const body = req.body as CreateTherapyPlanInput;
 
-  const therapistProfile = await prisma.therapistProfile.findUnique({
+  const userProfile = await prisma.userProfile.findUnique({
     where: { userId: req.user!.id },
   });
-  if (!therapistProfile) {
-    return res.status(404).json({ message: 'Therapist profile not found' });
+  if (!userProfile) {
+    return res.status(404).json({ message: 'User profile not found' });
   }
 
   // Consult types require consultEnabled
   if (
     (body.type === 'PERSONAL_CONSULT' || body.type === 'GROUP_CONSULT') &&
-    !therapistProfile.consultEnabled
+    !userProfile.consultEnabled
   ) {
     return res.status(403).json({
       message: 'You must enable consultations in your profile before creating this plan type.',
@@ -97,7 +97,7 @@ export const createPlan = async (req: Request, res: Response) => {
 
   const plan = await prisma.therapyPlan.create({
     data: {
-      therapistId: therapistProfile.id,
+      userProfileId: userProfile.id,
       type: body.type,
       title: body.title,
       slogan: body.slogan ?? null,
@@ -138,7 +138,7 @@ export const listPlans = async (req: Request, res: Response) => {
     where = { status: { in: query.status ? [query.status] : publicStatuses } };
   } else if (user.role === 'MEMBER' && userHasTherapistCert) {
     // Therapists see only their own plans (all statuses)
-    const profile = await prisma.therapistProfile.findUnique({ where: { userId: user.id } });
+    const profile = await prisma.userProfile.findUnique({ where: { userId: user.id } });
     if (!profile) {
       return res.json({
         data: [],
@@ -148,7 +148,7 @@ export const listPlans = async (req: Request, res: Response) => {
         totalPages: 0,
       });
     }
-    where = { therapistId: profile.id };
+    where = { userProfileId: profile.id };
   } else if (user.role === 'ADMIN') {
     // Admins see everything; optionally filter by status or type
     if (query.status) where.status = query.status;

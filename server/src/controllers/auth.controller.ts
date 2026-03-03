@@ -155,7 +155,6 @@ export const getMe = async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.id },
     include: {
-      therapistProfile: true,
       userProfile: { include: { certificates: true } },
     },
   });

@@ -11,7 +11,6 @@ import { stripeWebhookRouter } from './webhooks/stripe.webhook';
 import { alipayWebhookRouter } from './webhooks/alipay.webhook';
 import { wechatWebhookRouter } from './webhooks/wechat.webhook';
 import { authRouter } from './routes/auth.routes';
-import { therapistRouter } from './routes/therapist.routes';
 import { appointmentRouter } from './routes/appointment.routes';
 import { paymentRouter } from './routes/payment.routes';
 import { alipayRouter } from './routes/alipay.routes';
@@ -27,6 +26,8 @@ import { productRouter } from './routes/shop/product.routes';
 import { cartRouter } from './routes/shop/cart.routes';
 import { orderRouter } from './routes/shop/order.routes';
 import { memberRouter } from './routes/member.routes';
+import { statsRouter } from './routes/stats.routes';
+import { calendarRouter } from './routes/calendar.routes';
 import userProfileRouter from './routes/userProfile.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 
@@ -66,7 +67,6 @@ app.use('/api', rateLimiter(100, 60));
 // API routes
 const api = express.Router();
 api.use('/auth', authRouter);
-api.use('/therapists', therapistRouter);
 api.use('/appointments', appointmentRouter);
 api.use('/payments', paymentRouter);
 api.use('/alipay', alipayRouter);
@@ -82,6 +82,8 @@ api.use('/products', productRouter);
 api.use('/cart', cartRouter);
 api.use('/orders', orderRouter);
 api.use('/member', memberRouter);
+api.use('/stats', statsRouter);
+api.use('/calendar', calendarRouter);
 api.use('/user-profile', userProfileRouter);
 
 // Exchange rate proxy — avoids CORS issues calling cn.apihz.cn from the browser

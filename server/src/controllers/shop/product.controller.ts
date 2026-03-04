@@ -15,7 +15,7 @@ const createProductSchema = z.object({
 const updateProductSchema = createProductSchema.partial();
 
 export const getProducts = async (req: Request, res: Response) => {
-    const { category, sellerId, search, page = '1', limit = '10' } = req.query;
+    const { category, sellerId, artistId, search, page = '1', limit = '10' } = req.query;
     const pageNumber = parseInt(page as string, 10);
     const pageSize = parseInt(limit as string, 10);
 
@@ -25,8 +25,8 @@ export const getProducts = async (req: Request, res: Response) => {
         where.category = category as ProductCategory;
     }
 
-    if (sellerId) {
-        where.userProfileId = sellerId as string;
+    if (sellerId || artistId) {
+        where.userProfileId = (sellerId || artistId) as string;
     }
 
     if (search) {
@@ -189,6 +189,62 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(204).send();
 };
 
+export const submitProductForReview = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const userProfile = await prisma.userProfile.findUnique({ where: { userId: req.user!.id } });
+    if (!userProfile) return res.status(403).json({ message: 'User profile required' });
+
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    if (product.userProfileId !== userProfile.id) return res.status(403).json({ message: 'Not authorized' });
+    if (product.status !== 'DRAFT') return res.status(400).json({ message: 'Only draft products can be submitted' });
+
+    await prisma.product.update({
+        where: { id },
+        data: { status: 'PENDING_REVIEW', submittedAt: new Date() }
+    });
+
+    res.json({ message: 'Product submitted for review' });
+};
+
+export const reviewProduct = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { action, reason } = req.body;
+
+    if (!['APPROVE', 'REJECT'].includes(action)) {
+        return res.status(400).json({ message: 'Invalid action' });
+    }
+
+    const product = await prisma.product.findUnique({ where: { id } });
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    await prisma.product.update({
+        where: { id },
+        data: {
+            status: action === 'APPROVE' ? 'PUBLISHED' : 'REJECTED',
+            reviewedAt: new Date(),
+            rejectionReason: action === 'REJECT' ? reason : null
+        }
+    });
+
+    res.json({ message: `Product ${action === 'APPROVE' ? 'approved' : 'rejected'}` });
+};
+
+export const getPendingProducts = async (req: Request, res: Response) => {
+    const products = await prisma.product.findMany({
+        where: { status: 'PENDING_REVIEW' },
+        include: {
+            images: { orderBy: { order: 'asc' } },
+            userProfile: {
+                include: { user: { select: { firstName: true, lastName: true } } }
+            }
+        },
+        orderBy: { submittedAt: 'asc' }
+    });
+
+    res.json({ data: products });
+};
+
 export const ProductController = {
     createProductSchema,
     updateProductSchema,
@@ -197,4 +253,7 @@ export const ProductController = {
     createProduct,
     updateProduct,
     deleteProduct,
+    submitProductForReview,
+    reviewProduct,
+    getPendingProducts,
 };

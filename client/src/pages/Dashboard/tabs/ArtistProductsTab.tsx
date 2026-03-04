@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { getMyArtistProfile, getArtistProducts, deleteProduct, createProduct, updateProduct } from '../../../api/artist';
 import { Button } from '../../../components/ui/Button';
 import { PageLoader } from '../../../components/ui/Spinner';
@@ -80,9 +81,11 @@ export const ArtistProductsTab = () => {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-stone-900">{t('shop.artist.products.title')}</h2>
                 {!isFormOpen && (
-                    <Button onClick={() => setIsFormOpen(true)} size="sm">
-                        <Plus className="h-4 w-4 mr-2" /> {t('shop.artist.products.addProduct')}
-                    </Button>
+                    <Link to="/dashboard/product-wizard">
+                        <Button size="sm">
+                            <Plus className="h-4 w-4 mr-2" /> {t('shop.artist.products.addProduct')}
+                        </Button>
+                    </Link>
                 )}
             </div>
 

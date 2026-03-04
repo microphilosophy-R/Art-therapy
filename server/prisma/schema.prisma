@@ -142,6 +142,13 @@ enum ProductCategory {
   OTHER
 }
 
+enum ProductStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
 enum CertificateType {
   COUNSELOR
   THERAPIST
@@ -163,8 +170,11 @@ model User {
   firstName        String
   lastName         String
   nickname         String?
+  birthday         DateTime?
   age              Int?
   gender           String?
+  country          String?
+  religion         String?
   phone            String?
   avatarUrl        String?
   privacyConsentAt DateTime?
@@ -513,22 +523,27 @@ model Message {
 // ─── Artist & E-Commerce System ────────────────────────────────────────────────
 
 model Product {
-  id            String          @id @default(cuid())
-  userProfileId String
-  userProfile   UserProfile     @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
-  title         String
-  description   String
-  price         Decimal         @db.Decimal(10, 2)
-  stock         Int             @default(0)
-  category      ProductCategory @default(OTHER)
-  images        ProductImage[]
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id              String          @id @default(cuid())
+  userProfileId   String
+  userProfile     UserProfile     @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  price           Decimal         @db.Decimal(10, 2)
+  stock           Int             @default(0)
+  category        ProductCategory @default(OTHER)
+  status          ProductStatus   @default(DRAFT)
+  submittedAt     DateTime?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  images          ProductImage[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@index([userProfileId])
   @@index([category])
+  @@index([status])
 }
 
 model ProductImage {
@@ -633,11 +648,14 @@ model UserProfile {
   socialMediaLink String?
   portfolioUrl    String?
   featuredImageUrl String?
+  socialLinks     Json?    // {website, instagram, facebook}
 
   // Privacy & Visibility
   privateFields   Json?
   calendarVisible Boolean  @default(false)
   showcaseConfig  Json?
+  showcaseOrder   Json?    // [{type: 'plan'|'product', id: string, visible: boolean, order: number}]
+  profileViews    Int      @default(0)
 
   // Extended Metadata
   birthday        DateTime?

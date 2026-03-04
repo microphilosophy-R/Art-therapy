@@ -19,6 +19,7 @@ import { TherapyPlansDirectory } from '@/pages/therapy-plans/TherapyPlansDirecto
 import { TherapyPlanDetail } from '@/pages/therapy-plans/TherapyPlanDetail';
 import { TherapyPlanSignup } from '@/pages/therapy-plans/TherapyPlanSignup';
 import { EditTherapyPlan } from '@/pages/therapy-plans/EditTherapyPlan';
+import { ProductWizard } from '@/pages/Dashboard/ProductWizard';
 import { Gallery } from './pages/Gallery';
 import { ShopPage } from './pages/shop/ShopPage';
 import { ProductDetailsPage } from './pages/shop/ProductDetailsPage';
@@ -118,6 +119,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MyOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/product-wizard"
+            element={
+              <ProtectedRoute roles={['MEMBER', 'ADMIN']} certificates={['ARTIFICER']}>
+                <ProductWizard />
               </ProtectedRoute>
             }
           />

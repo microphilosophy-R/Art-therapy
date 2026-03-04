@@ -4,8 +4,11 @@ export const updateProfileSchema = z.object({
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),
   nickname: z.string().max(50).optional().nullable(),
+  birthday: z.string().optional().nullable(),
   age: z.number().int().min(13).max(120).optional().nullable(),
   gender: z.string().max(50).optional().nullable(),
+  country: z.string().max(100).optional().nullable(),
+  religion: z.string().max(100).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
 });
 

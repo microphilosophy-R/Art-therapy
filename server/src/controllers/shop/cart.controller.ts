@@ -18,7 +18,7 @@ export const getCart = async (req: Request, res: Response) => {
             product: {
                 include: {
                     images: { orderBy: { order: 'asc' }, take: 1 },
-                    artist: {
+                    userProfile: {
                         include: {
                             user: { select: { firstName: true, lastName: true } }
                         }

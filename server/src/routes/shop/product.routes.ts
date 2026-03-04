@@ -19,5 +19,6 @@ router.use(requireCertificate('ARTIFICER'));
 router.post('/', validate(ProductController.createProductSchema), ProductController.createProduct);
 router.put('/:id', validate(ProductController.updateProductSchema), ProductController.updateProduct);
 router.delete('/:id', ProductController.deleteProduct);
+router.post('/:id/submit', ProductController.submitProductForReview);
 
 export { router as productRouter };

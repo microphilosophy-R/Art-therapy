@@ -158,15 +158,35 @@ export const listPlans = async (req: Request, res: Response) => {
 
   const now = new Date();
   if (query.timeFilter === 'past') {
-    where.OR = [
-      { endTime: { lt: now } },
-      { AND: [{ endTime: null }, { startTime: { lt: now } }] },
+    where.AND = [
+      where.status ? { status: where.status } : {},
+      where.type ? { type: where.type } : {},
+      where.userProfileId ? { userProfileId: where.userProfileId } : {},
+      {
+        OR: [
+          { endTime: { lt: now } },
+          { AND: [{ endTime: null }, { startTime: { lt: now } }] },
+        ],
+      },
     ];
+    delete where.status;
+    delete where.type;
+    delete where.userProfileId;
   } else if (query.timeFilter === 'upcoming') {
-    where.OR = [
-      { endTime: { gte: now } },
-      { AND: [{ endTime: null }, { startTime: { gte: now } }] },
+    where.AND = [
+      where.status ? { status: where.status } : {},
+      where.type ? { type: where.type } : {},
+      where.userProfileId ? { userProfileId: where.userProfileId } : {},
+      {
+        OR: [
+          { endTime: { gte: now } },
+          { AND: [{ endTime: null }, { startTime: { gte: now } }] },
+        ],
+      },
     ];
+    delete where.status;
+    delete where.type;
+    delete where.userProfileId;
   }
 
   const [plans, total] = await Promise.all([
@@ -1199,5 +1219,14 @@ export const cancelSignup = async (req: Request, res: Response) => {
   );
 
   res.status(204).send();
+};
+
+export const getPendingPlans = async (req: Request, res: Response) => {
+  const plans = await prisma.therapyPlan.findMany({
+    where: { status: 'PENDING_REVIEW' },
+    include: THERAPIST_PLAN_INCLUDE,
+    orderBy: { submittedAt: 'asc' },
+  });
+  res.json({ data: plans });
 };
 

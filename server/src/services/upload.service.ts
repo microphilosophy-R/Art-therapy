@@ -58,7 +58,9 @@ export type AssetType =
   | 'therapist-portrait'
   | 'therapist-gallery'
   | 'therapist-cert'
-  | 'therapist-qr';
+  | 'therapist-qr'
+  | 'user-portrait'
+  | 'user-gallery';
 
 const ASSET_CONFIG: Record<AssetType, {
   folder: string;
@@ -78,6 +80,8 @@ const ASSET_CONFIG: Record<AssetType, {
   'therapist-gallery':  { folder: 'therapists/gallery',    resourceType: 'image', localExt: '' },
   'therapist-cert':     { folder: 'therapists/certificates', resourceType: 'auto', localExt: '' },
   'therapist-qr':       { folder: 'therapists/qr-codes',   resourceType: 'image', localExt: '' },
+  'user-portrait':      { folder: 'users/portraits',       resourceType: 'image', localExt: 'jpg' },
+  'user-gallery':       { folder: 'users/gallery',         resourceType: 'image', localExt: 'jpg' },
 };
 
 export const uploadAsset = async (

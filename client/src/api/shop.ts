@@ -132,3 +132,16 @@ export const createWechatProductOrder = async (orderId: string) => {
     const { data } = await api.post('/wechat/create-product-order', { orderId });
     return data; // { codeUrl: string, paymentId: string }
 };
+
+export const submitProductForReview = async (id: string) => {
+    await api.post(`/shop/products/${id}/submit`);
+};
+
+export const deleteProduct = async (id: string) => {
+    await api.delete(`/shop/products/${id}`);
+};
+
+export const updateProduct = async (id: string, data: Partial<Product>) => {
+    const { data: result } = await api.put(`/shop/products/${id}`, data);
+    return result;
+};

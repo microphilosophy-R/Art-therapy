@@ -13,6 +13,7 @@ import { getAppointments, updateAppointmentStatus } from '../../api/appointments
 import { getUnreadCount } from '../../api/messages';
 import { getPendingProfiles, reviewProfile } from '../../api/therapists';
 import { AdminPlansTab } from './tabs/AdminPlansTab';
+import { AdminReviewTab } from './tabs/AdminReviewTab';
 import { MessagesTab } from './tabs/MessagesTab';
 
 import { Avatar } from '../../components/ui/Avatar';
@@ -24,7 +25,7 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
 
-type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'messages' | 'profiles' | 'certificates';
+type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'review' | 'messages';
 
 const ROLE_OPTION_VALUES: UserRole[] = ['MEMBER', 'ADMIN'];
 
@@ -670,28 +671,13 @@ export const AdminDashboard = () => {
   });
   const unreadCount = unreadData?.count ?? 0;
 
-  const { data: pendingProfilesData } = useQuery({
-    queryKey: ['admin-pending-profiles'],
-    queryFn: getPendingProfiles,
-    refetchInterval: 60000,
-  });
-  const pendingProfileCount = (pendingProfilesData ?? []).length;
-
-  const { data: pendingCertsData } = useQuery({
-    queryKey: ['admin-pending-certificates'],
-    queryFn: listPendingCertificates,
-    refetchInterval: 60000,
-  });
-  const pendingCertCount = (pendingCertsData ?? []).length;
-
   const TABS: { id: Tab; label: string; badge?: number }[] = [
     { id: 'overview', label: t('dashboard.admin.overview') },
     { id: 'users', label: t('dashboard.admin.users') },
     { id: 'appointments', label: t('dashboard.admin.appointments') },
     { id: 'revenue', label: t('dashboard.admin.revenue') },
     { id: 'plans', label: t('dashboard.admin.plans') },
-    { id: 'profiles', label: t('admin.profiles.tabLabel'), badge: pendingProfileCount },
-    { id: 'certificates', label: 'Certificates', badge: pendingCertCount },
+    { id: 'review', label: t('dashboard.admin.reviewQueue') },
     { id: 'messages', label: t('dashboard.admin.messages'), badge: unreadCount },
   ];
 
@@ -739,8 +725,7 @@ export const AdminDashboard = () => {
         {activeTab === 'appointments' && <AppointmentsTab />}
         {activeTab === 'revenue' && <RevenueTab />}
         {activeTab === 'plans' && <AdminPlansTab />}
-        {activeTab === 'profiles' && <AdminProfilesTab />}
-        {activeTab === 'certificates' && <AdminCertificatesTab />}
+        {activeTab === 'review' && <AdminReviewTab />}
         {activeTab === 'messages' && <MessagesTab />}
       </div>
     </div>

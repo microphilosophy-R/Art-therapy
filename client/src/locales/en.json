@@ -448,7 +448,92 @@
       "editPlan": "Edit",
       "submitPlan": "Submit for Review",
       "archivePlan": "Archive",
-      "deletePlan": "Delete"
+      "deletePlan": "Delete",
+      "tabs": {
+        "statistics": "Statistics",
+        "therapyPlans": "Therapy Plans",
+        "products": "Products",
+        "showcase": "Showcase",
+        "calendar": "Calendar",
+        "reviewStatus": "Review Status",
+        "profilePreview": "Profile Preview",
+        "certificates": "Certificates"
+      },
+      "plans": {
+        "getCertified": "Get Certified to Create Plans"
+      },
+      "showcase": {
+        "getCertified": "Get Certified"
+      },
+      "products": {
+        "title": "Products",
+        "createProduct": "Create Product",
+        "myProducts": "My Products",
+        "noProducts": "No products yet.",
+        "stock": "Stock",
+        "getCertified": "Get Certified",
+        "statusFilter": {
+          "all": "All",
+          "draft": "Draft",
+          "pendingReview": "Pending Review",
+          "published": "Published",
+          "rejected": "Rejected"
+        },
+        "view": "View",
+        "edit": "Edit",
+        "submit": "Submit for Review",
+        "delete": "Delete",
+        "rejectionLabel": "Rejection Reason:"
+      },
+      "stats": {
+        "title": "Statistics",
+        "revenue": "Total Revenue",
+        "consumption": "Total Consumption",
+        "profits": "Profits",
+        "visitors": "Visitors",
+        "paidCustomers": "Paid Customers",
+        "orders": "Orders",
+        "plans": "Plans",
+        "products": "Products",
+        "totalSold": "Total Sold",
+        "items": "items",
+        "initiated": "Initiated",
+        "participated": "Participated",
+        "bought": "Bought",
+        "sold": "Sold",
+        "period": {
+          "week": "Week",
+          "month": "Month",
+          "all": "All Time"
+        },
+        "filter": {
+          "active": "Active",
+          "history": "History",
+          "all": "All"
+        },
+        "planStatus": {
+          "draft": "Draft",
+          "pending": "Pending Review",
+          "published": "Published",
+          "inProgress": "In Progress",
+          "finished": "Finished",
+          "archived": "Archived",
+          "participated": "Participated"
+        },
+        "productStatus": {
+          "active": "Active",
+          "soldOut": "Sold Out",
+          "draft": "Draft",
+          "pending": "Pending"
+        },
+        "charts": {
+          "revenueTrend": "Revenue Trend",
+          "visitorsTrend": "Visitors Trend",
+          "paidCustomersTrend": "Paid Customers Trend",
+          "ordersTrend": "Orders Trend",
+          "selectVariable": "Select Variable"
+        }
+      }
     },
     "admin": {
       "title": "Admin Dashboard",
@@ -504,7 +589,184 @@
       "rejectionReasonPlaceholder": "Explain why this plan is being rejected...",
       "confirmReject": "Confirm Reject",
       "noPlans": "No plans found.",
-      "noPlansInQueue": "No plans in this queue."
+      "noPlansInQueue": "No plans in this queue.",
+      "reviewQueue": "Review Queue"
+    },
+    "review": {
+      "applyForFeatures": "Apply for Features",
+      "mySubmissions": "My Submissions",
+      "profileSubmission": "Profile Submission",
+      "therapyPlan": "Therapy Plan",
+      "product": "Product",
+      "featureApplication": "Feature Application",
+      "applyFor": "Apply for {feature}",
+      "requirements": "Requirements:",
+      "benefits": "Benefits:",
+      "apply": "Apply",
+      "applied": "Applied",
+      "rejectionReason": "Rejection reason:",
+      "noSubmissions": "No submissions yet. Apply for features above to get started!",
+      "uploadCredentials": "Upload your certificate or credentials:",
+      "submit": "Submit",
+      "submitted": "Submitted",
+      "reviewQueue": "Review Queue",
+      "noPending": "No pending {type}",
+      "approve": "Approve",
+      "reject": "Reject",
+      "confirm": "Confirm",
+      "rejectionReasonPlaceholder": "Rejection reason",
+      "features": {
+        "therapist": {
+          "name": "Therapy Class Host",
+          "req1": "Valid therapy license",
+          "req2": "Professional certification",
+          "req3": "Background check",
+          "benefit1": "Create therapy plans",
+          "benefit2": "Accept appointments",
+          "benefit3": "Earn from sessions"
+        },
+        "counselor": {
+          "name": "Mental Counselor",
+          "req1": "Counseling certification",
+          "req2": "Minimum 2 years experience",
+          "benefit1": "Offer group consultations",
+          "benefit2": "Lead workshops"
+        },
+        "artificer": {
+          "name": "Artisan Seller",
+          "req1": "Art portfolio",
+          "req2": "Professional credentials",
+          "benefit1": "Sell products",
+          "benefit2": "Create art salons",
+          "benefit3": "Showcase work"
+        }
+      }
+    },
+    "wizard": {
+      "step1Title": "Terms & Requirements",
+      "step2Title": "Upload Credentials",
+      "step3Title": "Review & Submit",
+      "next": "Next",
+      "back": "Back",
+      "uploadHint": "Upload your certificates or credentials (PDF only, up to 5 files)",
+      "addFile": "Add PDF file",
+      "certificateType": "Certificate Type",
+      "uploadedFiles": "Uploaded Files",
+      "saveDraft": "Save Draft"
+    },
+    "plans": {
+      "getCertified": "Get Certified to Create Plans"
+    },
+    "showcase": {
+      "getCertified": "Get Certified"
+    },
+    "calendar": {
+      "title": "Work Calendar",
+      "filterAll": "All",
+      "filterAppointments": "Appointments",
+      "filterPlans": "Plans",
+      "noEvents": "No upcoming events",
+      "errorLoading": "Failed to load calendar events",
+      "eventTypes": {
+        "appointment": "Appointment",
+        "plan": "Plan"
+      }
+    },
+    "showcase": {
+      "title": "Showcase Management",
+      "addProduct": "Add Product",
+      "addPlan": "Add Plan",
+      "getCertified": "Get Certified",
+      "noItems": "No items in showcase",
+      "emptyMessage": "Create and publish products or plans first. They will appear here once approved.",
+      "itemTypes": {
+        "product": "Product",
+        "plan": "Plan"
+      },
+      "untitled": "Untitled"
+    },
+    "plans": {
+      "title": "Therapy Plans",
+      "createPlan": "Create Plan",
+      "getCertified": "Get Certified to Create Plans",
+      "certified": "Certified",
+      "view": "View",
+      "edit": "Edit",
+      "submit": "Submit",
+      "delete": "Delete",
+      "filterMyPlans": "My Plans",
+      "filterEnrolled": "Enrolled",
+      "statusFilter": {
+        "all": "All Status",
+        "draft": "Draft",
+        "pendingReview": "Pending Review",
+        "published": "Published",
+        "inProgress": "In Progress",
+        "finished": "Finished"
+      },
+      "noPlans": "No plans found",
+      "rejectionLabel": "Rejection:"
+    },
+    "profile": {
+      "previewTitle": "Public Profile Preview",
+      "viewLive": "View Live Profile",
+      "quickNav": "Quick Navigation",
+      "personalInfo": "Personal Info",
+      "professional": "Professional",
+      "exhibition": "Exhibition",
+      "showcase": "Showcase"
+    },
+    "products": {
+      "createTitle": "Create Product",
+      "getCertified": "Get Certified to Upload Products",
+      "certified": "Certified",
+      "stepPrefix": "Step",
+      "steps": {
+        "basicInfo": "Basic Info",
+        "description": "Description & Images",
+        "preview": "Preview & Submit"
+      },
+      "fields": {
+        "title": "Title",
+        "category": "Category",
+        "price": "Price (¥)",
+        "stock": "Stock",
+        "description": "Description",
+        "images": "Images (Max 9)",
+        "required": "*"
+      },
+      "categories": {
+        "painting": "Painting",
+        "sculpture": "Sculpture",
+        "crafts": "Crafts",
+        "digitalArt": "Digital Art",
+        "merchandise": "Merchandise",
+        "other": "Other"
+      },
+      "validation": {
+        "titleRequired": "Title is required",
+        "titleMinLength": "Title must be at least 2 characters",
+        "titleMaxLength": "Title must be less than 100 characters",
+        "priceRequired": "Price is required",
+        "pricePositive": "Price must be positive",
+        "stockRequired": "Stock is required",
+        "stockNonNegative": "Stock cannot be negative",
+        "descriptionRequired": "Description is required",
+        "descriptionMinLength": "Description must be at least 10 characters",
+        "imageRequired": "At least one image is required",
+        "imageMaxCount": "Maximum 9 images allowed"
+      },
+      "buttons": {
+        "exit": "Exit",
+        "back": "Back",
+        "next": "Next Step",
+        "submitReview": "Submit for Review"
+      },
+      "previewLabels": {
+        "category": "Category:",
+        "price": "Price: ¥",
+        "stock": "Stock:"
+      }
     }
   },
   "therapyPlans": {
@@ -691,6 +953,137 @@
     }
   },
   "profile": {
+    "title": "Profile Settings",
+    "subtitle": "Manage your account and preferences",
+    "personal": {
+      "title": "Personal Information",
+      "subtitle": "Manage your basic profile information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "nickname": "Nickname",
+      "nicknamePlaceholder": "Optional display name",
+      "birthday": "Date of Birth",
+      "birthdayPlaceholder": "YYYY-MM-DD",
+      "age": "Age",
+      "gender": "Gender",
+      "country": "Country",
+      "countryPlaceholder": "Select your country",
+      "religion": "Religion",
+      "religionPlaceholder": "Select your religion (optional)",
+      "genderOptions": {
+        "preferNotToSay": "Prefer not to say",
+        "female": "Female",
+        "male": "Male",
+        "other": "Other"
+      },
+      "religionOptions": {
+        "preferNotToSay": "Prefer not to say",
+        "christianity": "Christianity",
+        "islam": "Islam",
+        "hinduism": "Hinduism",
+        "buddhism": "Buddhism",
+        "judaism": "Judaism",
+        "sikhism": "Sikhism",
+        "atheism": "Atheism",
+        "agnosticism": "Agnosticism",
+        "other": "Other"
+      },
+      "email": "Email",
+      "emailNote": "Contact support to change your email",
+      "phone": "Phone",
+      "phonePlaceholder": "+1 555-000-0000",
+      "changeAvatar": "Change avatar",
+      "avatarHint": "jpg / png / webp · max 5 MB",
+      "avatarSuccess": "Avatar updated",
+      "avatarError": "Failed to upload avatar",
+      "saveSuccess": "Profile updated successfully",
+      "saveError": "Failed to update profile"
+    },
+    "tabs": {
+      "info": "Personal Info",
+      "security": "Security",
+      "privacy": "Privacy",
+      "professional": "Professional",
+      "exhibition": "Exhibition",
+      "showcase": "Showcase",
+      "preview": "Public Preview"
+    },
+    "professional": {
+      "title": "Professional Information",
+      "subtitle": "Manage your professional profile and service settings",
+      "bio": "Bio",
+      "specialties": "Specialties",
+      "specialtiesHint": "Comma-separated",
+      "sessionPrice": "Session Price ($)",
+      "sessionLength": "Session Length (min)",
+      "locationCity": "Location City",
+      "isAccepting": "Accepting new clients",
+      "consultEnabled": "Enable consultations",
+      "hourlyConsultFee": "Hourly Consult Fee ($)",
+      "saveSuccess": "Professional info saved",
+      "saveError": "Failed to save"
+    },
+    "exhibition": {
+      "title": "Exhibition",
+      "subtitle": "Manage your portfolio and social media links",
+      "featuredPortrait": "Featured Portrait",
+      "galleryImages": "Exhibition Images (max 9)",
+      "socialLinks": "Social Links",
+      "uploadPortrait": "Upload Portrait",
+      "addImage": "Add Image",
+      "addLink": "Add Link",
+      "labelPlaceholder": "Label (e.g., Instagram)",
+      "urlPlaceholder": "URL",
+      "portraitHint": "jpg / png / webp · max 10 MB",
+      "deleteConfirm": "Delete this image?",
+      "imageDeleted": "Image deleted",
+      "imageAdded": "Image added",
+      "portraitUpdated": "Portrait updated",
+      "uploadFailed": "Failed to upload"
+    },
+    "showcase": {
+      "title": "Showcase Configuration",
+      "subtitle": "Configure how your profile appears in public directories",
+      "displayName": "Display Name",
+      "showAccepting": "Show as accepting new clients",
+      "updated": "Showcase updated",
+      "updateFailed": "Failed to update"
+    },
+    "preview": {
+      "title": "Public Profile Preview",
+      "subtitle": "Preview how your public profile will appear",
+      "about": "About",
+      "specialties": "Specialties",
+      "exhibition": "Exhibition",
+      "submitForReview": "Submit for Review",
+      "submitting": "Submitting...",
+      "submitted": "Profile submitted for review",
+      "submitFailed": "Failed to submit",
+      "submitNote": "Submit your profile for admin approval to make it publicly visible.",
+      "rejectionReason": "Rejection reason"
+    },
+    "privacyTab": {
+      "title": "Privacy & Consent",
+      "subtitle": "Manage your privacy settings and data consent",
+      "accepted": "Privacy policy accepted",
+      "acceptedOn": "Accepted on",
+      "notAccepted": "Privacy policy not accepted",
+      "pleaseAccept": "Please accept our privacy policy to continue.",
+      "acceptButton": "Accept Privacy Policy",
+      "readPolicy": "Read Privacy Policy",
+      "success": "Privacy consent updated",
+      "error": "Failed to update consent"
+    },
+    "security": {
+      "title": "Change Password",
+      "subtitle": "Update your password to keep your account secure",
+      "current": "Current Password",
+      "new": "New Password",
+      "confirm": "Confirm New Password",
+      "submit": "Update Password",
+      "success": "Password updated successfully",
+      "error": "Failed to update password"
+    },
     "wizard": {
       "step1": "Basic Info",
       "step2": "Consultations",

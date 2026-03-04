@@ -65,43 +65,53 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body as LoginInput;
-  const user = await prisma.user.findUnique({
-    where: { email },
-    include: {
-      userProfile: {
-        include: {
-          certificates: true
+  try {
+    const { email, password } = req.body as LoginInput;
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        userProfile: {
+          include: {
+            certificates: true
+          }
         }
       }
+    });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+
+    if (!user.passwordHash) {
+      console.error('User missing passwordHash:', user.email);
+      return res.status(500).json({ message: 'Account configuration error' });
     }
-  });
-  if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
-  let approvedCertificates: string[] | undefined;
-  if (user.userProfile) {
-    approvedCertificates = user.userProfile.certificates
-      .filter((cert: any) => cert.status === 'APPROVED')
-      .map((cert: any) => cert.type);
+    let approvedCertificates: string[] | undefined;
+    if (user.userProfile) {
+      approvedCertificates = user.userProfile.certificates
+        .filter((cert: any) => cert.status === 'APPROVED')
+        .map((cert: any) => cert.type);
+    }
+
+    const accessToken = signAccess({ ...user, approvedCertificates });
+    const refreshToken = signRefresh(user.id);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      accessToken,
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatarUrl: user.avatarUrl },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Login failed' });
   }
-
-  const accessToken = signAccess({ ...user, approvedCertificates });
-  const refreshToken = signRefresh(user.id);
-
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: REFRESH_TTL_DAYS * 24 * 60 * 60 * 1000,
-  });
-
-  res.json({
-    accessToken,
-    user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatarUrl: user.avatarUrl },
-  });
 };
 
 export const refresh = async (req: Request, res: Response) => {

@@ -62,6 +62,32 @@ Backend enforcement is done by `authorize(...)` + `requireCertificate(...)` midd
 5. Admin reviews in `/api/v1/admin/certificates`.
 6. On approval, capability becomes available immediately on next auth refresh/login.
 
+Sequence diagram:
+
+```mermaid
+sequenceDiagram
+    participant M as MEMBER
+    participant FE as Frontend
+    participant API as API (/member)
+    participant DB as Database
+    participant A as ADMIN
+
+    M->>FE: Open review tab + start CertificateWizard
+    FE->>API: POST /member/apply-certificate (files + type)
+    API->>DB: Create/Upsert UserCertificate(status=PENDING)
+    DB-->>API: Certificate saved
+    API-->>FE: 201 Created
+    FE-->>M: Show pending state
+
+    A->>API: GET /admin/certificates
+    API->>DB: Query pending certificates
+    DB-->>API: Pending list
+    A->>API: PATCH /admin/certificates/:id (approve/reject)
+    API->>DB: Update status APPROVED/REJECTED
+    DB-->>API: Updated
+    API-->>A: Result
+```
+
 ## C. Therapy plan edition flow (multi-step wizard)
 
 Page: `/therapy-plans/create` or `/therapy-plans/:id/edit` (requires `THERAPIST` cert).
@@ -100,6 +126,26 @@ Lifecycle after submission:
 - `DRAFT/REJECTED -> PENDING_REVIEW -> PUBLISHED -> SIGN_UP_CLOSED -> IN_PROGRESS -> FINISHED -> IN_GALLERY`
 - Cancellation available in active stages.
 
+State/lifecycle diagram:
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT --> PENDING_REVIEW: Submit
+    REJECTED --> PENDING_REVIEW: Resubmit
+    PENDING_REVIEW --> PUBLISHED: Admin approve
+    PENDING_REVIEW --> REJECTED: Admin reject
+    PUBLISHED --> SIGN_UP_CLOSED: Close signup
+    SIGN_UP_CLOSED --> IN_PROGRESS: Start
+    IN_PROGRESS --> FINISHED: Finish
+    FINISHED --> IN_GALLERY: Move to gallery
+    PUBLISHED --> CANCELLED: Cancel
+    SIGN_UP_CLOSED --> CANCELLED: Cancel
+    IN_PROGRESS --> CANCELLED: Cancel
+    CANCELLED --> [*]
+    IN_GALLERY --> [*]
+```
+
 ## D. Product workflow (ARTIFICER)
 
 1. Create/edit product in product wizard.
@@ -115,6 +161,73 @@ Lifecycle after submission:
 3. Checkout and create order.
 4. Pay (provider based on environment and UI settings).
 5. Track in `/orders`.
+
+Checkout/payment sequence diagram:
+
+```mermaid
+sequenceDiagram
+    participant B as Buyer (MEMBER)
+    participant FE as Frontend
+    participant API as API
+    participant PAY as Alipay/WeChat/Stripe
+    participant WH as Webhook
+    participant DB as Database
+
+    B->>FE: Add product to cart
+    FE->>API: POST /cart
+    API->>DB: Upsert cart item
+    DB-->>API: Cart updated
+    API-->>FE: OK
+
+    B->>FE: Checkout
+    FE->>API: POST /orders
+    API->>DB: Create Order + OrderItems
+    DB-->>API: orderId
+    API-->>FE: orderId
+
+    FE->>API: POST /alipay/create-product-order (or wechat/stripe)
+    API->>PAY: Create payment order/intent
+    PAY-->>FE: payUrl/codeUrl/clientSecret
+    B->>PAY: Complete payment
+
+    PAY->>WH: Payment webhook callback
+    WH->>DB: Update ProductPayment=SUCCEEDED, Order=PAID
+    DB-->>WH: Persisted
+    WH-->>PAY: 200 OK
+    FE-->>B: Order visible in /orders
+```
+
+Appointment booking + payment sequence:
+
+```mermaid
+sequenceDiagram
+    participant C as Client (MEMBER)
+    participant FE as Frontend
+    participant API as API
+    participant DB as Database
+    participant PAY as Payment Provider
+    participant WH as Webhook
+
+    C->>FE: Select provider profile + time slot
+    FE->>API: POST /appointments (clientId + userProfileId + time)
+    API->>DB: Create Appointment(status=PENDING/CONFIRMED by config)
+    DB-->>API: appointmentId
+    API-->>FE: appointment object
+
+    FE->>API: POST /payments/create-intent (or /alipay/create-order, /wechat/create-order)
+    API->>DB: Create Payment(status=PENDING)
+    API->>PAY: Create intent/order
+    PAY-->>FE: clientSecret/payUrl/codeUrl
+    C->>PAY: Complete payment
+
+    PAY->>WH: Payment success callback
+    WH->>DB: Payment=SUCCEEDED, Appointment=CONFIRMED
+    DB-->>WH: Persisted
+    WH-->>PAY: 200 OK
+
+    FE->>API: GET /appointments/:id
+    API-->>FE: Confirmed appointment details
+```
 
 ## 3. Core Data Structures
 
@@ -359,4 +472,3 @@ Important groups:
 - payment toggles
 - upload provider config
 - exchange rate API keys
-

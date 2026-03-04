@@ -12,7 +12,7 @@ async function getValidatedAppointment(appointmentId: string, userId: string) {
   const appointment = await prisma.appointment.findUnique({
     where: { id: appointmentId },
     include: {
-      therapist: { include: { user: true } },
+      userProfile: { include: { user: true } },
       client: true,
       payment: true,
     },
@@ -22,15 +22,15 @@ async function getValidatedAppointment(appointmentId: string, userId: string) {
   if (appointment.clientId !== userId) throw new Error('Forbidden');
   if (appointment.status !== 'PENDING') throw new Error('Appointment is not in PENDING status');
   if (appointment.payment) throw new Error('Payment record already exists for this appointment');
-  if (!appointment.therapist) throw new Error('Therapist profile not found');
+  if (!appointment.userProfile) throw new Error('Provider profile not found');
 
   return appointment;
 }
 
 export const createWechatOrder = async (appointmentId: string, userId: string) => {
   const appointment = await getValidatedAppointment(appointmentId, userId);
-  if (!appointment.therapist) throw new Error('Therapist profile not found');
-  const therapist = appointment.therapist;
+  if (!appointment.userProfile) throw new Error('Provider profile not found');
+  const therapist = appointment.userProfile;
 
   const totalCents = Math.round(Number(therapist.sessionPrice) * 100);
   const platformFee = Math.round(totalCents * PLATFORM_FEE_PERCENT / 100);
@@ -162,7 +162,7 @@ export const handleWechatNotification = async (
       appointment: {
         include: {
           client: true,
-          therapist: { include: { user: true } },
+          userProfile: { include: { user: true } },
         },
       },
     },
@@ -185,8 +185,8 @@ export const handleWechatNotification = async (
     await sendAppointmentConfirmation({
       clientName: `${appointment.client.firstName} ${appointment.client.lastName}`,
       clientEmail: appointment.client.email,
-      therapistName: `${appointment.therapist?.user?.firstName ?? ''} ${appointment.therapist?.user?.lastName ?? ''}`.trim(),
-      therapistEmail: appointment.therapist?.user?.email ?? '',
+      therapistName: `${appointment.userProfile?.user?.firstName ?? ''} ${appointment.userProfile?.user?.lastName ?? ''}`.trim(),
+      therapistEmail: appointment.userProfile?.user?.email ?? '',
       date: appointment.startTime.toDateString(),
       time: appointment.startTime.toTimeString().slice(0, 5),
       medium: appointment.medium,

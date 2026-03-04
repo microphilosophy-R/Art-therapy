@@ -70,12 +70,12 @@ export const saveAsTemplate = async (req: Request, res: Response) => {
   const plan = await prisma.therapyPlan.findUnique({
     where: { id: planId },
     include: {
-      therapist: { select: { userId: true } },
+      userProfile: { select: { userId: true } },
     },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  const isOwner = plan.therapist?.userId === req.user!.id;
+  const isOwner = plan.userProfile?.userId === req.user!.id;
   const isAdmin = req.user!.role === 'ADMIN';
   if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Forbidden' });
 
@@ -104,3 +104,4 @@ export const saveAsTemplate = async (req: Request, res: Response) => {
 
   return res.status(201).json(template);
 };
+

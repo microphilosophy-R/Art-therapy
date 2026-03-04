@@ -26,12 +26,12 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         },
         status: { in: ['PAID', 'SHIPPED', 'DELIVERED'] }
       },
-      include: { items: true }
+      include: { items: { include: { product: { select: { userProfileId: true } } } } }
     });
 
     const revenue = orders.reduce((sum, order) => {
       const userItems = order.items.filter(item => item.product?.userProfileId === userProfile.id);
-      return sum + userItems.reduce((s, i) => s + Number(i.priceAtPurchase) * i.quantity, 0);
+      return sum + userItems.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
     }, 0);
 
     const platformFees = revenue * 0.15;
@@ -153,7 +153,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         });
 
         const dayRevenue = dayOrders.reduce((sum, order) => {
-          return sum + order.items.reduce((s, i) => s + Number(i.priceAtPurchase) * i.quantity, 0);
+          return sum + order.items.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
         }, 0);
 
         const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

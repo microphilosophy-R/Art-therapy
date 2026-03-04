@@ -9,19 +9,19 @@ export const processAppointmentRefund = async (
     where: { id: appointmentId },
     include: {
       payment: true,
-      therapist: { include: { refundPolicy: true } },
+      userProfile: { include: { refundPolicy: true } },
     },
   });
 
   if (!appointment?.payment) return null;
   if (appointment.payment.status !== 'SUCCEEDED') return null;
   if (!appointment.payment.stripeChargeId) return null;
-  if (!appointment.therapist) return null;
+  if (!appointment.userProfile) return null;
 
   const hoursUntil =
     (new Date(appointment.startTime).getTime() - Date.now()) / (1000 * 60 * 60);
 
-  const policy = appointment.therapist.refundPolicy;
+  const policy = appointment.userProfile.refundPolicy;
   const threshold = policy?.fullRefundHoursThreshold ?? 24;
 
   let refundAmount: number | undefined;

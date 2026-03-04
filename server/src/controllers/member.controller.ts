@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { uploadToS3 } from '../services/upload.service';
+import { uploadAsset } from '../services/upload.service';
 
 export const applyCertificate = async (req: Request, res: Response) => {
   try {
@@ -25,12 +25,14 @@ export const applyCertificate = async (req: Request, res: Response) => {
     const fileUrls: string[] = [];
     if (files && files.length > 0) {
       for (const file of files) {
-        const url = await uploadToS3(file.buffer, file.originalname, file.mimetype);
+        const safeId = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.originalname}`;
+        const url = await uploadAsset(file.buffer, 'therapist-cert', safeId);
         fileUrls.push(url);
       }
     }
 
-    const status = isDraft === 'true' ? 'DRAFT' : 'PENDING';
+    // Current enum does not support DRAFT for certificates; keep as PENDING.
+    const status = 'PENDING';
     const cert = await prisma.userCertificate.upsert({
       where: { profileId_type: { profileId: profile.id, type } },
       create: { profileId: profile.id, type, status, certificateUrls: fileUrls },

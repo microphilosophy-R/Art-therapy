@@ -17,7 +17,7 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
 
 export const getConnectStatus = async (req: Request, res: Response) => {
   try {
-    const profile = await prisma.therapistProfile.findUnique({ where: { userId: req.user!.id } });
+    const profile = await prisma.userProfile.findUnique({ where: { userId: req.user!.id } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
     const status = await stripeService.getConnectStatus(profile.id);
     res.json(status);
@@ -28,7 +28,7 @@ export const getConnectStatus = async (req: Request, res: Response) => {
 
 export const startConnectOnboarding = async (req: Request, res: Response) => {
   try {
-    const profile = await prisma.therapistProfile.findUnique({ where: { userId: req.user!.id } });
+    const profile = await prisma.userProfile.findUnique({ where: { userId: req.user!.id } });
     if (!profile) return res.status(404).json({ message: 'Profile not found' });
     const url = await stripeService.startConnectOnboarding(profile.id, req.user!.email);
     res.json({ url });

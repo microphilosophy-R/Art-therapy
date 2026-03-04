@@ -77,15 +77,15 @@ async function handleEvent(event: Stripe.Event) {
       // Send confirmation emails
       const appt = await prisma.appointment.findUnique({
         where: { id: appointmentId },
-        include: { client: true, therapist: { include: { user: true } } },
+        include: { client: true, userProfile: { include: { user: true } } },
       });
       if (appt) {
-        if (!appt.therapist?.user) break;
+        if (!appt.userProfile?.user) break;
         await sendAppointmentConfirmation({
           clientName: `${appt.client.firstName} ${appt.client.lastName}`,
           clientEmail: appt.client.email,
-          therapistName: `${appt.therapist.user.firstName} ${appt.therapist.user.lastName}`,
-          therapistEmail: appt.therapist.user.email,
+          therapistName: `${appt.userProfile.user.firstName} ${appt.userProfile.user.lastName}`,
+          therapistEmail: appt.userProfile.user.email,
           date: appt.startTime.toLocaleDateString(),
           time: appt.startTime.toLocaleTimeString(),
           medium: appt.medium,
@@ -146,7 +146,7 @@ async function handleEvent(event: Stripe.Event) {
         status = 'RESTRICTED';
       }
 
-      await prisma.therapistProfile.updateMany({
+      await prisma.userProfile.updateMany({
         where: { stripeAccountId: account.id },
         data: { stripeAccountStatus: status },
       });

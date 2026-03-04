@@ -9,18 +9,22 @@ export const getCalendarEvents = async (req: Request, res: Response) => {
   const events: any[] = [];
 
   if (includeTypes.includes('appointments')) {
+    const myProfile = await prisma.userProfile.findUnique({ where: { userId } });
     const appointments = await prisma.appointment.findMany({
       where: {
-        OR: [{ clientId: userId }, { therapistId: userId }],
+        OR: [
+          { clientId: userId },
+          ...(myProfile ? [{ userProfileId: myProfile.id }] : []),
+        ],
         startTime: { gte: new Date() },
       },
-      include: { therapist: { include: { user: true } }, client: true },
+      include: { userProfile: { include: { user: true } }, client: true },
       orderBy: { startTime: 'asc' },
     });
 
     events.push(...appointments.map(a => ({
       id: a.id,
-      title: `Appointment with ${a.clientId === userId ? a.therapist.user.firstName : a.client.firstName}`,
+      title: `Appointment with ${a.clientId === userId ? (a.userProfile?.user?.firstName ?? 'Provider') : a.client.firstName}`,
       startTime: a.startTime,
       endTime: a.endTime,
       type: 'appointment',

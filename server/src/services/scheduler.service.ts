@@ -17,17 +17,17 @@ export const startScheduledJobs = () => {
         },
         include: {
           client: true,
-          therapist: { include: { user: true } },
+          userProfile: { include: { user: true } },
         },
       });
 
       for (const appt of upcoming) {
-        if (!appt.therapist?.user) continue;
+        if (!appt.userProfile?.user) continue;
         await sendAppointmentReminder({
           clientName: `${appt.client.firstName} ${appt.client.lastName}`,
           clientEmail: appt.client.email,
-          therapistName: `${appt.therapist.user.firstName} ${appt.therapist.user.lastName}`,
-          therapistEmail: appt.therapist.user.email,
+          therapistName: `${appt.userProfile.user.firstName} ${appt.userProfile.user.lastName}`,
+          therapistEmail: appt.userProfile.user.email,
           date: appt.startTime.toLocaleDateString(),
           time: appt.startTime.toLocaleTimeString(),
           medium: appt.medium,

@@ -34,7 +34,9 @@ export const updateUser = async (req: Request, res: Response) => {
 export const getAdminStats = async (req: Request, res: Response) => {
   const [userCount, therapistCount, appointmentCount] = await Promise.all([
     prisma.user.count(),
-    prisma.therapistProfile.count(),
+    prisma.userCertificate.count({
+      where: { type: 'THERAPIST', status: 'APPROVED' },
+    }),
     prisma.appointment.count(),
   ]);
   res.json({ userCount, therapistCount, appointmentCount });

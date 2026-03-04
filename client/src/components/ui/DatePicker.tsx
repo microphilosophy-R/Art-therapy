@@ -15,6 +15,7 @@ interface DatePickerProps {
   error?: string;
   className?: string;
   placeholder?: string;
+  showTime?: boolean;
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -24,6 +25,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   error,
   className,
   placeholder,
+  showTime = false,
 }) => {
   const { i18n } = useTranslation();
   const selectedDate = value ? parseISO(value) : null;
@@ -33,8 +35,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {label && <label className="text-sm font-medium text-stone-700">{label}</label>}
       <ReactDatePicker
         selected={selectedDate}
-        onChange={(date) => onChange(date ? date.toISOString().split('T')[0] : '')}
-        dateFormat="yyyy/MM/dd"
+        onChange={(date: Date | null) =>
+          onChange(date ? (showTime ? date.toISOString() : date.toISOString().split('T')[0]) : '')
+        }
+        showTimeSelect={showTime}
+        dateFormat={showTime ? 'yyyy/MM/dd HH:mm' : 'yyyy/MM/dd'}
         locale={i18n.language.startsWith('zh') ? 'zh' : undefined}
         placeholderText={placeholder}
         className={cn(

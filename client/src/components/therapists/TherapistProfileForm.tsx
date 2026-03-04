@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Image, Link as LinkIcon, QrCode, Upload, X, CheckCircle } from 'lucide-react';
 import { updateTherapistProfile } from '../../api/therapists';
 import { uploadFile } from '@/api/upload';
-import { updateProfileSchema, type UpdateProfileInput } from '../../../../server/src/schemas/therapist.schemas';
+import { updateProfileSchema, type UpdateProfileInput } from '../../schemas/profileForms';
 import { Button } from '../ui/Button';
 import { Card, CardContent } from '../ui/Card';
 import { validateFile } from '../../utils/fileValidation';

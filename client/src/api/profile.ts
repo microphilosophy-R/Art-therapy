@@ -33,7 +33,28 @@ export interface ProfileUser extends User {
   nickname?: string;
   age?: number;
   gender?: string;
+  birthday?: string;
+  country?: string;
+  religion?: string;
   privacyConsentAt?: string;
+  userProfile?: {
+    id: string;
+    bio?: string | null;
+    specialties?: string[];
+    sessionPrice?: number | null;
+    sessionLength?: number | null;
+    locationCity?: string | null;
+    isAccepting?: boolean;
+    consultEnabled?: boolean;
+    hourlyConsultFee?: number | null;
+    featuredImageUrl?: string | null;
+    socialLinks?: Record<string, string>;
+    qrCodeUrl?: string | null;
+    profileStatus?: string;
+    rejectionReason?: string | null;
+    certificates?: Array<{ type: string; status: string }>;
+    galleryImages?: GalleryImage[];
+  };
 }
 
 export const getProfile = async (): Promise<ProfileUser> => {

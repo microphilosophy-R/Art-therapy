@@ -5,7 +5,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { uploadFile } from '../../../../api/upload';
 import { validateFile } from '../../../../utils/fileValidation';
-import type { UpdateProfileInput } from '../../../../../../server/src/schemas/therapist.schemas';
+import type { UpdateProfileInput } from '../../../../schemas/profileForms';
 
 interface Props {
   form: UseFormReturn<UpdateProfileInput>;

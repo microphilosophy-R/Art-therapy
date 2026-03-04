@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -10,16 +9,7 @@ import { CalendarTab } from './tabs/CalendarTab';
 import { MemberReviewTab } from './tabs/MemberReviewTab';
 import { ProfilePreviewTab } from './tabs/ProfilePreviewTab';
 import { StatsDashboard } from '../../components/dashboard/StatsDashboard';
-import { getProfile } from '../../api/profile';
-
-const STATUS_STYLE: Record<string, string> = {
-  PENDING: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  APPROVED: 'bg-green-50 text-green-700 border-green-200',
-  REJECTED: 'bg-rose-50 text-rose-700 border-rose-200',
-  REVOKED: 'bg-stone-100 text-stone-500 border-stone-200',
-  DRAFT: 'bg-stone-50 text-stone-600 border-stone-200',
-  PENDING_REVIEW: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-};
+import { Avatar } from '../../components/ui/Avatar';
 
 type TabKey = 'stats' | 'overview' | 'plans' | 'products' | 'showcase' | 'calendar' | 'review' | 'preview' | 'profile' | 'messages';
 
@@ -42,15 +32,6 @@ export const MemberDashboard = () => {
     navigate(`/dashboard/member?tab=${tabKey}`, { replace: true });
   };
 
-  const { data: profile } = useQuery({
-    queryKey: ['profile'],
-    queryFn: getProfile,
-  });
-
-  const hasTherapistCert = user?.approvedCertificates?.includes('THERAPIST');
-  const hasArtificerCert = user?.approvedCertificates?.includes('ARTIFICER');
-  const profileStatus = profile?.userProfile?.profileStatus || 'DRAFT';
-
   const tabs = [
     { key: 'stats' as TabKey, label: t('dashboard.therapist.tabs.statistics') },
     { key: 'plans' as TabKey, label: t('dashboard.therapist.tabs.therapyPlans') },
@@ -64,20 +45,16 @@ export const MemberDashboard = () => {
   return (
     <div className="bg-stone-50 min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-stone-900 mb-1">
-          Welcome, {user?.firstName}
-        </h1>
-        <p className="text-stone-500 mb-6 text-sm">
-          Manage your work and profile.
-        </p>
-
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <p className="text-sm text-stone-500">Profile Status</p>
-            <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded border ${STATUS_STYLE[profileStatus]}`}>
-              {profileStatus.replace('_', ' ')}
-            </span>
-          </div>
+        <div className="flex items-center gap-3 mb-6">
+          <Avatar
+            firstName={user?.firstName ?? ''}
+            lastName={user?.lastName ?? ''}
+            src={user?.avatarUrl}
+            size="lg"
+          />
+          <h1 className="text-2xl font-bold text-stone-900">
+            {user?.firstName} {user?.lastName}
+          </h1>
         </div>
 
         <div className="flex gap-2 mb-6 border-b border-stone-200 overflow-x-auto">

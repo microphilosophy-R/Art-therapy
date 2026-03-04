@@ -258,6 +258,9 @@ export interface TherapyPlanFilters {
   type?: TherapyPlanType | '';
   status?: TherapyPlanStatus | '';
   timeFilter?: 'upcoming' | 'past';
+  role?: 'creator' | 'participant';
+  sortBy?: 'startTime' | 'createdAt' | 'updatedAt';
+  order?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }

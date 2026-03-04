@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadFile } from '../../../../api/upload';
 import { addGalleryImage, deleteGalleryImage, reorderGalleryImages } from '../../../../api/therapists';
 import { validateFile } from '../../../../utils/fileValidation';
-import type { UpdateProfileInput } from '../../../../../../server/src/schemas/therapist.schemas';
+import type { UpdateProfileInput } from '../../../../schemas/profileForms';
 import type { TherapistProfile } from '../../../../types';
 
 interface Props {

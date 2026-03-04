@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { UseFormReturn } from 'react-hook-form';
-import type { UpdateProfileInput } from '../../../../../../server/src/schemas/therapist.schemas';
+import type { UpdateProfileInput } from '../../../../schemas/profileForms';
 
 interface Props {
   form: UseFormReturn<UpdateProfileInput>;

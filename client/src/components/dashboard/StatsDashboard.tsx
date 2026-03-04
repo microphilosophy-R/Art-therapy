@@ -99,7 +99,12 @@ export function StatsDashboard() {
     { label: t('dashboard.therapist.stats.revenue'), value: `¥${stats?.revenue || 0}`, icon: DollarSign, color: 'bg-green-100 text-green-600' },
     { label: t('dashboard.therapist.stats.consumption'), value: `¥${stats?.platformFees || 0}`, icon: TrendingUp, color: 'bg-blue-100 text-blue-600' },
     { label: t('dashboard.therapist.stats.visitors'), value: stats?.visitors || 0, icon: Users, color: 'bg-purple-100 text-purple-600' },
-    { label: t('dashboard.therapist.stats.paidCustomers'), value: stats?.paidCustomers[timePeriod] || 0, icon: Users, color: 'bg-teal-100 text-teal-600' }
+    {
+      label: t('dashboard.therapist.stats.paidCustomers'),
+      value: timePeriod === 'all' ? (stats?.paidCustomers.month || 0) : (stats?.paidCustomers[timePeriod] || 0),
+      icon: Users,
+      color: 'bg-teal-100 text-teal-600'
+    }
   ];
 
   return (

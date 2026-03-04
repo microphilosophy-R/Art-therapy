@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Calendar } from 'lucide-react';
 import { listTherapyPlans, submitTherapyPlanForReview, archiveTherapyPlan, deleteTherapyPlan } from '../../../api/therapyPlans';
-import type { TherapyPlan } from '../../../types';
+import type { TherapyPlan, TherapyPlanStatus } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
@@ -25,7 +25,7 @@ export const TherapyPlansTab = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<TherapyPlanStatus | 'all'>('all');
   const [roleFilter, setRoleFilter] = useState<'creator' | 'participant'>('creator');
 
   const hasTherapistCert = user?.approvedCertificates?.includes('THERAPIST');
@@ -82,7 +82,7 @@ export const TherapyPlansTab = () => {
             {t('dashboard.plans.filterEnrolled')}
           </button>
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1 text-sm border border-stone-300 rounded">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as TherapyPlanStatus | 'all')} className="px-3 py-1 text-sm border border-stone-300 rounded">
           <option value="all">{t('dashboard.plans.statusFilter.all')}</option>
           <option value="DRAFT">{t('dashboard.plans.statusFilter.draft')}</option>
           <option value="PENDING_REVIEW">{t('dashboard.plans.statusFilter.pendingReview')}</option>

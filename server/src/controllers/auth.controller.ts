@@ -11,6 +11,17 @@ const REFRESH_SECRET = () => process.env.JWT_REFRESH_SECRET!;
 const ACCESS_TTL = () => process.env.JWT_ACCESS_EXPIRES_IN ?? '15m';
 const REFRESH_TTL_DAYS = 7;
 
+const toAuthUser = (user: any, approvedCertificates: string[] = []) => ({
+  id: user.id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  role: user.role,
+  avatarUrl: user.avatarUrl ?? undefined,
+  createdAt: user.createdAt,
+  approvedCertificates,
+});
+
 const signAccess = (user: { id: string; email: string; role: string; firstName: string; lastName: string; approvedCertificates?: string[] }) =>
   jwt.sign(
     {
@@ -60,7 +71,7 @@ export const register = async (req: Request, res: Response) => {
 
   res.status(201).json({
     accessToken,
-    user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
+    user: toAuthUser(user, []),
   });
 };
 
@@ -106,7 +117,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       accessToken,
-      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, avatarUrl: user.avatarUrl },
+      user: toAuthUser(user, approvedCertificates ?? []),
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -138,7 +149,10 @@ export const refresh = async (req: Request, res: Response) => {
     }
 
     const accessToken = signAccess({ ...user, approvedCertificates });
-    res.json({ accessToken });
+    res.json({
+      accessToken,
+      user: toAuthUser(user, approvedCertificates ?? []),
+    });
   } catch {
     res.status(401).json({ message: 'Invalid refresh token' });
   }
@@ -170,6 +184,11 @@ export const getMe = async (req: Request, res: Response) => {
   });
   if (!user) return res.status(404).json({ message: 'User not found' });
 
+  const approvedCertificates =
+    user.userProfile?.certificates
+      ?.filter((cert: any) => cert.status === 'APPROVED')
+      .map((cert: any) => cert.type) ?? [];
+
   const { passwordHash: _, ...safeUser } = user;
-  res.json(safeUser);
+  res.json({ ...safeUser, approvedCertificates });
 };

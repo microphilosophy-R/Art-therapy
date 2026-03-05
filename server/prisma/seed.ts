@@ -1,4 +1,4 @@
-/// <reference types="node" />
+﻿/// <reference types="node" />
 import 'dotenv/config';
 import {
   PrismaClient,
@@ -12,10 +12,12 @@ import {
   CertificateType,
   CertificateStatus,
   ProfileStatus,
+  MessageTrigger,
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+const sortPair = (a: string, b: string) => (a < b ? [a, b] : [b, a]);
 
 const daysFromNow = (days: number, hour = 10, minute = 0) => {
   const d = new Date();
@@ -32,7 +34,7 @@ const daysAgo = (days: number, hour = 10, minute = 0) => {
 };
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('馃尡 Seeding database...');
 
   const passwordHash = await bcrypt.hash('password123', 10);
 
@@ -109,7 +111,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Users created');
+  console.log('鉁?Users created');
 
   // Unified Profiles
   const profile1 = await prisma.userProfile.create({
@@ -167,7 +169,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Profiles created');
+  console.log('鉁?Profiles created');
 
   // Gallery Images
   await prisma.galleryImage.createMany({
@@ -185,7 +187,7 @@ async function main() {
     ],
   });
 
-  console.log('✓ Gallery images created');
+  console.log('鉁?Gallery images created');
 
   // Availability
   for (const day of [1, 2, 3, 4, 5]) {
@@ -194,7 +196,7 @@ async function main() {
     });
   }
 
-  console.log('✓ Availability created');
+  console.log('鉁?Availability created');
 
   // Refund Policies
   await prisma.refundPolicy.create({
@@ -207,7 +209,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Refund policies created');
+  console.log('鉁?Refund policies created');
 
   // Reviews
   await prisma.review.createMany({
@@ -227,7 +229,7 @@ async function main() {
     ],
   });
 
-  console.log('✓ Reviews created');
+  console.log('鉁?Reviews created');
 
   // Appointments
   await prisma.appointment.create({
@@ -241,7 +243,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Appointments created');
+  console.log('鉁?Appointments created');
 
   // Therapy Plans
   await prisma.therapyPlan.create({
@@ -281,7 +283,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Therapy plans created');
+  console.log('鉁?Therapy plans created');
 
   // Additional therapy plans with various statuses
   await prisma.therapyPlan.create({
@@ -417,7 +419,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Additional therapy plans created');
+  console.log('鉁?Additional therapy plans created');
 
   // Therapy plan participants
   await prisma.therapyPlanParticipant.create({
@@ -452,7 +454,7 @@ async function main() {
     },
   });
 
-  console.log('✓ Therapy plan participants created');
+  console.log('鉁?Therapy plan participants created');
 
   // Update profile views
   await prisma.userProfile.update({
@@ -470,7 +472,7 @@ async function main() {
     data: { profileViews: 532 }
   });
 
-  console.log('✓ Profile views updated');
+  console.log('鉁?Profile views updated');
 
   // Products
   const product1 = await prisma.product.create({
@@ -561,7 +563,45 @@ async function main() {
     },
   });
 
-  console.log('✓ Products created');
+  console.log('鉁?Products created');
+
+  // Ensure certificate-feature alignment for MEMBER accounts:
+  // - plan owners -> THERAPIST
+  // - product owners -> ARTIFICER
+  const [profilesWithPlans, profilesWithProducts] = await Promise.all([
+    prisma.userProfile.findMany({
+      where: { therapyPlans: { some: {} } },
+      select: { id: true },
+    }),
+    prisma.userProfile.findMany({
+      where: { products: { some: {} } },
+      select: { id: true },
+    }),
+  ]);
+
+  await prisma.userCertificate.createMany({
+    data: profilesWithPlans.map((p) => ({
+      profileId: p.id,
+      type: CertificateType.THERAPIST,
+      status: CertificateStatus.APPROVED,
+      tosAcceptedAt: new Date(),
+      reviewedAt: new Date(),
+    })),
+    skipDuplicates: true,
+  });
+
+  await prisma.userCertificate.createMany({
+    data: profilesWithProducts.map((p) => ({
+      profileId: p.id,
+      type: CertificateType.ARTIFICER,
+      status: CertificateStatus.APPROVED,
+      tosAcceptedAt: new Date(),
+      reviewedAt: new Date(),
+    })),
+    skipDuplicates: true,
+  });
+
+  console.log('✓ Certificates aligned with MEMBER features (plans/products)');
 
   // Orders - distributed over time
   await prisma.order.create({
@@ -756,11 +796,180 @@ async function main() {
     }
   });
 
-  console.log('✓ Orders created');
+  console.log('鉁?Orders created');
 
-  console.log('\n✅ Seed complete!\n');
-  console.log('Test accounts — password for all: password123');
-  console.log('─────────────────────────────────────────────────────');
+  
+  // Bilingual backfill-style seed content for plans and products
+  const plansForI18n = await prisma.therapyPlan.findMany({
+    where: {
+      title: {
+        in: [
+          'Individual Anxiety Management',
+          'Mindful Painting Salon',
+          'Stress Relief Through Art',
+          'Community Art Workshop',
+        ],
+      },
+    },
+    select: { id: true, title: true, slogan: true, introduction: true },
+  });
+
+  for (const plan of plansForI18n) {
+    await prisma.therapyPlan.update({
+      where: { id: plan.id },
+      data: {
+        titleI18n: { zh: `zh-${plan.title}`, en: plan.title },
+        sloganI18n: plan.slogan ? { zh: `zh-${plan.slogan}`, en: plan.slogan } : undefined,
+        introductionI18n: { zh: `zh-${plan.introduction}`, en: plan.introduction },
+      },
+    });
+  }
+
+  const productsForI18n = await prisma.product.findMany({
+    where: {
+      title: {
+        in: ['Autumn Mountain Watercolor', 'Handmade Ceramic Therapy Mug', 'Mindfulness Coloring Book'],
+      },
+    },
+    select: { id: true, title: true, description: true },
+  });
+
+  for (const product of productsForI18n) {
+    await prisma.product.update({
+      where: { id: product.id },
+      data: {
+        titleI18n: { zh: `zh-${product.title}`, en: product.title },
+        descriptionI18n: { zh: `zh-${product.description}`, en: product.description },
+      },
+    });
+  }
+
+  console.log('✓ Bilingual i18n fields populated for sample plans/products');
+
+  // Follow graph for MEMBER follow/chat testing
+  await prisma.userFollow.createMany({
+    data: [
+      { followerId: client1.id, followingId: therapist1User.id },
+      { followerId: client1.id, followingId: therapist2User.id },
+      { followerId: client1.id, followingId: artist1User.id },
+      { followerId: client2.id, followingId: therapist1User.id },
+      { followerId: therapist1User.id, followingId: client1.id },
+    ],
+    skipDuplicates: true,
+  });
+
+  // Conversations + chat messages (alternating + unread samples)
+  const [convAUserA, convAUserB] = sortPair(client1.id, therapist1User.id);
+  const conversationA = await prisma.conversation.create({
+    data: {
+      userAId: convAUserA,
+      userBId: convAUserB,
+      lastMessageAt: daysAgo(0, 11, 15),
+    },
+  });
+
+  await prisma.message.createMany({
+    data: [
+      {
+        conversationId: conversationA.id,
+        senderId: client1.id,
+        recipientId: therapist1User.id,
+        trigger: MessageTrigger.CHAT,
+        body: 'Hi Sarah, can we discuss a short grounding exercise for tonight?',
+        createdAt: daysAgo(0, 11, 0),
+        isRead: true,
+        readAt: daysAgo(0, 11, 5),
+      },
+      {
+        conversationId: conversationA.id,
+        senderId: therapist1User.id,
+        recipientId: client1.id,
+        trigger: MessageTrigger.CHAT,
+        body: 'Absolutely. Start with 3 minutes of breathing and 5-minute color journaling.',
+        createdAt: daysAgo(0, 11, 10),
+        isRead: false,
+      },
+      {
+        conversationId: conversationA.id,
+        senderId: client1.id,
+        recipientId: therapist1User.id,
+        trigger: MessageTrigger.CHAT,
+        body: 'Great, I will do that and share how it feels tomorrow.',
+        createdAt: daysAgo(0, 11, 15),
+        isRead: false,
+      },
+    ],
+  });
+
+  const [convBUserA, convBUserB] = sortPair(client2.id, artist1User.id);
+  const conversationB = await prisma.conversation.create({
+    data: {
+      userAId: convBUserA,
+      userBId: convBUserB,
+      lastMessageAt: daysAgo(1, 20, 10),
+    },
+  });
+
+  await prisma.message.createMany({
+    data: [
+      {
+        conversationId: conversationB.id,
+        senderId: client2.id,
+        recipientId: artist1User.id,
+        trigger: MessageTrigger.CHAT,
+        body: 'Hi Li, is the Autumn Mountain Watercolor still available?',
+        createdAt: daysAgo(1, 20, 0),
+        isRead: false,
+      },
+      {
+        conversationId: conversationB.id,
+        senderId: artist1User.id,
+        recipientId: client2.id,
+        trigger: MessageTrigger.CHAT,
+        body: 'Yes, one piece is currently reserved and one is available.',
+        createdAt: daysAgo(1, 20, 5),
+        isRead: true,
+        readAt: daysAgo(1, 20, 7),
+      },
+      {
+        conversationId: conversationB.id,
+        senderId: client2.id,
+        recipientId: artist1User.id,
+        trigger: MessageTrigger.CHAT,
+        body: 'Perfect, I would like to purchase the available one.',
+        createdAt: daysAgo(1, 20, 10),
+        isRead: false,
+      },
+    ],
+  });
+
+  // Keep some system/admin notifications for merged Messages tab testing
+  await prisma.message.createMany({
+    data: [
+      {
+        senderId: admin.id,
+        recipientId: client1.id,
+        trigger: MessageTrigger.MANUAL,
+        body: 'Welcome! Your account and profile are active.',
+        createdAt: daysAgo(2, 9, 0),
+        isRead: true,
+        readAt: daysAgo(2, 9, 5),
+      },
+      {
+        senderId: admin.id,
+        recipientId: client2.id,
+        trigger: MessageTrigger.MANUAL,
+        body: 'Reminder: Please complete your profile details.',
+        createdAt: daysAgo(1, 8, 30),
+        isRead: false,
+      },
+    ],
+  });
+
+  console.log('✓ Follow + chat seed data created');
+  console.log('\n鉁?Seed complete!\n');
+  console.log('Test accounts 鈥?password for all: password123');
+  console.log('鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€');
   console.log('Admin:       admin@arttherapy.dev');
   console.log('Therapist 1: therapist@arttherapy.dev   (Sarah Chen)');
   console.log('Therapist 2: therapist2@arttherapy.dev  (Marcus Webb)');
@@ -779,3 +988,5 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+
+

@@ -666,10 +666,24 @@
       "filterAppointments": "Appointments",
       "filterPlans": "Plans",
       "noEvents": "No upcoming events",
+      "ongoingTitle": "Ongoing Events",
+      "noOngoing": "No ongoing events right now.",
+      "graphicTitle": "Graphic Calendar",
+      "legendTitle": "Legend",
       "errorLoading": "Failed to load calendar events",
       "eventTypes": {
         "appointment": "Appointment",
         "plan": "Plan"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "CONFIRMED": "Confirmed",
+        "IN_PROGRESS": "In Progress",
+        "COMPLETED": "Completed",
+        "CANCELLED": "Cancelled",
+        "PUBLISHED": "Published",
+        "SIGN_UP_CLOSED": "Sign-up Closed",
+        "FINISHED": "Finished"
       }
     },
     "showcase": {
@@ -1475,6 +1489,27 @@
           "OTHER": "Other"
         }
       }
+    }
+  },
+  "translation": {
+    "optionalStepTitle": "Optional Translation Assist",
+    "optionalHint": "You can skip this and continue with manual editing.",
+    "translateNow": "Translate now",
+    "skip": "Skip",
+    "skipped": "Translation step skipped. Manual mode remains available.",
+    "manualFallback": "Auto translation is unavailable right now. Please continue in manual mode.",
+    "partialFailure": "Some fields could not be translated. Please review and edit manually.",
+    "sourcePrefix": "Detected source",
+    "modeLabel": "Mode",
+    "sourceDetected": {
+      "zh": "Chinese",
+      "en": "English"
+    },
+    "status": {
+      "idle": "Idle",
+      "pending": "Pending",
+      "success": "Success",
+      "failed": "Failed"
     }
   }
 }

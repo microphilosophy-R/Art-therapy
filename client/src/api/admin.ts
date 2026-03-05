@@ -30,12 +30,42 @@ export interface AdminCertificate {
   type: string;
   status: string;
   appliedAt: string;
+  reviewedAt?: string | null;
+  certificateUrls?: string[];
   rejectionReason?: string | null;
   profile: { user: { id: string; firstName: string; lastName: string; email: string } };
 }
 
+export interface AdminCertificateFilters {
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVOKED' | 'ALL';
+  type?: 'COUNSELOR' | 'THERAPIST' | 'ARTIFICER' | 'ALL';
+  q?: string;
+}
+
+export const listAdminCertificates = async (
+  filters: AdminCertificateFilters = {}
+): Promise<AdminCertificate[]> => {
+  const params: Record<string, string> = {};
+  if (filters.status && filters.status !== 'ALL') params.status = filters.status;
+  if (filters.type && filters.type !== 'ALL') params.type = filters.type;
+  if (filters.q?.trim()) params.q = filters.q.trim();
+
+  const { data } = await api.get('/admin/certificates', { params });
+  return data;
+};
+
 export const listPendingCertificates = async (): Promise<AdminCertificate[]> => {
-  const { data } = await api.get('/admin/certificates');
+  return listAdminCertificates({ status: 'PENDING' });
+};
+
+export const manageCertificate = async (
+  id: string,
+  payload: {
+    action: 'APPROVE' | 'REJECT' | 'REVOKE' | 'RESET_TO_PENDING';
+    rejectionReason?: string;
+  }
+): Promise<AdminCertificate> => {
+  const { data } = await api.patch(`/admin/certificates/${id}`, payload);
   return data;
 };
 
@@ -43,6 +73,5 @@ export const reviewCertificate = async (
   id: string,
   payload: { action: 'APPROVE' | 'REJECT'; rejectionReason?: string }
 ): Promise<AdminCertificate> => {
-  const { data } = await api.patch(`/admin/certificates/${id}`, payload);
-  return data;
+  return manageCertificate(id, payload);
 };

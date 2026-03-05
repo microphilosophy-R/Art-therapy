@@ -422,7 +422,13 @@
       "upcoming": "即将进行",
       "past": "历史",
       "forms": "问卷",
-      "calendar": "日历",
+      "calendar": {
+        "title": "工作日历",
+        "all": "全部",
+        "appointments": "预约",
+        "plans": "计划",
+        "noEvents": "暂无即将进行的活动"
+      },
       "noAppointments": "暂无{{tab}}预约。",
       "confirmSession": "确认疗程",
       "stripeTitle": "连接银行账户以接收付款",
@@ -432,148 +438,6 @@
       "createFirstForm": "创建第一份问卷",
       "newForm": "新建问卷",
       "formTo": "发送给：{{name}}",
-      "stats": {
-        "title": "数据统计",
-        "revenue": "总收入",
-        "profits": "利润",
-        "visitors": "访客数",
-        "paidCustomers": "付费客户",
-        "week": "本周",
-        "today": "今日",
-        "plans": "计划",
-        "products": "商品",
-        "active": "在售",
-        "history": "历史",
-        "all": "全部",
-        "draft": "草稿",
-        "pending": "待审核",
-        "published": "已发布",
-        "revenueTrend": "收入趋势（7天）"
-      },
-      "therapyPlans": {
-        "title": "疗愈计划",
-        "myPlans": "我的计划",
-        "enrolled": "已报名",
-        "createPlan": "创建计划",
-        "noPlans": "暂无计划"
-      },
-      "plans": {
-        "getCertified": "获取认证以创建计划"
-      },
-      "showcase": {
-        "title": "展示管理",
-        "addProduct": "添加商品",
-        "addPlan": "添加计划",
-        "noItems": "展示中暂无项目",
-        "getCertified": "获取认证",
-        "emptyMessage": "请先创建并发布商品或计划。审核通过后将在此处显示。"
-      },
-      "products": {
-        "title": "商品",
-        "createProduct": "创建商品",
-        "myProducts": "我的商品",
-        "noProducts": "暂无商品",
-        "stock": "库存",
-        "getCertified": "获取认证",
-        "statusFilter": {
-          "all": "全部",
-          "draft": "草稿",
-          "pendingReview": "待审核",
-          "published": "已发布",
-          "rejected": "已拒绝"
-        },
-        "view": "查看",
-        "edit": "编辑",
-        "submit": "提交审核",
-        "delete": "删除",
-        "rejectionLabel": "拒绝原因："
-      },
-      "calendar": {
-        "title": "工作日历",
-        "all": "全部",
-        "appointments": "预约",
-        "plans": "计划",
-        "noEvents": "暂无即将进行的活动"
-      },
-      "review": {
-        "title": "审核队列",
-        "profiles": "个人资料",
-        "plans": "计划",
-        "products": "商品",
-        "certificates": "证书",
-        "approve": "批准",
-        "reject": "拒绝",
-        "rejectionReason": "拒绝原因",
-        "confirm": "确认",
-        "noPending": "暂无待审核项目"
-      },
-      "memberReview": {
-        "title": "审核状态",
-        "applyFor": "申请",
-        "pendingProcesses": "待处理流程",
-        "features": {
-          "therapist": "治疗师",
-          "counselor": "咨询师",
-          "artificer": "艺术家"
-        }
-      },
-      "profilePreview": {
-        "title": "公开资料预览",
-        "viewLive": "查看在线资料",
-        "quickNav": "快速导航",
-        "personalInfo": "个人信息",
-        "professional": "专业信息",
-        "exhibition": "展览",
-        "showcase": "展示"
-      },
-      "tabs": {
-        "statistics": "数据统计",
-        "therapyPlans": "疗愈计划",
-        "products": "商品管理",
-        "showcase": "展示管理",
-        "calendar": "工作日历",
-        "reviewStatus": "审核状态",
-        "profilePreview": "资料预览",
-        "certificates": "证书管理"
-      },
-      "certificates": {
-        "therapist": "疗愈课程主持人",
-        "artificer": "手工艺品卖家",
-        "counselor": "心理咨询师",
-        "createTherapyPlan": "创建疗愈计划",
-        "manageProducts": "管理商品",
-        "consultSettings": "咨询设置",
-        "notApplied": "未申请",
-        "apply": "申请",
-        "applying": "申请中..."
-      },
-      "calendarLegend": {
-        "pending": "待确认",
-        "confirmed": "已确认",
-        "cancelled": "已取消",
-        "completed": "已完成"
-      },
-      "plans": "疗愈计划",
-      "messages": "消息",
-      "noPlans": "暂无计划。",
-      "createFirstPlan": "创建第一个计划",
-      "createPlan": "创建计划",
-      "newPlan": "新建计划",
-      "planStatus": "状态：{{status}}",
-      "editPlan": "编辑",
-      "submitPlan": "提交审核",
-      "archivePlan": "归档",
-      "deletePlan": "删除",
-      "tabs": {
-        "statistics": "数据统计",
-        "therapyPlans": "治疗计划",
-        "products": "商品管理",
-        "showcase": "作品展示",
-        "calendar": "日历",
-        "reviewStatus": "审核状态",
-        "profilePreview": "个人主页预览",
-        "certificates": "资质认证"
-      },
       "stats": {
         "title": "数据统计",
         "revenue": "总收入",
@@ -622,7 +486,111 @@
           "ordersTrend": "订单趋势",
           "selectVariable": "选择变量"
         }
-      }
+      },
+      "therapyPlans": {
+        "title": "疗愈计划",
+        "myPlans": "我的计划",
+        "enrolled": "已报名",
+        "createPlan": "创建计划",
+        "noPlans": "暂无计划"
+      },
+      "plans": "疗愈计划",
+      "showcase": {
+        "title": "展示管理",
+        "addProduct": "添加商品",
+        "addPlan": "添加计划",
+        "noItems": "展示中暂无项目",
+        "getCertified": "获取认证",
+        "emptyMessage": "请先创建并发布商品或计划。审核通过后将在此处显示。"
+      },
+      "products": {
+        "title": "商品",
+        "createProduct": "创建商品",
+        "myProducts": "我的商品",
+        "noProducts": "暂无商品",
+        "stock": "库存",
+        "getCertified": "获取认证",
+        "statusFilter": {
+          "all": "全部",
+          "draft": "草稿",
+          "pendingReview": "待审核",
+          "published": "已发布",
+          "rejected": "已拒绝"
+        },
+        "view": "查看",
+        "edit": "编辑",
+        "submit": "提交审核",
+        "delete": "删除",
+        "rejectionLabel": "拒绝原因："
+      },
+      "review": {
+        "title": "审核队列",
+        "profiles": "个人资料",
+        "plans": "计划",
+        "products": "商品",
+        "certificates": "证书",
+        "approve": "批准",
+        "reject": "拒绝",
+        "rejectionReason": "拒绝原因",
+        "confirm": "确认",
+        "noPending": "暂无待审核项目"
+      },
+      "memberReview": {
+        "title": "审核状态",
+        "applyFor": "申请",
+        "pendingProcesses": "待处理流程",
+        "features": {
+          "therapist": "治疗师",
+          "counselor": "咨询师",
+          "artificer": "艺术家"
+        }
+      },
+      "profilePreview": {
+        "title": "公开资料预览",
+        "viewLive": "查看在线资料",
+        "quickNav": "快速导航",
+        "personalInfo": "个人信息",
+        "professional": "专业信息",
+        "exhibition": "展览",
+        "showcase": "展示"
+      },
+      "tabs": {
+        "statistics": "数据统计",
+        "therapyPlans": "治疗计划",
+        "products": "商品管理",
+        "showcase": "作品展示",
+        "calendar": "日历",
+        "reviewStatus": "审核状态",
+        "profilePreview": "个人主页预览",
+        "certificates": "资质认证"
+      },
+      "certificates": {
+        "therapist": "疗愈课程主持人",
+        "artificer": "手工艺品卖家",
+        "counselor": "心理咨询师",
+        "createTherapyPlan": "创建疗愈计划",
+        "manageProducts": "管理商品",
+        "consultSettings": "咨询设置",
+        "notApplied": "未申请",
+        "apply": "申请",
+        "applying": "申请中..."
+      },
+      "calendarLegend": {
+        "pending": "待确认",
+        "confirmed": "已确认",
+        "cancelled": "已取消",
+        "completed": "已完成"
+      },
+      "messages": "消息",
+      "noPlans": "暂无计划。",
+      "createFirstPlan": "创建第一个计划",
+      "createPlan": "创建计划",
+      "newPlan": "新建计划",
+      "planStatus": "状态：{{status}}",
+      "editPlan": "编辑",
+      "submitPlan": "提交审核",
+      "archivePlan": "归档",
+      "deletePlan": "删除"
     },
     "admin": {
       "title": "管理员控制台",
@@ -679,8 +647,7 @@
       "rejectionReasonPlaceholder": "请说明拒绝此计划的原因...",
       "confirmReject": "确认拒绝",
       "noPlans": "未找到计划。",
-      "noPlansInQueue": "此队列中暂无计划。",
-      "reviewQueue": "审核队列"
+      "noPlansInQueue": "此队列中暂无计划。"
     },
     "review": {
       "applyForFeatures": "申请功能",
@@ -695,30 +662,16 @@
       "apply": "申请",
       "applied": "已申请",
       "rejectionReason": "拒绝原因：",
-      "noSubmissions": "暂无提交记录。请在上方申请功能以开始！",
-      "uploadCredentials": "上传您的证书或资质：",
+      "noSubmissions": "暂无提交记录。请先申请上方功能。",
+      "uploadCredentials": "上传证书或资质文件：",
       "submit": "提交",
       "submitted": "已提交",
       "reviewQueue": "审核队列",
-      "noPending": "暂无待审核的{type}",
-      "approve": "批准",
+      "noPending": "暂无待审核{type}",
+      "approve": "通过",
       "reject": "拒绝",
       "confirm": "确认",
-      "rejectionReasonPlaceholder": "拒绝原因"
-    },
-    "wizard": {
-      "step1Title": "条款与要求",
-      "step2Title": "上传资质文件",
-      "step3Title": "审核并提交",
-      "next": "下一步",
-      "back": "返回",
-      "uploadHint": "上传您的证书或资质文件（仅限PDF格式，最多5个文件）",
-      "addFile": "添加PDF文件",
-      "certificateType": "证书类型",
-      "uploadedFiles": "已上传文件",
-      "saveDraft": "保存草稿"
-    },
-    "review": {
+      "rejectionReasonPlaceholder": "请输入拒绝原因",
       "features": {
         "therapist": {
           "name": "疗愈课程主持人",
@@ -752,6 +705,18 @@
         "getCertified": "获取认证"
       }
     },
+    "wizard": {
+      "step1Title": "条款与要求",
+      "step2Title": "上传资质文件",
+      "step3Title": "审核并提交",
+      "next": "下一步",
+      "back": "返回",
+      "uploadHint": "上传您的证书或资质文件（仅限PDF格式，最多5个文件）",
+      "addFile": "添加PDF文件",
+      "certificateType": "证书类型",
+      "uploadedFiles": "已上传文件",
+      "saveDraft": "保存草稿"
+    },
     "calendar": {
       "title": "工作日历",
       "filterAll": "全部",
@@ -762,6 +727,20 @@
       "eventTypes": {
         "appointment": "预约",
         "plan": "计划"
+      },
+      "ongoingTitle": "持续进行中的活动",
+      "noOngoing": "当前没有进行中的活动。",
+      "graphicTitle": "图形日历",
+      "legendTitle": "图例",
+      "status": {
+        "PENDING": "待处理",
+        "CONFIRMED": "已确认",
+        "IN_PROGRESS": "进行中",
+        "COMPLETED": "已完成",
+        "CANCELLED": "已取消",
+        "PUBLISHED": "已发布",
+        "SIGN_UP_CLOSED": "报名已关闭",
+        "FINISHED": "已结束"
       }
     },
     "showcase": {
@@ -1567,6 +1546,27 @@
           "OTHER": "其他"
         }
       }
+    }
+  },
+  "translation": {
+    "optionalStepTitle": "可选翻译辅助",
+    "optionalHint": "你可以跳过此步骤，继续手动编辑。",
+    "translateNow": "立即翻译",
+    "skip": "跳过",
+    "skipped": "已跳过翻译步骤，仍可手动编辑。",
+    "manualFallback": "自动翻译暂不可用，请改为手动模式。",
+    "partialFailure": "部分字段翻译失败，请手动检查并补充。",
+    "sourcePrefix": "识别源语言",
+    "modeLabel": "模式",
+    "sourceDetected": {
+      "zh": "中文",
+      "en": "英文"
+    },
+    "status": {
+      "idle": "未开始",
+      "pending": "处理中",
+      "success": "成功",
+      "failed": "失败"
     }
   }
 }

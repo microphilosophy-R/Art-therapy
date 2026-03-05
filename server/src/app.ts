@@ -28,6 +28,7 @@ import { orderRouter } from './routes/shop/order.routes';
 import { memberRouter } from './routes/member.routes';
 import { statsRouter } from './routes/stats.routes';
 import { calendarRouter } from './routes/calendar.routes';
+import { translateRouter } from './routes/translate.routes';
 import userProfileRouter from './routes/userProfile.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 import { followRouter } from './routes/follow.routes';
@@ -85,6 +86,7 @@ api.use('/orders', orderRouter);
 api.use('/member', memberRouter);
 api.use('/stats', statsRouter);
 api.use('/calendar', calendarRouter);
+api.use('/translate', translateRouter);
 api.use('/user-profile', userProfileRouter);
 api.use('/follows', followRouter);
 

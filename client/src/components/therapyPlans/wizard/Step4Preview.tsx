@@ -14,6 +14,7 @@ interface Step4Props {
     existingGalleryCount?: number;
     existingVideoUrl?: string | null;
     existingPdfCount?: number;
+    translationPanel?: React.ReactNode;
 }
 
 export const Step4Preview = ({
@@ -25,6 +26,7 @@ export const Step4Preview = ({
     existingGalleryCount = 0,
     existingVideoUrl = null,
     existingPdfCount = 0,
+    translationPanel,
 }: Step4Props) => {
     const { t, i18n } = useTranslation();
     const isZh = i18n.language.startsWith('zh');
@@ -52,6 +54,7 @@ export const Step4Preview = ({
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            {translationPanel}
             <div className="bg-stone-50 rounded-xl p-6 border border-stone-200">
                 <h3 className="text-lg font-bold text-stone-900 mb-6 flex items-center gap-2">
                     <Info className="h-5 w-5 text-teal-600" />

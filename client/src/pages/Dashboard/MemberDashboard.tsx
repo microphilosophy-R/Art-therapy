@@ -11,12 +11,13 @@ import { ProfilePreviewTab } from './tabs/ProfilePreviewTab';
 import { StatsDashboard } from '../../components/dashboard/StatsDashboard';
 import { Avatar } from '../../components/ui/Avatar';
 import { MessagesTab } from './tabs/MessagesTab';
+import api from '../../api/axios';
 
 type TabKey = 'stats' | 'overview' | 'plans' | 'products' | 'showcase' | 'calendar' | 'review' | 'preview' | 'profile' | 'messages';
 
 export const MemberDashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>('stats');
@@ -27,6 +28,42 @@ export const MemberDashboard = () => {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    const syncCertificates = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        if (!active) return;
+
+        const me = res.data as any;
+        const approvedFromProfile =
+          me?.userProfile?.certificates
+            ?.filter((cert: any) => cert.status === 'APPROVED')
+            .map((cert: any) => cert.type) ?? [];
+
+        const approvedCertificates: string[] = Array.from(
+          new Set([...(me?.approvedCertificates ?? []), ...approvedFromProfile])
+        );
+
+        updateUser({
+          approvedCertificates,
+          avatarUrl: me?.avatarUrl ?? user?.avatarUrl,
+          firstName: me?.firstName ?? user?.firstName,
+          lastName: me?.lastName ?? user?.lastName,
+          email: me?.email ?? user?.email,
+          role: me?.role ?? user?.role,
+        });
+      } catch {
+        // ignore; dashboard still works with persisted auth state
+      }
+    };
+
+    void syncCertificates();
+    return () => {
+      active = false;
+    };
+  }, [updateUser, user?.avatarUrl, user?.email, user?.firstName, user?.lastName, user?.role]);
 
   const handleTabChange = (tabKey: TabKey) => {
     setActiveTab(tabKey);

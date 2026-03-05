@@ -27,7 +27,16 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        useAuthStore.getState().setAuth(data.user, data.accessToken);
+        const auth = useAuthStore.getState();
+        if (data.user) {
+          auth.setAuth(data.user, data.accessToken);
+        } else if (auth.user) {
+          auth.setAuth(auth.user, data.accessToken);
+        } else {
+          auth.clearAuth();
+          window.location.href = '/';
+          return Promise.reject(error);
+        }
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
       } catch {

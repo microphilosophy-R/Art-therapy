@@ -287,6 +287,7 @@ Nginx handles routing web traffic to your static frontend files and backend API.
 ### ⚠️ Common Pitfalls for Beginners:
 1. **Wrong root path:** Your `root` directive MUST perfectly match your absolute directory path. If you are using the `admin` user, it should be `/home/admin/art-therapy/client/dist`. Run `pwd` in the `client/dist` folder to confirm this path.
 2. **Missing backend routes:** The backend utilizes `/api/`, `/webhooks/`, `/uploads/`, and `/health`. Nginx must be configured to pass **all** of these, not just `/api/v1/`. Otherwise webhooks and uploads will fail.
+3. **Missing Socket.IO route:** Realtime chat requires `/socket.io/` websocket upgrade proxy. If omitted, browser will show websocket closed/failed errors.
 3. **Trailing slashes in proxy_pass:** Do **NOT** add trailing slashes or URI paths when using `proxy_pass http://127.0.0.1:3001;`. Let Nginx simply forward the path as-is.
 
 Create a new configuration file:
@@ -325,6 +326,19 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Socket.IO realtime chat
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 60s;
         proxy_cache_bypass $http_upgrade;
     }
 
@@ -393,6 +407,13 @@ At this point, visiting `http://luyin.xyz` should load your React app. If it doe
    curl http://127.0.0.1:3001/health
    # You should get a JSON response like {"status":"ok", "ts":"..."}
    ```
+
+3. **Verify Socket.IO endpoint is reachable (chat realtime):**
+   ```bash
+   # Should return a 400 JSON payload from Socket.IO (this is expected without full handshake)
+   curl -i "http://127.0.0.1/socket.io/?EIO=4&transport=polling"
+   ```
+   If you get `404`/`502`, your Nginx `location /socket.io/` is missing or broken.
 
 ---
 
@@ -569,3 +590,101 @@ Now, anytime you push code to GitHub and want it on your live server, you just S
 ```
 
 It will pull the code, handle the database migrations, rebuild the server, restart PM2, rebuild the frontend, and print out green success messages along the way!
+
+---
+
+## Release Migration Checklist (Bilingual + Follow/Chat + WebSocket)
+
+Use this checklist when deploying the release that adds:
+
+- `TherapyPlan.titleI18n/sloganI18n/introductionI18n`
+- `Product.titleI18n/descriptionI18n`
+- `UserFollow`, `Conversation`
+- `Message.conversationId`, `MessageTrigger.CHAT`
+- Socket.IO realtime chat delivery
+
+### 1) Pre-deploy safety checks
+
+```bash
+cd ~/art-therapy
+git pull origin main
+
+# Optional but recommended backup
+sudo -u postgres pg_dump arttherapy_db > ~/arttherapy_db_backup_$(date +%F_%H%M).sql
+```
+
+### 2) Backend dependency + Prisma migration order (important)
+
+```bash
+cd ~/art-therapy/server
+npm ci --omit=dev
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+pm2 restart art-therapy-api
+```
+
+Notes:
+
+- Do not skip `prisma migrate deploy`.
+- Do not restart API before migrations finish.
+- This release contains SQL backfill from legacy fields to i18n JSON fields.
+
+### 3) Frontend deploy
+
+```bash
+cd ~/art-therapy/client
+npm ci
+npm run build
+```
+
+Nginx serves new `dist/` automatically.
+
+### 4) Post-deploy verification (2-3 minutes)
+
+```bash
+# API health
+curl http://127.0.0.1:3001/health
+
+# Core endpoints
+curl -I http://127.0.0.1:3001/api/v1/therapy-plans
+curl -I http://127.0.0.1:3001/api/v1/products
+```
+
+Manual browser checks:
+
+1. Open home page and confirm no `500` on `/therapy-plans` and `/products`.
+2. Log in as MEMBER and verify `/api/v1/messages/unread-count` returns 200.
+3. Follow a MEMBER from profile/product/plan owner area.
+4. Start chat and verify:
+   - first message succeeds
+   - second consecutive message blocked (`409`)
+   - after peer reply, send unlocked
+5. Verify bilingual display fallback on a plan and a product in both `zh` and `en`.
+
+### 5) Common failure and fix
+
+If many endpoints return `500` and server logs show Prisma invocation errors:
+
+- Cause: database schema not migrated to latest.
+- Fix:
+
+```bash
+cd ~/art-therapy/server
+npx prisma migrate deploy
+npx prisma generate
+pm2 restart art-therapy-api
+```
+
+If Windows local dev shows Prisma engine rename `EPERM`, stop all Node processes and rerun `prisma generate`.
+
+If browser console shows:
+
+- `WebSocket connection ... /socket.io/... failed: WebSocket is closed before the connection is established`
+
+Check:
+
+1. Nginx includes `location /socket.io/` with websocket upgrade headers.
+2. `sudo nginx -t` passes, then `sudo systemctl reload nginx`.
+3. `pm2 restart art-therapy-api` after backend deploy.
+4. `CLIENT_URL` in `server/.env` matches your actual frontend origin (including `https://` if SSL enabled).

@@ -154,14 +154,24 @@ export const EditTherapyPlan = () => {
 
   // ── Auto-save: called before each step advance ────────────────────────────
 
+  const buildRequiredLocalized = (zhInput: string, enInput: string) => {
+    const zh = zhInput.trim();
+    const en = enInput.trim();
+    const fallback = zh || en;
+    return {
+      zh: zh || fallback,
+      en: en || fallback,
+    };
+  };
+
   const buildMetadataPayload = (values: TherapyPlanFormValues) => ({
     type: values.type,
-    title: values.title,
-    titleI18n: { zh: values.title, en: values.titleEn },
+    title: values.title.trim() || values.titleEn.trim(),
+    titleI18n: buildRequiredLocalized(values.title, values.titleEn),
     slogan: values.slogan || undefined,
     sloganI18n: values.slogan || values.sloganEn ? { zh: values.slogan || undefined, en: values.sloganEn || undefined } : null,
-    introduction: values.introduction,
-    introductionI18n: { zh: values.introduction, en: values.introductionEn },
+    introduction: values.introduction.trim() || values.introductionEn.trim(),
+    introductionI18n: buildRequiredLocalized(values.introduction, values.introductionEn),
     startTime: values.startTime ? new Date(values.startTime).toISOString() : new Date().toISOString(),
     endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
     location: values.location,
@@ -232,6 +242,10 @@ export const EditTherapyPlan = () => {
       }
 
       await Promise.all(uploads);
+      if (!isCreateMode) invalidate();
+    } else if (fromStep === 4) {
+      const pid = isCreateMode ? autoSavePlanId! : id!;
+      await updateTherapyPlan(pid, buildMetadataPayload(values));
       if (!isCreateMode) invalidate();
     }
     } catch (err: any) {

@@ -1,4 +1,8 @@
 export type UserRole = 'ADMIN' | 'MEMBER';
+export interface LocalizedText {
+  zh?: string;
+  en?: string;
+}
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'CANCELLED' | 'COMPLETED';
 export type SessionMedium = 'IN_PERSON' | 'VIDEO';
 export type StripeAccountStatus = 'NOT_CONNECTED' | 'ONBOARDING_IN_PROGRESS' | 'ACTIVE' | 'RESTRICTED' | 'DISABLED';
@@ -163,7 +167,18 @@ export type MessageTrigger =
   | 'PLAN_SUBMITTED'
   | 'PLAN_APPROVED'
   | 'PLAN_REJECTED'
-  | 'MANUAL';
+  | 'MANUAL'
+  | 'CHAT'
+  | 'APPOINTMENT_DEADLINE_WARNING'
+  | 'APPOINTMENT_AUTO_CANCELLED'
+  | 'PLAN_SIGNUP'
+  | 'PLAN_SIGNUP_CANCELLED'
+  | 'PLAN_STARTED'
+  | 'PLAN_FINISHED'
+  | 'PLAN_CANCELLED_BY_THERAPIST'
+  | 'PROFILE_SUBMITTED'
+  | 'PROFILE_APPROVED'
+  | 'PROFILE_REJECTED';
 
 export type ParticipantStatus = 'PENDING_PAYMENT' | 'SIGNED_UP' | 'CANCELLED';
 
@@ -207,8 +222,11 @@ export interface TherapyPlan {
   type: TherapyPlanType;
   status: TherapyPlanStatus;
   title: string;
+  titleI18n?: LocalizedText | null;
   slogan?: string;
+  sloganI18n?: LocalizedText | null;
   introduction: string;
+  introductionI18n?: LocalizedText | null;
   startTime: string;
   endTime?: string | null;
   location: string;
@@ -250,7 +268,18 @@ export interface Message {
   readAt?: string | null;
   planId?: string | null;
   plan?: Pick<TherapyPlan, 'id' | 'title' | 'type' | 'status'> | null;
+  conversationId?: string | null;
   createdAt: string;
+}
+
+export interface Conversation {
+  id: string;
+  peer: Pick<User, 'id' | 'firstName' | 'lastName' | 'avatarUrl'>;
+  lastMessage: Message | null;
+  unreadCount: number;
+  lastMessageAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TherapyPlanFilters {

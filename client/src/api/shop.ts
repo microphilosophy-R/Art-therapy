@@ -1,17 +1,21 @@
 import api from './axios';
+import type { LocalizedText } from '../types';
 
 export interface Product {
     id: string;
     artistId?: string;
     userProfileId?: string;
     title: string;
+    titleI18n?: LocalizedText | null;
     description: string;
+    descriptionI18n?: LocalizedText | null;
     price: number;
     stock: number;
     category: string;
     images: { id: string; url: string; order: number }[];
     artist?: {
         user?: {
+            id: string;
             firstName: string;
             lastName: string;
             avatarUrl: string | null;
@@ -19,6 +23,7 @@ export interface Product {
     };
     userProfile?: {
         user?: {
+            id: string;
             firstName: string;
             lastName: string;
             avatarUrl: string | null;

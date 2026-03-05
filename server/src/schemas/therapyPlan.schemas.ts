@@ -14,12 +14,25 @@ const PLAN_STATUSES = [
   'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY', 'CANCELLED', 'ARCHIVED',
 ] as const;
 
+export const LocalizedTextRequired = z.object({
+  zh: z.string().min(1),
+  en: z.string().min(1),
+});
+
+export const LocalizedTextOptional = z.object({
+  zh: z.string().optional(),
+  en: z.string().optional(),
+});
+
 export const createTherapyPlanSchema = z
   .object({
     type: z.enum([...PLAN_TYPES]),
-    title: z.string().min(5).max(100),
+    title: z.string().min(5).max(100).optional(),
+    titleI18n: LocalizedTextRequired.optional(),
     slogan: z.string().max(60).optional(),
-    introduction: z.string().min(20).max(2000),
+    sloganI18n: LocalizedTextOptional.optional().nullable(),
+    introduction: z.string().min(20).max(2000).optional(),
+    introductionI18n: LocalizedTextRequired.optional(),
     startTime: z.string().datetime(),
     endTime: z.string().datetime().nullable().optional(),
     location: z.string().min(1).max(300),
@@ -30,6 +43,14 @@ export const createTherapyPlanSchema = z
     defaultPosterId: z.number().int().min(1).max(6).optional().nullable(),
     posterUrl: z.string().url().optional().nullable(),
     price: z.number().min(0).optional().nullable(),
+  })
+  .refine((d) => !!(d.titleI18n || d.title), {
+    message: 'title or titleI18n is required',
+    path: ['titleI18n'],
+  })
+  .refine((d) => !!(d.introductionI18n || d.introduction), {
+    message: 'introduction or introductionI18n is required',
+    path: ['introductionI18n'],
   })
   .refine((d) => !(d.defaultPosterId && d.posterUrl), {
     message: 'Provide either defaultPosterId or posterUrl, not both',
@@ -51,8 +72,11 @@ export const updateTherapyPlanSchema = z
   .object({
     type: z.enum([...PLAN_TYPES]).optional(),
     title: z.string().min(5).max(100).optional(),
+    titleI18n: LocalizedTextRequired.partial().optional(),
     slogan: z.string().max(60).nullable().optional(),
+    sloganI18n: LocalizedTextOptional.optional().nullable(),
     introduction: z.string().min(20).max(2000).optional(),
+    introductionI18n: LocalizedTextRequired.partial().optional(),
     startTime: z.string().datetime().optional(),
     endTime: z.string().datetime().nullable().optional(),
     location: z.string().min(1).max(300).optional(),

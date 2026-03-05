@@ -17,8 +17,11 @@ import { Step4Preview } from '../../components/therapyPlans/wizard/Step4Preview'
 export interface TherapyPlanFormValues {
   type: TherapyPlanType;
   title: string;
+  titleEn: string;
   slogan: string;
+  sloganEn: string;
   introduction: string;
+  introductionEn: string;
   startTime: string;
   endTime: string;
   location: string;
@@ -34,8 +37,11 @@ export interface TherapyPlanFormValues {
 const defaultValues: TherapyPlanFormValues = {
   type: 'PERSONAL_CONSULT',
   title: '',
+  titleEn: '',
   slogan: '',
+  sloganEn: '',
   introduction: '',
+  introductionEn: '',
   startTime: '',
   endTime: '',
   location: '',
@@ -55,9 +61,12 @@ const toDatetimeLocal = (iso?: string | null): string => {
 
 export const planToFormValues = (plan: TherapyPlan): TherapyPlanFormValues => ({
   type: plan.type,
-  title: plan.title,
-  slogan: plan.slogan || '',
-  introduction: plan.introduction,
+  title: plan.titleI18n?.zh ?? plan.title,
+  titleEn: plan.titleI18n?.en ?? plan.title,
+  slogan: plan.sloganI18n?.zh ?? plan.slogan ?? '',
+  sloganEn: plan.sloganI18n?.en ?? plan.slogan ?? '',
+  introduction: plan.introductionI18n?.zh ?? plan.introduction,
+  introductionEn: plan.introductionI18n?.en ?? plan.introduction,
   startTime: toDatetimeLocal(plan.startTime),
   endTime: toDatetimeLocal(plan.endTime),
   location: plan.location,
@@ -237,11 +246,16 @@ export const TherapyPlanForm = ({
     if (!values.title.trim()) errs.title = t('common.errors.required');
     else if (values.title.trim().length < 5) errs.title = t('therapyPlans.form.titleMinLength');
     else if (values.title.trim().length > 100) errs.title = t('therapyPlans.form.titleMaxLength');
+    if (!values.titleEn.trim()) errs.titleEn = t('common.errors.required');
+    else if (values.titleEn.trim().length > 100) errs.titleEn = t('therapyPlans.form.titleMaxLength');
 
     if (values.slogan && values.slogan.length > 60) errs.slogan = t('therapyPlans.form.sloganMaxLengthError');
+    if (values.sloganEn && values.sloganEn.length > 60) errs.sloganEn = t('therapyPlans.form.sloganMaxLengthError');
 
     if (!values.introduction.trim()) errs.introduction = t('common.errors.required');
     else if (values.introduction.trim().length < 20) errs.introduction = t('therapyPlans.form.introMinLength');
+    if (!values.introductionEn.trim()) errs.introductionEn = t('common.errors.required');
+    else if (values.introductionEn.trim().length < 20) errs.introductionEn = t('therapyPlans.form.introMinLength');
 
     if (!values.location.trim()) errs.location = t('common.errors.required');
     if (!values.contactInfo.trim()) errs.contactInfo = t('common.errors.required');

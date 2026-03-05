@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -6,12 +6,14 @@ import { getProductById, addToCart } from '../../api/shop';
 import { Button } from '../../components/ui/Button';
 import { useAuthStore } from '../../store/authStore';
 import { Loader2, ArrowLeft, ShoppingCart, Minus, Plus } from 'lucide-react';
+import { pickLocalizedText } from '../../utils/i18nContent';
+import { followUser, getFollowStatus, unfollowUser } from '../../api/follows';
 
 export const ProductDetailsPage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, user } = useAuthStore();
     const queryClient = useQueryClient();
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
@@ -56,6 +58,25 @@ export const ProductDetailsPage = () => {
         : 'Unknown Seller';
     const sellerInitial = sellerUser?.firstName?.charAt(0) || '?';
     const sellerAvatar = sellerUser?.avatarUrl ?? null;
+    const sellerUserId = sellerUser?.id;
+    const canFollowSeller = !!(isAuthenticated && user?.role === 'MEMBER' && sellerUserId && sellerUserId !== user.id);
+    const productTitle = pickLocalizedText(product.titleI18n, i18n.language, product.title);
+    const productDescription = pickLocalizedText(product.descriptionI18n, i18n.language, product.description);
+
+    const { data: followStatus } = useQuery({
+        queryKey: ['follow-status', sellerUserId],
+        queryFn: () => getFollowStatus(sellerUserId!),
+        enabled: canFollowSeller,
+    });
+
+    const followMutation = useMutation({
+        mutationFn: () => followUser(sellerUserId!),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', sellerUserId] }),
+    });
+    const unfollowMutation = useMutation({
+        mutationFn: () => unfollowUser(sellerUserId!),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', sellerUserId] }),
+    });
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -71,7 +92,7 @@ export const ProductDetailsPage = () => {
                         {product.images.length > 0 ? (
                             <img
                                 src={product.images[activeImage].url}
-                                alt={product.title}
+                                alt={productTitle}
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -103,7 +124,7 @@ export const ProductDetailsPage = () => {
                             {t(`shop.categories.${product.category}`)}
                         </span>
                     </div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{product.title}</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{productTitle}</h1>
                     <div className="flex items-center gap-4 mb-6">
                         <div className="flex items-center gap-2">
                             {sellerAvatar ? (
@@ -117,14 +138,40 @@ export const ProductDetailsPage = () => {
                                 {t('shop.product.by', { name: sellerName })}
                             </span>
                         </div>
+                        {canFollowSeller && (
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant={followStatus?.isFollowing ? 'outline' : 'primary'}
+                                    onClick={() => {
+                                        if (followStatus?.isFollowing) {
+                                            unfollowMutation.mutate();
+                                        } else {
+                                            followMutation.mutate();
+                                        }
+                                    }}
+                                    loading={followMutation.isPending || unfollowMutation.isPending}
+                                >
+                                    {followStatus?.isFollowing ? 'Following' : 'Follow'}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!followStatus?.isFollowing}
+                                    onClick={() => navigate(`/dashboard/member?tab=messages&conversation=${sellerUserId}`)}
+                                >
+                                    Message
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="text-3xl font-bold text-gray-900 mb-6">
-                        ¥{Number(product.price).toFixed(2)}
+                        楼{Number(product.price).toFixed(2)}
                     </div>
 
                     <div className="prose prose-teal max-w-none text-gray-600 mb-8 whitespace-pre-line">
-                        {product.description}
+                        {productDescription}
                     </div>
 
                     <div className="mt-auto border-t pt-6 space-y-6">
@@ -184,3 +231,4 @@ export const ProductDetailsPage = () => {
         </div>
     );
 };
+

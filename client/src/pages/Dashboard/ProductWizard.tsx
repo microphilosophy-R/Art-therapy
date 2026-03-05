@@ -10,19 +10,23 @@ type ProductCategory = 'PAINTING' | 'SCULPTURE' | 'CRAFTS' | 'DIGITAL_ART' | 'ME
 
 interface ProductFormValues {
   title: string;
+  titleEn: string;
   category: ProductCategory;
   price: string;
   stock: string;
   description: string;
+  descriptionEn: string;
   images: File[];
 }
 
 const defaultValues: ProductFormValues = {
   title: '',
+  titleEn: '',
   category: 'OTHER',
   price: '',
   stock: '',
   description: '',
+  descriptionEn: '',
   images: [],
 };
 
@@ -46,7 +50,16 @@ export const ProductWizard = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: { title: string; category: ProductCategory; price: number; stock: number; description: string; images: string[] }) => {
+    mutationFn: async (data: {
+      title: string;
+      titleI18n: { zh: string; en: string };
+      category: ProductCategory;
+      price: number;
+      stock: number;
+      description: string;
+      descriptionI18n: { zh: string; en: string };
+      images: string[];
+    }) => {
       const res = await api.post('/shop/products', data);
       return res.data;
     },
@@ -63,6 +76,7 @@ export const ProductWizard = () => {
     if (!values.title.trim()) errs.title = t('dashboard.products.validation.titleRequired');
     else if (values.title.length < 2) errs.title = t('dashboard.products.validation.titleMinLength');
     else if (values.title.length > 100) errs.title = t('dashboard.products.validation.titleMaxLength');
+    if (!values.titleEn.trim()) errs.titleEn = t('dashboard.products.validation.titleRequired');
 
     const price = parseFloat(values.price);
     if (!values.price) errs.price = t('dashboard.products.validation.priceRequired');
@@ -80,6 +94,8 @@ export const ProductWizard = () => {
     const errs: Partial<Record<keyof ProductFormValues, string>> = {};
     if (!values.description.trim()) errs.description = t('dashboard.products.validation.descriptionRequired');
     else if (values.description.length < 10) errs.description = t('dashboard.products.validation.descriptionMinLength');
+    if (!values.descriptionEn.trim()) errs.descriptionEn = t('dashboard.products.validation.descriptionRequired');
+    else if (values.descriptionEn.length < 10) errs.descriptionEn = t('dashboard.products.validation.descriptionMinLength');
 
     if (values.images.length === 0) errs.images = t('dashboard.products.validation.imageRequired');
     else if (values.images.length > 9) errs.images = t('dashboard.products.validation.imageMaxCount');
@@ -112,10 +128,12 @@ export const ProductWizard = () => {
   const handleSubmit = async () => {
     await createMutation.mutateAsync({
       title: values.title,
+      titleI18n: { zh: values.title, en: values.titleEn },
       category: values.category,
       price: parseFloat(values.price),
       stock: parseInt(values.stock, 10),
       description: values.description,
+      descriptionI18n: { zh: values.description, en: values.descriptionEn },
       images: imageUrls,
     });
   };
@@ -175,7 +193,7 @@ export const ProductWizard = () => {
       {currentStep === 1 && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} {t('dashboard.products.fields.required')}</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (zh) {t('dashboard.products.fields.required')}</label>
             <input
               type="text"
               value={values.title}
@@ -183,6 +201,16 @@ export const ProductWizard = () => {
               className="w-full px-3 py-2 border border-stone-300 rounded-lg"
             />
             {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (en) {t('dashboard.products.fields.required')}</label>
+            <input
+              type="text"
+              value={values.titleEn}
+              onChange={(e) => set('titleEn', e.target.value)}
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+            />
+            {errors.titleEn && <p className="text-sm text-red-600 mt-1">{errors.titleEn}</p>}
           </div>
 
           <div>
@@ -232,7 +260,7 @@ export const ProductWizard = () => {
       {currentStep === 2 && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} {t('dashboard.products.fields.required')}</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (zh) {t('dashboard.products.fields.required')}</label>
             <textarea
               value={values.description}
               onChange={(e) => set('description', e.target.value)}
@@ -240,6 +268,16 @@ export const ProductWizard = () => {
               className="w-full px-3 py-2 border border-stone-300 rounded-lg"
             />
             {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (en) {t('dashboard.products.fields.required')}</label>
+            <textarea
+              value={values.descriptionEn}
+              onChange={(e) => set('descriptionEn', e.target.value)}
+              rows={6}
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+            />
+            {errors.descriptionEn && <p className="text-sm text-red-600 mt-1">{errors.descriptionEn}</p>}
           </div>
 
           <div>

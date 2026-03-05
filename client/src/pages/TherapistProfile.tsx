@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   MapPin, Clock, Video, Star, Shield, ChevronLeft, Calendar, QrCode, Globe, X
 } from 'lucide-react';
@@ -22,12 +22,14 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import zhCnLocale from '@fullcalendar/core/locales/zh-cn';
 import { cn } from '../utils/cn';
 import { getPosterUrl } from '../utils/therapyPlanUtils';
+import { followUser, getFollowStatus, unfollowUser } from '../api/follows';
 
 export const TherapistProfile = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { isAuthenticated, user: currentUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'showcase' | 'schedule' | 'about' | 'reviews'>('showcase');
   const [showQrModal, setShowQrModal] = useState(false);
 
@@ -41,6 +43,23 @@ export const TherapistProfile = () => {
     queryKey: ['therapist-plans', id],
     queryFn: () => listTherapyPlans({ therapistId: id, status: 'PUBLISHED' }),
     enabled: !!id,
+  });
+  const targetUserId = therapist?.user?.id;
+  const canFollow = !!(isAuthenticated && currentUser?.role === 'MEMBER' && targetUserId && targetUserId !== currentUser.id);
+
+  const { data: followStatus } = useQuery({
+    queryKey: ['follow-status', targetUserId],
+    queryFn: () => getFollowStatus(targetUserId!),
+    enabled: canFollow,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => followUser(targetUserId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', targetUserId] }),
+  });
+  const unfollowMutation = useMutation({
+    mutationFn: () => unfollowUser(targetUserId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', targetUserId] }),
   });
 
   if (isLoading) return <PageLoader />;
@@ -383,6 +402,33 @@ export const TherapistProfile = () => {
                   </p>
                 )}
 
+                {canFollow && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={followStatus?.isFollowing ? 'outline' : 'primary'}
+                      size="sm"
+                      onClick={() => {
+                        if (followStatus?.isFollowing) {
+                          unfollowMutation.mutate();
+                        } else {
+                          followMutation.mutate();
+                        }
+                      }}
+                      loading={followMutation.isPending || unfollowMutation.isPending}
+                    >
+                      {followStatus?.isFollowing ? 'Following' : 'Follow'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!followStatus?.isFollowing}
+                      onClick={() => navigate(`/dashboard/member?tab=messages&conversation=${targetUserId}`)}
+                    >
+                      Message
+                    </Button>
+                  </div>
+                )}
+
                 <div className="space-y-2 pt-2 border-t border-stone-100">
                   {[
                     { icon: Clock, text: t('therapists.profile.minuteSession', { n: sessionLength }) },
@@ -435,3 +481,4 @@ export const TherapistProfile = () => {
     </div>
   );
 };
+

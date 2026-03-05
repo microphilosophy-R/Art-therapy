@@ -3,6 +3,8 @@ import app from './app';
 import { prisma } from './lib/prisma';
 import { redis } from './lib/redis';
 import { startScheduledJobs } from './services/scheduler.service';
+import { createServer } from 'http';
+import { initSocketServer } from './lib/socket';
 
 // Express 4 async route handlers do not automatically forward rejected promises
 // to the global error handler. In Node.js 15+ an unhandled rejection crashes the
@@ -30,7 +32,10 @@ async function main() {
   // Start cron jobs
   startScheduledJobs();
 
-  app.listen(PORT, () => {
+  const httpServer = createServer(app);
+  initSocketServer(httpServer, process.env.CLIENT_URL ?? 'http://localhost:5173');
+
+  httpServer.listen(PORT, () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);
     console.log(`[Server] Environment: ${process.env.NODE_ENV ?? 'development'}`);
   });

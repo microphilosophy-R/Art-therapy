@@ -30,8 +30,10 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
 };
 
 export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false }: TherapyPlanCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const posterUrl = getPosterUrl(plan);
+  const planTitle = plan.titleI18n ? (i18n.language.startsWith('zh') ? (plan.titleI18n.zh || plan.titleI18n.en || plan.title) : (plan.titleI18n.en || plan.titleI18n.zh || plan.title)) : plan.title;
+  const planSlogan = plan.sloganI18n ? (i18n.language.startsWith('zh') ? (plan.sloganI18n.zh || plan.sloganI18n.en || plan.slogan) : (plan.sloganI18n.en || plan.sloganI18n.zh || plan.slogan)) : plan.slogan;
 
   // Render logic based on type
   const isPersonal = plan.type === 'PERSONAL_CONSULT';
@@ -43,7 +45,7 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
   const enrolledCount = plan._count?.participants || 0;
   const participants = plan.participants || [];
 
-  const sloganString = plan.slogan || t(`common.planSlogan.${plan.type}`);
+  const sloganString = planSlogan || t(`common.planSlogan.${plan.type}`);
 
   const linkTo = (isPersonal && perspective === 'public')
     ? `/therapists/${plan.therapistId}`
@@ -62,7 +64,7 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
       <div className="absolute inset-0 bg-stone-800">
         <img
           src={posterUrl}
-          alt={plan.title}
+          alt={planTitle}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-60"
           onError={(e) => {
             const img = e.target as HTMLImageElement;
@@ -115,7 +117,7 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
           <div className="transform translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out space-y-3 mt-4">
 
             <h3 className="font-semibold text-teal-100 line-clamp-1">
-              {plan.title}
+              {planTitle}
             </h3>
 
             <div className="space-y-1.5 text-xs text-stone-300">

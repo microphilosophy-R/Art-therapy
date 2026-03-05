@@ -6,9 +6,10 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Loader2 } from 'lucide-react';
+import { pickLocalizedText } from '../../utils/i18nContent';
 
 export const ShopPage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [category, setCategory] = useState<string>('');
     const [search, setSearch] = useState<string>('');
 
@@ -58,6 +59,7 @@ export const ShopPage = () => {
                     {data?.map((product) => {
                         const sellerUser = product.userProfile?.user ?? product.artist?.user;
                         const sellerName = sellerUser?.firstName || 'Unknown Seller';
+                        const title = pickLocalizedText(product.titleI18n, i18n.language, product.title);
                         return (
                         <Link key={product.id} to={`/shop/${product.id}`} className="group">
                             <Card className="h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
@@ -65,7 +67,7 @@ export const ShopPage = () => {
                                     {product.images[0] ? (
                                         <img
                                             src={product.images[0].url}
-                                            alt={product.title}
+                                            alt={title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
                                     ) : (
@@ -83,7 +85,7 @@ export const ShopPage = () => {
                                     <div className="text-xs text-teal-600 font-medium mb-1">
                                         {t(`shop.categories.${product.category}`)}
                                     </div>
-                                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{product.title}</h3>
+                                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{title}</h3>
                                     <p className="text-sm text-gray-500 mb-3 truncate">
                                         {t('shop.product.by', { name: sellerName })}
                                     </p>

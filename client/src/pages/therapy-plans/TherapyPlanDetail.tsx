@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,6 +23,8 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
+import { pickLocalizedText } from '../../utils/i18nContent';
+import { followUser, getFollowStatus, unfollowUser } from '../../api/follows';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
   DRAFT: 'outline',
@@ -106,8 +108,12 @@ export const TherapyPlanDetail = () => {
   }
 
   const posterUrl = getPosterUrl(plan);
+  const planTitle = pickLocalizedText(plan.titleI18n, i18n.language, plan.title);
+  const planSlogan = pickLocalizedText(plan.sloganI18n, i18n.language, plan.slogan);
+  const planIntroduction = pickLocalizedText(plan.introductionI18n, i18n.language, plan.introduction);
   const therapist = plan.therapist;
   const therapistUser = therapist?.user;
+  const therapistUserId = therapistUser?.id;
 
   const galleryImages = plan.images?.length
     ? plan.images.map((img) => img.url)
@@ -130,9 +136,26 @@ export const TherapyPlanDetail = () => {
 
   const canSignUp = (user?.role === 'MEMBER' || !user) && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled && !isPendingPayment && !isPastSignupDeadline;
   const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && (isEnrolled || isPendingPayment);
+  const canFollowOwner = !!(user?.role === 'MEMBER' && therapistUserId && therapistUserId !== user.id);
+
+  const { data: followStatus } = useQuery({
+    queryKey: ['follow-status', therapistUserId],
+    queryFn: () => getFollowStatus(therapistUserId!),
+    enabled: canFollowOwner,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => followUser(therapistUserId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', therapistUserId] }),
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: () => unfollowUser(therapistUserId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', therapistUserId] }),
+  });
 
   const priceDisplay = plan.price != null
-    ? `¥${Number(plan.price).toFixed(2)}`
+    ? `楼${Number(plan.price).toFixed(2)}`
     : null;
 
   return (
@@ -192,9 +215,9 @@ export const TherapyPlanDetail = () => {
               </Badge>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">{plan.title}</h1>
-          {plan.slogan && (
-            <p className="text-stone-500 mt-1 italic">{plan.slogan}</p>
+          <h1 className="text-2xl font-bold text-stone-900">{planTitle}</h1>
+          {planSlogan && (
+            <p className="text-stone-500 mt-1 italic">{planSlogan}</p>
           )}
         </div>
 
@@ -231,7 +254,7 @@ export const TherapyPlanDetail = () => {
           {plan.status === 'PUBLISHED' && (
             <a
               href={getTherapyPlanIcsUrl(plan.id)}
-              download={`${plan.title}.ics`}
+              download={`${planTitle}.ics`}
               className="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:border-teal-400 hover:text-teal-700 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
@@ -248,7 +271,7 @@ export const TherapyPlanDetail = () => {
             <StandardPaymentWorkflow
               type={plan.type as any}
               data={{
-                title: plan.title,
+                title: planTitle,
                 price: Number(plan.price),
                 startTime: plan.startTime,
                 endTime: plan.endTime || undefined,
@@ -303,7 +326,7 @@ export const TherapyPlanDetail = () => {
                       }}
                     >
                       {priceDisplay
-                        ? `${t('therapyPlans.detail.signUp')} · ${priceDisplay}`
+                        ? `${t('therapyPlans.detail.signUp')} 路 ${priceDisplay}`
                         : t('therapyPlans.detail.signUp')}
                     </Button>
                   )}
@@ -346,7 +369,7 @@ export const TherapyPlanDetail = () => {
         <h2 className="text-sm font-medium text-stone-500 uppercase tracking-wide mb-2">
           {t('therapyPlans.detail.introduction')}
         </h2>
-        <p className="text-stone-700 whitespace-pre-wrap">{plan.introduction}</p>
+        <p className="text-stone-700 whitespace-pre-wrap">{planIntroduction}</p>
       </section>
 
       {/* PDF attachment */}
@@ -364,7 +387,7 @@ export const TherapyPlanDetail = () => {
         </div>
       )}
 
-      {/* Schedule — PlanSchedule if events exist, else single date card */}
+      {/* Schedule 鈥?PlanSchedule if events exist, else single date card */}
       {plan.events && plan.events.length > 0 ? (
         <PlanSchedule mode="view" events={plan.events} planType={plan.type} />
       ) : (
@@ -450,6 +473,32 @@ export const TherapyPlanDetail = () => {
               {therapist?.bio && (
                 <p className="text-sm text-stone-600 mt-1 line-clamp-3">{therapist.bio}</p>
               )}
+              {canFollowOwner && (
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={followStatus?.isFollowing ? 'outline' : 'primary'}
+                    onClick={() => {
+                      if (followStatus?.isFollowing) {
+                        unfollowMutation.mutate();
+                      } else {
+                        followMutation.mutate();
+                      }
+                    }}
+                    loading={followMutation.isPending || unfollowMutation.isPending}
+                  >
+                    {followStatus?.isFollowing ? 'Following' : 'Follow'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!followStatus?.isFollowing}
+                    onClick={() => navigate(`/dashboard/member?tab=messages&conversation=${therapistUserId}`)}
+                  >
+                    Message
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -457,3 +506,4 @@ export const TherapyPlanDetail = () => {
     </div>
   );
 };
+

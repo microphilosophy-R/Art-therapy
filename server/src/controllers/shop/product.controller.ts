@@ -1,18 +1,21 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
-import { z } from 'zod';
 import { ProductCategory } from '@prisma/client';
+import {
+    createProductSchema,
+    updateProductSchema,
+    type CreateProductInput,
+    type UpdateProductInput,
+} from '../../schemas/product.schemas';
 
-const createProductSchema = z.object({
-    title: z.string().min(2, 'Title must be at least 2 characters').max(100),
-    description: z.string().min(10, 'Description must be at least 10 characters'),
-    price: z.number().positive('Price must be positive'),
-    stock: z.number().int().nonnegative('Stock cannot be negative'),
-    category: z.nativeEnum(ProductCategory),
-    images: z.array(z.string().url()).min(1, 'At least one image is required').max(10, 'Maximum 10 images allowed'),
-});
-
-const updateProductSchema = createProductSchema.partial();
+const toLocalizedRequired = (
+    i18n: { zh?: string; en?: string } | undefined,
+    fallback: string | undefined,
+) => {
+    const zh = i18n?.zh ?? fallback ?? '';
+    const en = i18n?.en ?? fallback ?? '';
+    return { zh, en };
+};
 
 export const getProducts = async (req: Request, res: Response) => {
     const { category, sellerId, artistId, search, page = '1', limit = '10' } = req.query;
@@ -43,7 +46,7 @@ export const getProducts = async (req: Request, res: Response) => {
                 images: { orderBy: { order: 'asc' } },
                 userProfile: {
                     include: {
-                        user: { select: { firstName: true, lastName: true, avatarUrl: true } }
+                        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } }
                     }
                 }
             },
@@ -74,7 +77,7 @@ export const getProductById = async (req: Request, res: Response) => {
             images: { orderBy: { order: 'asc' } },
             userProfile: {
                 include: {
-                    user: { select: { firstName: true, lastName: true, avatarUrl: true } }
+                    user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } }
                 }
             }
         }
@@ -88,7 +91,9 @@ export const getProductById = async (req: Request, res: Response) => {
 };
 
 export const createProduct = async (req: Request, res: Response) => {
-    const data = req.body as z.infer<typeof createProductSchema>;
+    const data = req.body as CreateProductInput;
+    const titleI18n = toLocalizedRequired((data as any).titleI18n, (data as any).title);
+    const descriptionI18n = toLocalizedRequired((data as any).descriptionI18n, (data as any).description);
 
     const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
@@ -101,8 +106,10 @@ export const createProduct = async (req: Request, res: Response) => {
     const product = await prisma.product.create({
         data: {
             userProfileId: userProfile.id,
-            title: data.title,
-            description: data.description,
+            title: titleI18n.zh,
+            titleI18n,
+            description: descriptionI18n.zh,
+            descriptionI18n,
             price: data.price,
             stock: data.stock,
             category: data.category,
@@ -121,7 +128,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const data = req.body as z.infer<typeof updateProductSchema>;
+    const data = req.body as UpdateProductInput;
 
     const userProfile = await prisma.userProfile.findUnique({
         where: { userId: req.user!.id }
@@ -149,9 +156,29 @@ export const updateProduct = async (req: Request, res: Response) => {
     const product = await prisma.product.update({
         where: { id },
         data: {
-            ...data,
+            ...(data.title !== undefined || (data as any).titleI18n !== undefined
+                ? {
+                    titleI18n: toLocalizedRequired((data as any).titleI18n, data.title ?? existingProduct.title),
+                    title: toLocalizedRequired((data as any).titleI18n, data.title ?? existingProduct.title).zh,
+                }
+                : {}),
+            ...(data.description !== undefined || (data as any).descriptionI18n !== undefined
+                ? {
+                    descriptionI18n: toLocalizedRequired(
+                        (data as any).descriptionI18n,
+                        data.description ?? existingProduct.description,
+                    ),
+                    description: toLocalizedRequired(
+                        (data as any).descriptionI18n,
+                        data.description ?? existingProduct.description,
+                    ).zh,
+                }
+                : {}),
+            ...(data.price !== undefined ? { price: data.price } : {}),
+            ...(data.stock !== undefined ? { stock: data.stock } : {}),
+            ...(data.category !== undefined ? { category: data.category } : {}),
             images: data.images ? {
-                create: data.images.map((url, index) => ({
+                create: data.images.map((url: string, index: number) => ({
                     url,
                     order: index,
                 })),

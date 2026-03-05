@@ -5,9 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { getProducts } from '../../api/shop';
 import { Button } from '../ui/Button';
 import { Loader2, ArrowRight, ShoppingBag } from 'lucide-react';
+import { pickLocalizedText } from '../../utils/i18nContent';
 
 export const FeaturedProductsRow = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data: products, isLoading } = useQuery({
         queryKey: ['featured-products'],
         queryFn: () => getProducts({ limit: 4 }),
@@ -47,6 +48,7 @@ export const FeaturedProductsRow = () => {
                         const sellerName = sellerUser
                             ? `${sellerUser.firstName} ${sellerUser.lastName}`.trim()
                             : 'Unknown Seller';
+                        const title = pickLocalizedText(product.titleI18n, i18n.language, product.title);
 
                         return (
                             <Link
@@ -58,7 +60,7 @@ export const FeaturedProductsRow = () => {
                                 {product.images?.[0] ? (
                                     <img
                                         src={product.images[0].url}
-                                        alt={product.title}
+                                        alt={title}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
                                 ) : (
@@ -82,7 +84,7 @@ export const FeaturedProductsRow = () => {
 
                             <div className="p-5 flex flex-col flex-1">
                                 <h3 className="font-bold text-gray-900 mb-1 group-hover:text-teal-600 transition-colors line-clamp-1">
-                                    {product.title}
+                                    {title}
                                 </h3>
                                 <p className="text-xs text-gray-500 mb-4">
                                     {t('shop.product.by', { name: sellerName })}

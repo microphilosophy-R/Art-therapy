@@ -6,13 +6,17 @@ import type {
   TherapyPlanType,
   ArtSalonSubType,
   SessionMedium,
+  LocalizedText,
 } from '../types';
 
 export interface CreateTherapyPlanPayload {
   type: TherapyPlanType;
   title: string;
+  titleI18n?: LocalizedText;
   slogan?: string;
+  sloganI18n?: LocalizedText | null;
   introduction: string;
+  introductionI18n?: LocalizedText;
   startTime: string;
   endTime?: string;
   location: string;

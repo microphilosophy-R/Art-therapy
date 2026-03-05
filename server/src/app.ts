@@ -30,6 +30,7 @@ import { statsRouter } from './routes/stats.routes';
 import { calendarRouter } from './routes/calendar.routes';
 import userProfileRouter from './routes/userProfile.routes';
 import { rateLimiter } from './middleware/rateLimiter';
+import { followRouter } from './routes/follow.routes';
 
 const app = express();
 
@@ -85,6 +86,7 @@ api.use('/member', memberRouter);
 api.use('/stats', statsRouter);
 api.use('/calendar', calendarRouter);
 api.use('/user-profile', userProfileRouter);
+api.use('/follows', followRouter);
 
 // Exchange rate proxy — avoids CORS issues calling cn.apihz.cn from the browser
 // Uses APIHZ_ID / APIHZ_KEY env vars; falls back to the shared public demo key (rate-limited).

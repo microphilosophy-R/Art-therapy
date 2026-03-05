@@ -157,8 +157,11 @@ export const EditTherapyPlan = () => {
   const buildMetadataPayload = (values: TherapyPlanFormValues) => ({
     type: values.type,
     title: values.title,
+    titleI18n: { zh: values.title, en: values.titleEn },
     slogan: values.slogan || undefined,
+    sloganI18n: values.slogan || values.sloganEn ? { zh: values.slogan || undefined, en: values.sloganEn || undefined } : null,
     introduction: values.introduction,
+    introductionI18n: { zh: values.introduction, en: values.introductionEn },
     startTime: values.startTime ? new Date(values.startTime).toISOString() : new Date().toISOString(),
     endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
     location: values.location,

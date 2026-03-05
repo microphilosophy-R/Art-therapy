@@ -10,6 +10,7 @@ import { MemberReviewTab } from './tabs/MemberReviewTab';
 import { ProfilePreviewTab } from './tabs/ProfilePreviewTab';
 import { StatsDashboard } from '../../components/dashboard/StatsDashboard';
 import { Avatar } from '../../components/ui/Avatar';
+import { MessagesTab } from './tabs/MessagesTab';
 
 type TabKey = 'stats' | 'overview' | 'plans' | 'products' | 'showcase' | 'calendar' | 'review' | 'preview' | 'profile' | 'messages';
 
@@ -40,6 +41,7 @@ export const MemberDashboard = () => {
     { key: 'calendar' as TabKey, label: t('dashboard.therapist.tabs.calendar') },
     { key: 'review' as TabKey, label: t('dashboard.therapist.tabs.reviewStatus') },
     { key: 'preview' as TabKey, label: t('dashboard.therapist.tabs.profilePreview') },
+    { key: 'messages' as TabKey, label: t('dashboard.client.messages', 'Messages') },
   ];
 
   return (
@@ -81,6 +83,7 @@ export const MemberDashboard = () => {
         {activeTab === 'calendar' && <CalendarTab />}
         {activeTab === 'review' && <MemberReviewTab />}
         {activeTab === 'preview' && <ProfilePreviewTab />}
+        {activeTab === 'messages' && <MessagesTab />}
       </div>
     </div>
   );

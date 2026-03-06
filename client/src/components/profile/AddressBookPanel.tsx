@@ -40,14 +40,6 @@ const emptyForm: AddressFormState = {
 
 const mobileRegex = /^1\d{10}$/;
 
-const tagLabels: Record<AddressTag, string> = {
-  HOME: 'Home',
-  COMPANY: 'Company',
-  SCHOOL: 'School',
-  PARENTS: 'Parents',
-  OTHER: 'Other',
-};
-
 interface AddressBookPanelProps {
   selectable?: boolean;
   selectedAddressId?: string | null;
@@ -136,6 +128,17 @@ export const AddressBookPanel = ({
     deleteMutation.isPending ||
     defaultMutation.isPending;
 
+  const tagLabels = useMemo<Record<AddressTag, string>>(
+    () => ({
+      HOME: t('shop.checkout.addressTags.HOME', 'Home'),
+      COMPANY: t('shop.checkout.addressTags.COMPANY', 'Company'),
+      SCHOOL: t('shop.checkout.addressTags.SCHOOL', 'School'),
+      PARENTS: t('shop.checkout.addressTags.PARENTS', 'Parents'),
+      OTHER: t('shop.checkout.addressTags.OTHER', 'Other'),
+    }),
+    [t],
+  );
+
   const loadToForm = (address: MemberAddress) => {
     setEditingAddressId(address.id);
     setForm({
@@ -159,11 +162,17 @@ export const AddressBookPanel = ({
   };
 
   const validate = () => {
-    if (!form.recipientName.trim()) return 'Recipient name is required';
-    if (!mobileRegex.test(form.mobile.trim())) return 'China mobile must be 11 digits';
-    if (!form.province.trim() || !form.city.trim() || !form.district.trim()) return 'Province / city / district are required';
-    if (form.addressDetail.trim().length < 5) return 'Detailed address must be at least 5 characters';
-    if (form.postalCode.trim() && !/^\d{6}$/.test(form.postalCode.trim())) return 'Postal code must be 6 digits';
+    if (!form.recipientName.trim()) return t('shop.checkout.validation.recipientRequired', 'Recipient name is required');
+    if (!mobileRegex.test(form.mobile.trim())) return t('shop.checkout.validation.mobileInvalid', 'China mobile must be 11 digits');
+    if (!form.province.trim() || !form.city.trim() || !form.district.trim()) {
+      return t('shop.checkout.validation.regionRequired', 'Province / city / district are required');
+    }
+    if (form.addressDetail.trim().length < 5) {
+      return t('shop.checkout.validation.addressDetailMin', 'Detailed address must be at least 5 characters');
+    }
+    if (form.postalCode.trim() && !/^\d{6}$/.test(form.postalCode.trim())) {
+      return t('shop.checkout.validation.postalCodeInvalid', 'Postal code must be 6 digits');
+    }
     return null;
   };
 

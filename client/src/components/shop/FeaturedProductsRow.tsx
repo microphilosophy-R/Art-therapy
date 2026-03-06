@@ -18,7 +18,7 @@ export const FeaturedProductsRow = () => {
     if (isLoading) {
         return (
             <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-celadon-600" />
             </div>
         );
     }
@@ -36,7 +36,7 @@ export const FeaturedProductsRow = () => {
                         <p className="text-gray-600">{t('shop.subtitle')}</p>
                     </div>
                     <Link to="/shop">
-                        <Button variant="ghost" className="text-teal-600 hover:text-teal-700 hover:bg-teal-50">
+                        <Button variant="ghost" className="text-celadon-600 hover:text-celadon-700 hover:bg-celadon-50">
                             {t('shop.product.viewDetails')}
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
@@ -58,46 +58,46 @@ export const FeaturedProductsRow = () => {
                                 to={`/shop/${product.id}`}
                                 className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
                             >
-                            <div className="aspect-square relative overflow-hidden bg-gray-100">
-                                {coverUrl ? (
-                                    <img
-                                        src={coverUrl}
-                                        alt={title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                        <ShoppingBag className="w-12 h-12" />
-                                    </div>
-                                )}
-                                <div className="absolute top-4 left-4">
-                                    <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-teal-700 text-xs font-bold rounded-full shadow-sm uppercase tracking-wider">
-                                        {t(`shop.categories.${product.category}`)}
-                                    </span>
-                                </div>
-                                {product.stock === 0 && (
-                                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                                        <span className="bg-white text-gray-900 px-4 py-2 rounded-lg font-bold shadow-lg">
-                                            {t('shop.product.soldOut')}
+                                <div className="aspect-poster relative overflow-hidden bg-ivory-300">
+                                    {coverUrl ? (
+                                        <img
+                                            src={coverUrl}
+                                            alt={title}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                            <ShoppingBag className="w-12 h-12" />
+                                        </div>
+                                    )}
+                                    <div className="absolute top-4 left-4">
+                                        <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-celadon-700 text-xs font-bold rounded-full shadow-sm uppercase tracking-wider">
+                                            {t(`shop.categories.${product.category}`)}
                                         </span>
                                     </div>
-                                )}
-                            </div>
+                                    {product.stock === 0 && (
+                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                                            <span className="bg-white text-gray-900 px-4 py-2 rounded-lg font-bold shadow-lg">
+                                                {t('shop.product.soldOut')}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
 
-                            <div className="p-5 flex flex-col flex-1">
-                                <h3 className="font-bold text-gray-900 mb-1 group-hover:text-teal-600 transition-colors line-clamp-1">
-                                    {title}
-                                </h3>
-                                <p className="text-xs text-gray-500 mb-4">
-                                    {t('shop.product.by', { name: sellerName })}
-                                </p>
-                                <div className="mt-auto flex items-center justify-between">
-                                    <span className="text-xl font-bold text-gray-900">¥{Number(product.price).toFixed(2)}</span>
-                                    <div className="p-2 rounded-full bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all duration-300">
-                                        <ShoppingBag className="w-5 h-5" />
+                                <div className="p-5 flex flex-col flex-1">
+                                    <h3 className="font-bold text-gray-900 mb-1 group-hover:text-celadon-600 transition-colors line-clamp-1">
+                                        {title}
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mb-4">
+                                        {t('shop.product.by', { name: sellerName })}
+                                    </p>
+                                    <div className="mt-auto flex items-center justify-between">
+                                        <span className="text-xl font-bold text-gray-900">¥{Number(product.price).toFixed(2)}</span>
+                                        <div className="p-2 rounded-full bg-celadon-50 text-celadon-600 group-hover:bg-celadon-600 group-hover:text-white transition-all duration-300">
+                                            <ShoppingBag className="w-5 h-5" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
                             </Link>
                         );
                     })}

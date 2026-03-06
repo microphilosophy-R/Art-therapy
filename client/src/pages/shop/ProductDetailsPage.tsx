@@ -37,7 +37,7 @@ export const ProductDetailsPage = () => {
     if (isLoading) {
         return (
             <div className="flex justify-center flex-col items-center py-32 space-y-4">
-                <Loader2 className="w-12 h-12 animate-spin text-teal-600" />
+                <Loader2 className="w-12 h-12 animate-spin text-celadon-600" />
                 <p className="text-gray-500">{t('shop.product.loading')}</p>
             </div>
         );
@@ -88,7 +88,7 @@ export const ProductDetailsPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <Link to="/shop" className="inline-flex items-center text-gray-500 hover:text-teal-600 mb-6 transition-colors">
+            <Link to="/shop" className="inline-flex items-center text-gray-500 hover:text-celadon-600 mb-6 transition-colors">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t('shop.product.backToShop')}
             </Link>
@@ -96,7 +96,7 @@ export const ProductDetailsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                 {/* Image Gallery */}
                 <div className="space-y-4">
-                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
+                    <div className="aspect-poster bg-ivory-300 rounded-2xl overflow-hidden border">
                         {activeMedia ? (
                             <img
                                 src={activeMedia.url}
@@ -115,7 +115,7 @@ export const ProductDetailsPage = () => {
                                 <button
                                     key={img.id}
                                     onClick={() => setActiveImage(idx)}
-                                    className={`w-20 h-20 rounded-md overflow-hidden border-2 flex-shrink-0 transition-colors ${activeImage === idx ? 'border-teal-600' : 'border-transparent hover:border-gray-300'
+                                    className={`w-20 h-20 rounded-md overflow-hidden border-2 flex-shrink-0 transition-colors ${activeImage === idx ? 'border-celadon-600' : 'border-transparent hover:border-gray-300'
                                         }`}
                                 >
                                     <img src={img.url} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
@@ -128,7 +128,7 @@ export const ProductDetailsPage = () => {
                 {/* Product Info */}
                 <div className="flex flex-col">
                     <div className="mb-2">
-                        <span className="text-sm font-semibold tracking-wider text-teal-600 uppercase">
+                        <span className="text-sm font-semibold tracking-wider text-celadon-600 uppercase">
                             {t(`shop.categories.${product.category}`)}
                         </span>
                     </div>
@@ -138,7 +138,7 @@ export const ProductDetailsPage = () => {
                             {sellerAvatar ? (
                                 <img src={sellerAvatar} alt="Artist" className="w-6 h-6 rounded-full" />
                             ) : (
-                                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-xs text-bold">
+                                <div className="w-6 h-6 rounded-full bg-celadon-100 flex items-center justify-center text-celadon-700 text-xs text-bold">
                                     {sellerInitial}
                                 </div>
                             )}
@@ -178,7 +178,7 @@ export const ProductDetailsPage = () => {
                         楼{Number(product.price).toFixed(2)}
                     </div>
 
-                    <div className="prose prose-teal max-w-none text-gray-600 mb-8 whitespace-pre-line">
+                    <div className="prose prose-stone max-w-none text-gray-600 mb-8 whitespace-pre-line">
                         {productDescription}
                     </div>
 
@@ -200,7 +200,7 @@ export const ProductDetailsPage = () => {
                                     <div className="flex items-center border rounded-md">
                                         <button
                                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                            className="p-2 text-gray-500 hover:text-teal-600 hover:bg-gray-50 transition-colors"
+                                            className="p-2 text-gray-500 hover:text-celadon-600 hover:bg-gray-50 transition-colors"
                                             disabled={quantity <= 1}
                                         >
                                             <Minus className="w-4 h-4" />
@@ -208,7 +208,7 @@ export const ProductDetailsPage = () => {
                                         <span className="w-12 text-center font-medium">{quantity}</span>
                                         <button
                                             onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                                            className="p-2 text-gray-500 hover:text-teal-600 hover:bg-gray-50 transition-colors"
+                                            className="p-2 text-gray-500 hover:text-celadon-600 hover:bg-gray-50 transition-colors"
                                             disabled={quantity >= product.stock}
                                         >
                                             <Plus className="w-4 h-4" />
@@ -220,7 +220,7 @@ export const ProductDetailsPage = () => {
                                 {isAuthenticated ? (
                                     <Button
                                         size="lg"
-                                        className="w-full text-lg h-14 bg-teal-600 hover:bg-teal-700"
+                                        className="w-full text-lg h-14 bg-celadon-600 hover:bg-celadon-700 text-ivory-50"
                                         onClick={() => handleAddToCart()}
                                         disabled={isAdding}
                                     >
@@ -231,7 +231,7 @@ export const ProductDetailsPage = () => {
                                     <Button
                                         size="lg"
                                         variant="outline"
-                                        className="w-full text-lg h-14 border-teal-600 text-teal-600 hover:bg-teal-50"
+                                        className="w-full text-lg h-14 border-celadon-600 text-celadon-600 hover:bg-celadon-50"
                                         onClick={() => navigate('/login?redirect=/shop/' + product.id)}
                                     >
                                         {t('shop.product.loginToAddToCart')}

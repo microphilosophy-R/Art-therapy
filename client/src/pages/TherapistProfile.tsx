@@ -144,15 +144,15 @@ export const TherapistProfile = () => {
               <CardContent className="p-0">
                 <div className="flex flex-col sm:flex-row gap-0">
                   {/* Portrait */}
-                  <div className="sm:w-48 shrink-0">
+                  <div className="sm:w-64 shrink-0 aspect-portrait overflow-hidden">
                     {featuredImageUrl ? (
                       <img
                         src={featuredImageUrl}
                         alt={`${user.firstName} ${user.lastName}`}
-                        className="w-full h-64 sm:h-full object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-64 sm:h-full bg-gradient-to-br from-teal-600 to-teal-800 flex items-center justify-center">
+                      <div className="w-full h-full bg-gradient-to-br from-celadon-600 to-celadon-800 flex flex-col items-center justify-center p-4">
                         <Avatar
                           firstName={user.firstName}
                           lastName={user.lastName}
@@ -263,9 +263,9 @@ export const TherapistProfile = () => {
                 {activeTab === 'showcase' && (
                   <div className="space-y-6">
                     {/* Featured Plans Showcase */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {therapistPlansResponse?.data?.slice(0, 4).map((plan: TherapyPlan) => (
-                        <Link key={plan.id} to={`/therapy-plans/${plan.id}`} className="group relative aspect-[16/9] rounded-2xl overflow-hidden border border-stone-200">
+                        <Link key={plan.id} to={`/therapy-plans/${plan.id}`} className="group relative aspect-poster rounded-3xl overflow-hidden border border-ink-100 shadow-sm">
                           <img src={getPosterUrl(plan)} alt={plan.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                           <div className="absolute bottom-4 left-4 right-4">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, LogOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { TherapyPlan, TherapyPlanImage, TherapyPlanType, ArtSalonSubType, SessionMedium } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { WizardStepper } from '../../components/ui/WizardStepper';
@@ -471,26 +472,26 @@ export const TherapyPlanForm = ({
     targetKey: keyof TherapyPlanFormValues;
     multiline?: boolean;
   }> = [
-    {
-      field: 'title',
-      label: t('therapyPlans.form.title'),
-      sourceKey: translationSourceLang === 'zh' ? 'title' : 'titleEn',
-      targetKey: translationSourceLang === 'zh' ? 'titleEn' : 'title',
-    },
-    {
-      field: 'slogan',
-      label: t('therapyPlans.form.slogan'),
-      sourceKey: translationSourceLang === 'zh' ? 'slogan' : 'sloganEn',
-      targetKey: translationSourceLang === 'zh' ? 'sloganEn' : 'slogan',
-    },
-    {
-      field: 'introduction',
-      label: t('therapyPlans.form.introduction'),
-      sourceKey: translationSourceLang === 'zh' ? 'introduction' : 'introductionEn',
-      targetKey: translationSourceLang === 'zh' ? 'introductionEn' : 'introduction',
-      multiline: true,
-    },
-  ];
+      {
+        field: 'title',
+        label: t('therapyPlans.form.title'),
+        sourceKey: translationSourceLang === 'zh' ? 'title' : 'titleEn',
+        targetKey: translationSourceLang === 'zh' ? 'titleEn' : 'title',
+      },
+      {
+        field: 'slogan',
+        label: t('therapyPlans.form.slogan'),
+        sourceKey: translationSourceLang === 'zh' ? 'slogan' : 'sloganEn',
+        targetKey: translationSourceLang === 'zh' ? 'sloganEn' : 'slogan',
+      },
+      {
+        field: 'introduction',
+        label: t('therapyPlans.form.introduction'),
+        sourceKey: translationSourceLang === 'zh' ? 'introduction' : 'introductionEn',
+        targetKey: translationSourceLang === 'zh' ? 'introductionEn' : 'introduction',
+        multiline: true,
+      },
+    ];
 
   const handleTranslationFieldChange = (
     key: keyof TherapyPlanFormValues,
@@ -678,208 +679,219 @@ export const TherapyPlanForm = ({
       />
 
       {/* Form Content */}
-      <div className="pt-4">
-        {currentStep === 1 && (
-          <Step1Metadata
-            values={values as Step1Values}
-            errors={errors}
-            set={set}
-            setValues={setValues}
-            setErrors={setErrors}
-            posterFile={posterFile}
-            setPosterFile={setPosterFile}
-            isLoading={isNextBusy}
-            consultEnabled={consultEnabled}
-          />
-        )}
-        {currentStep === 2 && (
-          <Step2Schedule
-            values={values}
-            errors={errors}
-            set={set}
-            handleStartTimeChange={handleStartTimeChange}
-            handleEndTimeChange={handleEndTimeChange}
-            durationMinutes={durationMinutes}
-            handleDurationChange={handleDurationChange}
-          />
-        )}
-        {currentStep === 3 && (
-          <Step3Imports
-            isLoading={isNextBusy}
-            videoUploadPercent={videoUploadPercent}
-            videoFile={videoFile}
-            setVideoFile={setVideoFile}
-            existingVideoUrl={existingVideoUrl}
-            videoError={videoError}
-            setVideoError={setVideoError}
-            galleryImages={galleryImages}
-            stagedGalleryFiles={stagedGalleryFiles}
-            setStagedGalleryFiles={setStagedGalleryFiles}
-            onAddGalleryImage={onAddGalleryImage}
-            onDeleteGalleryImage={onDeleteGalleryImage}
-            isAddingGalleryImage={isAddingGalleryImage}
-            galleryError={galleryError}
-            setGalleryError={setGalleryError}
-            galleryUploadError={galleryUploadError}
-            pdfFiles={pdfFiles}
-            setPdfFiles={setPdfFiles}
-            existingPdfs={existingPdfs}
-            onAddPdf={onAddPdf}
-            onDeletePdf={onDeletePdf}
-            isAddingPdf={isAddingPdf}
-            pdfError={pdfError}
-            setPdfError={setPdfError}
-            planType={values.type}
-          />
-        )}
-        {currentStep === 4 && (
-          <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h4 className="text-sm font-semibold text-stone-900">
-                  {t('translation.optionalStepTitle')}
-                </h4>
-                <p className="text-xs text-stone-500">
-                  {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
-                </p>
-                <p className="text-xs text-stone-500 mt-1">
-                  {t('translation.manualEditHint')}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSkipTranslation}
-                  disabled={isTranslating || isSubmittingForReview}
-                >
-                  {t('translation.skip')}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleTranslateStep4}
-                  loading={isTranslating}
-                  disabled={isTranslating || isSubmittingForReview}
-                >
-                  {t('translation.translateNow')}
-                </Button>
-              </div>
-            </div>
-
-            {translationMessage && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                {translationMessage}
-              </p>
+      <div className="pt-4 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="w-full"
+          >
+            {currentStep === 1 && (
+              <Step1Metadata
+                values={values as Step1Values}
+                errors={errors}
+                set={set}
+                setValues={setValues}
+                setErrors={setErrors}
+                posterFile={posterFile}
+                setPosterFile={setPosterFile}
+                isLoading={isNextBusy}
+                consultEnabled={consultEnabled}
+              />
             )}
-
-            <div className="hidden md:grid md:grid-cols-2 gap-3 px-1">
-              <p className="text-xs font-medium text-stone-600">
-                {t('translation.sourceColumn', { lang: t(`translation.sourceDetected.${translationSourceLang}`) })}
-              </p>
-              <p className="text-xs font-medium text-stone-600">
-                {t('translation.resultColumn', { lang: t(`translation.sourceDetected.${translationTargetLang}`) })}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {translationRows.map((row) => {
-                const state = translationState[row.field];
-                const sourceValue = String(values[row.sourceKey] ?? '');
-                const targetValue = String(values[row.targetKey] ?? '');
-                const statusClass =
-                  state.status === 'success'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : state.status === 'failed'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : state.status === 'pending'
-                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-stone-50 text-stone-600 border-stone-200';
-                return (
-                  <div
-                    key={row.field}
-                    className="rounded-md border border-stone-200 p-3"
-                  >
-                    <p className="text-sm font-medium text-stone-800 mb-2">{row.label}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        {row.multiline ? (
-                          <textarea
-                            rows={4}
-                            value={sourceValue}
-                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
-                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={sourceValue}
-                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
-                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        {row.multiline ? (
-                          <textarea
-                            rows={4}
-                            value={targetValue}
-                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
-                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={targetValue}
-                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
-                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
-                        {t(`translation.status.${state.status}`)}
-                      </span>
-                      {state.errorCode && state.status === 'failed' && (
-                        <span className="text-xs text-rose-600">{state.errorCode}</span>
-                      )}
-                    </div>
+            {currentStep === 2 && (
+              <Step2Schedule
+                values={values}
+                errors={errors}
+                set={set}
+                handleStartTimeChange={handleStartTimeChange}
+                handleEndTimeChange={handleEndTimeChange}
+                durationMinutes={durationMinutes}
+                handleDurationChange={handleDurationChange}
+              />
+            )}
+            {currentStep === 3 && (
+              <Step3Imports
+                isLoading={isNextBusy}
+                videoUploadPercent={videoUploadPercent}
+                videoFile={videoFile}
+                setVideoFile={setVideoFile}
+                existingVideoUrl={existingVideoUrl}
+                videoError={videoError}
+                setVideoError={setVideoError}
+                galleryImages={galleryImages}
+                stagedGalleryFiles={stagedGalleryFiles}
+                setStagedGalleryFiles={setStagedGalleryFiles}
+                onAddGalleryImage={onAddGalleryImage}
+                onDeleteGalleryImage={onDeleteGalleryImage}
+                isAddingGalleryImage={isAddingGalleryImage}
+                galleryError={galleryError}
+                setGalleryError={setGalleryError}
+                galleryUploadError={galleryUploadError}
+                pdfFiles={pdfFiles}
+                setPdfFiles={setPdfFiles}
+                existingPdfs={existingPdfs}
+                onAddPdf={onAddPdf}
+                onDeletePdf={onDeletePdf}
+                isAddingPdf={isAddingPdf}
+                pdfError={pdfError}
+                setPdfError={setPdfError}
+                planType={values.type}
+              />
+            )}
+            {currentStep === 4 && (
+              <div className="rounded-3xl border border-ink-100 bg-ivory-50 p-6 md:p-10 space-y-6 shadow-gentle">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-stone-900">
+                      {t('translation.optionalStepTitle')}
+                    </h4>
+                    <p className="text-xs text-stone-500">
+                      {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
+                    </p>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {t('translation.manualEditHint')}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleSkipTranslation}
+                      disabled={isTranslating || isSubmittingForReview}
+                    >
+                      {t('translation.skip')}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleTranslateStep4}
+                      loading={isTranslating}
+                      disabled={isTranslating || isSubmittingForReview}
+                    >
+                      {t('translation.translateNow')}
+                    </Button>
+                  </div>
+                </div>
 
-            {translationMode && (
-              <p className="text-xs text-stone-500">
-                {t('translation.modeLabel')}: {translationMode.toUpperCase()}
-              </p>
-            )}
-          </div>
-        )}
-        {currentStep === 5 && (
-          <div className="space-y-4">
-            {planId && (
-              <div className="flex items-center gap-2 text-xs text-stone-400">
-                <span className="font-medium">{t('therapyPlans.form.planId', 'Plan ID')}:</span>
-                <code className="font-mono bg-stone-100 px-2 py-0.5 rounded text-stone-500 select-all">{planId}</code>
+                {translationMessage && (
+                  <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                    {translationMessage}
+                  </p>
+                )}
+
+                <div className="hidden md:grid md:grid-cols-2 gap-6 pl-4 pr-1">
+                  <p className="text-sm font-serif font-medium text-ink-600 tracking-wide uppercase">
+                    {t('translation.sourceColumn', { lang: t(`translation.sourceDetected.${translationSourceLang}`) })}
+                  </p>
+                  <p className="text-sm font-serif font-medium text-ink-600 tracking-wide uppercase">
+                    {t('translation.resultColumn', { lang: t(`translation.sourceDetected.${translationTargetLang}`) })}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {translationRows.map((row) => {
+                    const state = translationState[row.field];
+                    const sourceValue = String(values[row.sourceKey] ?? '');
+                    const targetValue = String(values[row.targetKey] ?? '');
+                    const statusClass =
+                      state.status === 'success'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : state.status === 'failed'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : state.status === 'pending'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-ivory-200 text-ink-600 border-ink-200';
+                    return (
+                      <div
+                        key={row.field}
+                        className="rounded-2xl border border-ink-200 bg-white p-5 shadow-sm transition-all hover:shadow-gentle"
+                      >
+                        <p className="text-sm font-semibold text-ink-900 mb-4 tracking-wide">{row.label}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            {row.multiline ? (
+                              <textarea
+                                rows={5}
+                                value={sourceValue}
+                                onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                                className="w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 py-3 text-[15px] leading-relaxed text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={sourceValue}
+                                onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                                className="h-12 w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 text-[15px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                              />
+                            )}
+                          </div>
+                          <div>
+                            {row.multiline ? (
+                              <textarea
+                                rows={5}
+                                value={targetValue}
+                                onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                                className="w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 py-3 text-[15px] leading-relaxed text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={targetValue}
+                                onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                                className="h-12 w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 text-[15px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                              />
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                            {t(`translation.status.${state.status}`)}
+                          </span>
+                          {state.errorCode && state.status === 'failed' && (
+                            <span className="text-xs text-rose-600">{state.errorCode}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {translationMode && (
+                  <p className="text-xs text-stone-500">
+                    {t('translation.modeLabel')}: {translationMode.toUpperCase()}
+                  </p>
+                )}
               </div>
             )}
-            <Step4Preview
-              values={values}
-              posterFile={posterFile}
-              videoFile={videoFile}
-              stagedGalleryFiles={stagedGalleryFiles}
-              pdfFiles={pdfFiles}
-              existingGalleryCount={galleryImages.length}
-              existingVideoUrl={existingVideoUrl}
-              existingPdfCount={existingPdfs.length}
-            />
-          </div>
-        )}
+            {currentStep === 5 && (
+              <div className="space-y-4">
+                {planId && (
+                  <div className="flex items-center gap-2 text-xs text-stone-400">
+                    <span className="font-medium">{t('therapyPlans.form.planId', 'Plan ID')}:</span>
+                    <code className="font-mono bg-stone-100 px-2 py-0.5 rounded text-stone-500 select-all">{planId}</code>
+                  </div>
+                )}
+                <Step4Preview
+                  values={values}
+                  posterFile={posterFile}
+                  videoFile={videoFile}
+                  stagedGalleryFiles={stagedGalleryFiles}
+                  pdfFiles={pdfFiles}
+                  existingGalleryCount={galleryImages.length}
+                  existingVideoUrl={existingVideoUrl}
+                  existingPdfCount={existingPdfs.length}
+                />
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Action Bar */}
-      <div className="flex items-center justify-between border-t border-stone-200 pt-6 mt-8">
+      <div className="flex items-center justify-between border-t border-ink-200 pt-8 mt-12 bg-ivory-300/50 -mx-4 px-4 pb-4 md:-mx-8 md:px-8">
         {/* Left: Exit */}
         <Button
           variant="ghost"
@@ -936,7 +948,7 @@ export const TherapyPlanForm = ({
                   onClick={handleSubmitForReview}
                   loading={isSubmittingForReview}
                   disabled={isSubmittingForReview || !translationReviewed}
-                  className="bg-teal-600 hover:bg-teal-700 text-white"
+                  className="bg-celadon-600 hover:bg-celadon-700 text-ivory-50 font-medium px-8"
                 >
                   {t('therapyPlans.form.submitForReview')}
                 </Button>
@@ -945,6 +957,6 @@ export const TherapyPlanForm = ({
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };

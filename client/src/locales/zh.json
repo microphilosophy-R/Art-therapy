@@ -609,8 +609,8 @@
       "appointmentsTotal": "共 {{total}} 条",
       "tableHeaders": {
         "name": "姓名",
-        "client": "\u5ba2\u6237",
-        "therapist": "\u6cbb\u7597\u5e08",
+        "client": "客户",
+        "therapist": "治疗师",
         "email": "邮箱",
         "role": "角色",
         "joined": "注册时间",
@@ -797,8 +797,8 @@
         "basicInfo": "基本信息",
         "description": "描述与图片",
         "preview": "预览与提交",
-        "media": "\u5a92\u4f53\u4e0a\u4f20",
-        "translation": "\u7ffb\u8bd1"
+        "media": "媒体上传",
+        "translation": "翻译"
       },
       "fields": {
         "title": "标题",
@@ -808,8 +808,8 @@
         "description": "描述",
         "images": "图片（最多9张）",
         "required": "*",
-        "poster": "\u6d77\u62a5",
-        "video": "\u89c6\u9891"
+        "poster": "海报",
+        "video": "视频"
       },
       "categories": {
         "painting": "绘画",
@@ -831,9 +831,9 @@
         "descriptionMinLength": "描述至少需要10个字符",
         "imageRequired": "至少需要一张图片",
         "imageMaxCount": "最多只能上传9张图片",
-        "imageUploadFailed": "\u56fe\u7247\u4e0a\u4f20\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5",
-        "posterRequired": "\u8bf7\u9009\u62e9\u6d77\u62a5",
-        "mediaUploadFailed": "\u5a92\u4f53\u4e0a\u4f20\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5"
+        "imageUploadFailed": "图片上传失败，请重试",
+        "posterRequired": "请选择海报",
+        "mediaUploadFailed": "媒体上传失败，请重试"
       },
       "buttons": {
         "exit": "退出",
@@ -984,7 +984,7 @@
         "metadata": "基础信息",
         "schedule": "日程安排",
         "imports": "素材上传",
-        "translation": "\u7ffb\u8bd1",
+        "translation": "翻译",
         "preview": "预览发布"
       }
     },
@@ -1086,7 +1086,8 @@
       "professional": "专业信息",
       "exhibition": "作品展示",
       "showcase": "展示配置",
-      "preview": "公开预览"
+      "preview": "公开预览",
+      "addresses": "\u6536\u8d27\u5730\u5740"
     },
     "professional": {
       "title": "专业信息",
@@ -1199,6 +1200,10 @@
       "title": "图片集",
       "add": "添加图片",
       "images": "张图片"
+    },
+    "addresses": {
+      "title": "\u6536\u8d27\u5730\u5740\u7ba1\u7406",
+      "subtitle": "\u53ef\u7ba1\u7406\u6700\u591a 6 \u4e2a\u7528\u4e8e\u5546\u54c1\u8ba2\u5355\u7684\u6536\u8d27\u5730\u5740\u3002"
     }
   },
   "forms": {
@@ -1464,7 +1469,30 @@
       "orderSummary": "订单摘要",
       "qty": "数量: {{count}}",
       "free": "包邮",
-      "terms": "下单即表示您同意我们的销售条款和隐私政策。"
+      "terms": "下单即表示您同意我们的销售条款和隐私政策。",
+      "addressBookTitle": "\u5730\u5740\u7c3f",
+      "addressBookHint": "\u6700\u591a\u53ef\u4fdd\u5b58 6 \u4e2a\u6536\u8d27\u5730\u5740\u3002",
+      "defaultAddress": "\u9ed8\u8ba4\u5730\u5740",
+      "setDefault": "\u8bbe\u4e3a\u9ed8\u8ba4",
+      "editAddress": "\u7f16\u8f91\u5730\u5740",
+      "addAddress": "\u65b0\u589e\u5730\u5740",
+      "postalCode": "\u90ae\u653f\u7f16\u7801\uff08\u9009\u586b\uff09",
+      "setAsDefault": "\u8bbe\u4e3a\u9ed8\u8ba4\u5730\u5740",
+      "maxAddressReached": "\u6700\u591a\u53ea\u80fd\u4fdd\u5b58 6 \u4e2a\u5730\u5740",
+      "addressTags": {
+        "HOME": "\u5bb6",
+        "COMPANY": "\u516c\u53f8",
+        "SCHOOL": "\u5b66\u6821",
+        "PARENTS": "\u7236\u6bcd\u5bb6",
+        "OTHER": "\u5176\u4ed6"
+      },
+      "validation": {
+        "recipientRequired": "\u8bf7\u586b\u5199\u6536\u4ef6\u4eba\u59d3\u540d",
+        "mobileInvalid": "\u8bf7\u8f93\u5165 11 \u4f4d\u4e2d\u56fd\u5927\u9646\u624b\u673a\u53f7",
+        "regionRequired": "\u8bf7\u586b\u5199\u7701 / \u5e02 / \u533a",
+        "addressDetailMin": "\u8be6\u7ec6\u5730\u5740\u81f3\u5c11 5 \u4e2a\u5b57\u7b26",
+        "postalCodeInvalid": "\u90ae\u653f\u7f16\u7801\u9700\u4e3a 6 \u4f4d\u6570\u5b57"
+      }
     },
     "orders": {
       "title": "我的订单",
@@ -1561,15 +1589,15 @@
   "translation": {
     "optionalStepTitle": "可选翻译辅助",
     "optionalHint": "你可以跳过此步骤，继续手动编辑。",
-    "manualEditHint": "\u53ef\u624b\u52a8\u7f16\u8f91\u5de6\u53f3\u4e24\u4fa7\uff0c\u70b9\u51fb\u201c\u7acb\u5373\u7ffb\u8bd1\u201d\u4f1a\u8986\u76d6\u53f3\u4fa7\u7ed3\u679c\u3002",
+    "manualEditHint": "可手动编辑左右两侧，点击“立即翻译”会覆盖右侧结果。",
     "translateNow": "立即翻译",
     "skip": "跳过",
     "skipped": "已跳过翻译步骤，仍可手动编辑。",
     "manualFallback": "自动翻译暂不可用，请改为手动模式。",
     "partialFailure": "部分字段翻译失败，请手动检查并补充。",
-    "reviewRequired": "\u8bf7\u5148\u5b8c\u6210\u7ffb\u8bd1\u6b65\u9aa4\u518d\u7ee7\u7eed\u3002",
-    "sourceColumn": "\u6e90\u8bed\u8a00\uff08{{lang}}\uff09",
-    "resultColumn": "\u7ffb\u8bd1\u7ed3\u679c\uff08{{lang}}\uff09",
+    "reviewRequired": "请先完成翻译步骤再继续。",
+    "sourceColumn": "源语言（{{lang}}）",
+    "resultColumn": "翻译结果（{{lang}}）",
     "sourcePrefix": "识别源语言",
     "modeLabel": "模式",
     "sourceDetected": {

@@ -1,4 +1,5 @@
 import { CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export interface WizardStepItem {
   id: number;
@@ -22,14 +23,16 @@ export const WizardStepper = ({
   const completionPercent = steps.length > 1 ? ((Math.max(currentStep, 1) - 1) / total) * 100 : 0;
 
   return (
-    <nav aria-label="Progress" className="w-full md:relative">
-      <div className="hidden md:block absolute top-4 left-0 right-0 h-px bg-stone-200" aria-hidden />
-      <div
-        className="hidden md:block absolute top-4 left-0 h-px bg-teal-600 transition-all duration-300"
-        style={{ width: `${completionPercent}%` }}
+    <nav aria-label="Progress" className="w-full md:relative mb-12">
+      <div className="hidden md:block absolute top-4 left-0 right-0 h-px bg-ink-100" aria-hidden />
+      <motion.div
+        className="hidden md:block absolute top-4 left-0 h-px bg-celadon-500 origin-left"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: completionPercent / 100 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
         aria-hidden
       />
-      <ol role="list" className="space-y-3 md:space-y-0 md:flex md:items-start">
+      <ol role="list" className="space-y-4 md:space-y-0 md:flex md:items-start">
         {steps.map((step) => {
           const isCompleted = currentStep > step.id;
           const isCurrent = currentStep === step.id;
@@ -43,34 +46,31 @@ export const WizardStepper = ({
                   if (isClickable) onStepClick(step.id);
                 }}
                 disabled={!isClickable}
-                className={`group flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors md:flex-col md:items-center md:gap-2 md:border-0 md:bg-transparent md:px-2 md:py-0 ${
-                  isClickable ? 'cursor-pointer hover:bg-stone-50 md:hover:bg-transparent' : 'cursor-default'
-                } ${
-                  isCurrent
-                    ? 'border-teal-200 bg-teal-50 md:border-0 md:bg-transparent'
-                    : 'border-stone-200 bg-white md:border-0 md:bg-transparent'
-                }`}
+                className={`group flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left transition-all duration-300 md:flex-col md:items-center md:gap-3 md:border-0 md:bg-transparent md:px-2 md:py-0 ${isClickable ? 'cursor-pointer hover:bg-ivory-200 md:hover:bg-transparent' : 'cursor-default'
+                  } ${isCurrent
+                    ? 'border-celadon-300 bg-ivory-50 md:border-0 md:bg-transparent shadow-gentle md:shadow-none'
+                    : 'border-ink-100 bg-ivory-50 md:border-0 md:bg-transparent'
+                  }`}
               >
                 <span
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-colors ${
-                    isCompleted
-                      ? 'border-teal-600 bg-teal-600 text-white'
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-serif font-medium transition-all duration-500 shadow-sm ${isCompleted
+                      ? 'border-celadon-600 bg-celadon-600 text-ivory-50 shadow-celadon-200'
                       : isCurrent
-                        ? 'border-teal-600 bg-white text-teal-700'
-                        : 'border-stone-300 bg-white text-stone-500'
-                  }`}
-                >
-                  {isCompleted ? <CheckCircle className="h-4 w-4" /> : step.id}
-                </span>
-                <span className="min-w-0 md:text-center">
-                  <span
-                    className={`block text-xs font-medium ${
-                      isCompleted || isCurrent ? 'text-teal-700' : 'text-stone-500'
+                        ? 'border-celadon-500 bg-ivory-50 text-celadon-700 ring-4 ring-celadon-50 scale-110'
+                        : 'border-ink-200 bg-ivory-50 text-ink-400'
                     }`}
+                >
+                  {isCompleted ? <CheckCircle className="h-5 w-5" /> : step.id}
+                </span>
+                <span className="min-w-0 md:text-center mt-1">
+                  <span
+                    className={`block text-xs font-serif uppercase tracking-widest mb-1 transition-colors ${isCompleted || isCurrent ? 'text-celadon-700 font-semibold' : 'text-ink-400'
+                      }`}
                   >
                     {formatStepLabel ? formatStepLabel(step.id) : `Step ${step.id}`}
                   </span>
-                  <span className="block text-sm font-medium text-stone-900 truncate">{step.name}</span>
+                  <span className={`block text-[15px] font-sans transition-colors ${isCurrent ? 'text-ink-900 font-medium' : 'text-ink-600'
+                    }`}>{step.name}</span>
                 </span>
               </button>
             </li>

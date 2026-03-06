@@ -4,3 +4,5 @@ docs
 update_locales.js
 uploades
 debug.log
+scripts
+extract_logo.py

@@ -78,7 +78,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                 <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                     {isArtist && products?.slice(0, 5).map(product => (
                         <Link key={product.id} to={`/shop/${product.id}`} className="min-w-[150px] w-40 shrink-0 group">
-                            <div className="aspect-square bg-stone-100 rounded-xl overflow-hidden mb-2">
+                            <div className="aspect-poster bg-stone-100 rounded-xl overflow-hidden mb-2">
                                 {getProductCoverUrl(product) ? (
                                     <img src={getProductCoverUrl(product)!} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                 ) : (
@@ -94,7 +94,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
 
                     {isTherapist && plans.map(plan => (
                         <Link key={plan.id} to={`/therapy-plans/${plan.id}`} className="min-w-[200px] w-52 shrink-0 group">
-                            <div className="aspect-[16/9] bg-stone-100 rounded-xl overflow-hidden mb-2 relative">
+                            <div className="aspect-poster bg-stone-100 rounded-xl overflow-hidden mb-2 relative">
                                 <img src={getPosterUrl(plan)} alt={plan.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
                             </div>
@@ -223,7 +223,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                                 to={`/shop/${product.id}`}
                                 className="group border border-stone-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
                             >
-                                <div className="aspect-square bg-stone-100 overflow-hidden">
+                                <div className="aspect-poster bg-stone-100 overflow-hidden">
                                     {getProductCoverUrl(product) ? (
                                         <img
                                             src={getProductCoverUrl(product)!}
@@ -255,7 +255,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                                 to={`/therapy-plans/${plan.id}`}
                                 className="group border border-stone-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
                             >
-                                <div className="aspect-[16/9] bg-stone-100 overflow-hidden relative">
+                                <div className="aspect-poster bg-stone-100 overflow-hidden relative">
                                     <img
                                         src={getPosterUrl(plan)}
                                         alt={plan.title}

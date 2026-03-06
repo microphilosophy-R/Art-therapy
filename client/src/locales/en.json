@@ -438,7 +438,9 @@
         "cancelled": "Cancelled",
         "completed": "Completed"
       },
-      "plans": "Plans",
+      "plans": {
+        "getCertified": "Get Certified to Create Plans"
+      },
       "messages": "Messages",
       "noPlans": "No plans yet.",
       "createFirstPlan": "Create your first plan",
@@ -458,9 +460,6 @@
         "reviewStatus": "Review Status",
         "profilePreview": "Profile Preview",
         "certificates": "Certificates"
-      },
-      "plans": {
-        "getCertified": "Get Certified to Create Plans"
       },
       "showcase": {
         "getCertified": "Get Certified"
@@ -657,10 +656,39 @@
       "saveDraft": "Save Draft"
     },
     "plans": {
-      "getCertified": "Get Certified to Create Plans"
+      "title": "Therapy Plans",
+      "createPlan": "Create Plan",
+      "getCertified": "Get Certified to Create Plans",
+      "certified": "Certified",
+      "view": "View",
+      "edit": "Edit",
+      "submit": "Submit",
+      "delete": "Delete",
+      "filterMyPlans": "My Plans",
+      "filterEnrolled": "Enrolled",
+      "statusFilter": {
+        "all": "All Status",
+        "draft": "Draft",
+        "pendingReview": "Pending Review",
+        "published": "Published",
+        "inProgress": "In Progress",
+        "finished": "Finished"
+      },
+      "noPlans": "No plans found",
+      "rejectionLabel": "Rejection:"
     },
     "showcase": {
-      "getCertified": "Get Certified"
+      "title": "Showcase Management",
+      "addProduct": "Add Product",
+      "addPlan": "Add Plan",
+      "getCertified": "Get Certified",
+      "noItems": "No items in showcase",
+      "emptyMessage": "Create and publish products or plans first. They will appear here once approved.",
+      "itemTypes": {
+        "product": "Product",
+        "plan": "Plan"
+      },
+      "untitled": "Untitled"
     },
     "calendar": {
       "title": "Work Calendar",
@@ -687,41 +715,6 @@
         "SIGN_UP_CLOSED": "Sign-up Closed",
         "FINISHED": "Finished"
       }
-    },
-    "showcase": {
-      "title": "Showcase Management",
-      "addProduct": "Add Product",
-      "addPlan": "Add Plan",
-      "getCertified": "Get Certified",
-      "noItems": "No items in showcase",
-      "emptyMessage": "Create and publish products or plans first. They will appear here once approved.",
-      "itemTypes": {
-        "product": "Product",
-        "plan": "Plan"
-      },
-      "untitled": "Untitled"
-    },
-    "plans": {
-      "title": "Therapy Plans",
-      "createPlan": "Create Plan",
-      "getCertified": "Get Certified to Create Plans",
-      "certified": "Certified",
-      "view": "View",
-      "edit": "Edit",
-      "submit": "Submit",
-      "delete": "Delete",
-      "filterMyPlans": "My Plans",
-      "filterEnrolled": "Enrolled",
-      "statusFilter": {
-        "all": "All Status",
-        "draft": "Draft",
-        "pendingReview": "Pending Review",
-        "published": "Published",
-        "inProgress": "In Progress",
-        "finished": "Finished"
-      },
-      "noPlans": "No plans found",
-      "rejectionLabel": "Rejection:"
     },
     "profile": {
       "previewTitle": "Public Profile Preview",
@@ -1027,10 +1020,15 @@
       "info": "Personal Info",
       "security": "Security",
       "privacy": "Privacy",
+      "addresses": "Addresses",
       "professional": "Professional",
       "exhibition": "Exhibition",
       "showcase": "Showcase",
       "preview": "Public Preview"
+    },
+    "addresses": {
+      "title": "Delivery Addresses",
+      "subtitle": "Manage up to 6 delivery addresses for product orders."
     },
     "professional": {
       "title": "Professional Information",
@@ -1400,6 +1398,29 @@
       "addressPlaceholder": "Street name, building, apartment number",
       "recipientName": "Recipient Name",
       "phoneNumber": "Phone Number",
+      "addressBookTitle": "Address Book",
+      "addressBookHint": "You can store up to 6 delivery addresses.",
+      "defaultAddress": "Default",
+      "setDefault": "Set default",
+      "editAddress": "Edit Address",
+      "addAddress": "Add Address",
+      "postalCode": "Postal Code (optional)",
+      "setAsDefault": "Set as default",
+      "maxAddressReached": "Maximum 6 addresses reached",
+      "addressTags": {
+        "HOME": "Home",
+        "COMPANY": "Company",
+        "SCHOOL": "School",
+        "PARENTS": "Parents",
+        "OTHER": "Other"
+      },
+      "validation": {
+        "recipientRequired": "Recipient name is required",
+        "mobileInvalid": "China mobile must be 11 digits",
+        "regionRequired": "Province / city / district are required",
+        "addressDetailMin": "Detailed address must be at least 5 characters",
+        "postalCodeInvalid": "Postal code must be 6 digits"
+      },
       "confirmOrder": "Confirm & Place Order",
       "paymentMethod": "Select Payment Method",
       "alipay": "Alipay",

@@ -60,7 +60,7 @@ export const CheckoutPage = () => {
     if (isLoadingCart) {
         return (
             <div className="flex justify-center flex-col items-center py-32 space-y-4">
-                <Loader2 className="w-12 h-12 animate-spin text-teal-600" />
+                <Loader2 className="w-12 h-12 animate-spin text-celadon-600" />
                 <p className="text-gray-500">{t('shop.checkout.loading')}</p>
             </div>
         );
@@ -81,24 +81,23 @@ export const CheckoutPage = () => {
                 {[1, 2, 3].map((n) => (
                     <div key={n} className="flex items-center gap-3">
                         <div
-                            className={`h-8 w-8 rounded-full text-sm font-semibold flex items-center justify-center ${
-                                step >= n ? 'bg-teal-600 text-white' : 'bg-stone-200 text-stone-600'
-                            }`}
+                            className={`h-8 w-8 rounded-full text-sm font-semibold flex items-center justify-center ${step >= n ? 'bg-celadon-600 text-white shadow-gentle' : 'bg-ivory-200 text-ink-500 border border-ink-100'
+                                }`}
                         >
                             {n}
                         </div>
-                        {n < 3 && <div className={`h-0.5 w-10 ${step > n ? 'bg-teal-600' : 'bg-stone-200'}`} />}
+                        {n < 3 && <div className={`h-0.5 w-10 ${step > n ? 'bg-celadon-600' : 'bg-ivory-200'}`} />}
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="space-y-8 lg:col-span-2">
                     {step === 1 && (
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-teal-600"></div>
+                        <div className="bg-ivory-50 p-8 rounded-3xl border border-ink-100 shadow-gentle relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-celadon-500"></div>
                             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                                <MapPin className="w-5 h-5 mr-2 text-teal-600" />
+                                <MapPin className="w-5 h-5 mr-2 text-celadon-600" />
                                 {t('shop.checkout.shippingAddress')}
                             </h2>
 
@@ -111,7 +110,7 @@ export const CheckoutPage = () => {
                             <div className="mt-6 flex justify-end">
                                 <Button
                                     size="lg"
-                                    className="bg-teal-600 hover:bg-teal-700"
+                                    className="bg-celadon-600 hover:bg-celadon-700 text-ivory-50 shadow-sm"
                                     disabled={!selectedAddressId}
                                     onClick={() => setStep(2)}
                                 >
@@ -122,10 +121,10 @@ export const CheckoutPage = () => {
                     )}
 
                     {step === 2 && (
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-teal-600"></div>
+                        <div className="bg-ivory-50 p-8 rounded-3xl border border-ink-100 shadow-gentle relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-celadon-500"></div>
                             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                                <MapPin className="w-5 h-5 mr-2 text-teal-600" />
+                                <MapPin className="w-5 h-5 mr-2 text-celadon-600" />
                                 {t('shop.checkout.confirmAddress', 'Confirm Shipping Address')}
                             </h2>
 
@@ -154,7 +153,7 @@ export const CheckoutPage = () => {
                                 </Button>
                                 <Button
                                     size="lg"
-                                    className="bg-teal-600 hover:bg-teal-700"
+                                    className="bg-celadon-600 hover:bg-celadon-700 text-ivory-50 shadow-sm"
                                     disabled={!selectedAddressId || isCreatingOrder}
                                     onClick={() => handleCreateOrder()}
                                 >
@@ -166,10 +165,10 @@ export const CheckoutPage = () => {
                     )}
 
                     {step === 3 && createdOrderId && (
-                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+                        <div className="bg-ivory-50 p-8 rounded-3xl border border-ink-100 shadow-gentle relative overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                            <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
                             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                                <CreditCard className="w-5 h-5 mr-2 text-blue-600" />
+                                <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
                                 {t('shop.checkout.paymentMethod')}
                             </h2>
 
@@ -214,24 +213,24 @@ export const CheckoutPage = () => {
                 </div>
 
                 <div className="lg:col-span-1">
-                    <div className="bg-gray-50 rounded-xl p-6 sticky top-24 border">
+                    <div className="bg-ivory-50 rounded-3xl p-8 sticky top-24 border border-ink-100 shadow-gentle">
                         <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
                             <ShoppingBag className="w-5 h-5 mr-2 text-gray-600" />
                             {t('shop.checkout.orderSummary')}
                         </h2>
 
-                        <div className="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2">
+                        <div className="space-y-4 mb-6 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                             {cartItems.map((item) => (
-                                <div key={item.id} className="flex gap-4">
-                                    <div className="flex-shrink-0 w-16 h-16 bg-white rounded border overflow-hidden">
+                                <div key={item.id} className="flex gap-4 group">
+                                    <div className="flex-shrink-0 w-16 aspect-poster bg-white rounded-md border border-ink-100 overflow-hidden shadow-sm">
                                         {getProductCoverUrl(item.product) ? (
                                             <img
                                                 src={getProductCoverUrl(item.product)!}
                                                 alt={item.product.title}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                             />
                                         ) : (
-                                            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                            <div className="w-full h-full bg-ivory-100 flex items-center justify-center text-stone-400">
                                                 <ShoppingBag className="w-4 h-4" />
                                             </div>
                                         )}
@@ -247,22 +246,22 @@ export const CheckoutPage = () => {
                             ))}
                         </div>
 
-                        <div className="border-t pt-4 space-y-3 mb-6">
+                        <div className="border-t border-ink-100 pt-4 space-y-3 mb-6">
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>{t('shop.cart.subtotal', { count: cartItems.length })}</span>
                                 <span>¥{subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>{t('shop.cart.shipping')}</span>
-                                <span className="text-green-600 font-medium">{t('shop.checkout.free')}</span>
+                                <span className="text-celadon-600 font-medium">{t('shop.checkout.free')}</span>
                             </div>
                         </div>
 
-                        <div className="border-t border-b py-4 mb-6">
+                        <div className="border-t border-b border-ink-100 py-4 mb-6">
                             <div className="flex justify-between items-end">
                                 <span className="font-bold text-gray-900">{t('shop.cart.total')}</span>
                                 <div className="text-right">
-                                    <span className="text-3xl font-bold text-teal-600 block">¥{subtotal.toFixed(2)}</span>
+                                    <span className="text-3xl font-bold text-celadon-600 block">¥{subtotal.toFixed(2)}</span>
                                     <span className="text-xs text-gray-500">{t('shop.cart.includesVat')}</span>
                                 </div>
                             </div>

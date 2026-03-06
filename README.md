@@ -37,13 +37,24 @@ Capabilities are enforced by backend middleware (`authorize(...)` + `requireCert
 
 - Public therapist directory and profile pages
 - Appointment booking and payment
+- Unified therapy plan and product editors with shared stepper guidance
 - Therapy plan creation workflow (therapist certificate required)
-- Product creation and fulfillment workflow (artificer certificate required)
-- Cart, checkout, orders, and payment webhook processing
+- Product creation workflow with required poster + optional gallery/video media (artificer certificate required)
+- Cart, checkout, address selection, orders, and payment webhook processing
 - Member follow system (`MEMBER` <-> `MEMBER` only)
 - Direct chat with Socket.IO real-time updates
 - Chat guardrail: one consecutive message max until the other side replies
-- Bilingual content support (`zh`/`en`) for plans and products
+- Bilingual content support (`zh`/`en`) with translation checkpoint editing
+- Member address book management for delivery profiles (up to 6 saved addresses)
+
+## Recent Updates (2026-03-06)
+
+- Product media parity landed in the wizard: Step 1 now requires a poster (default public posters or custom upload), and Step 2 supports optional gallery images and optional video; product media fields now persist poster/video explicitly.
+- Product and therapy editor wizards now use a unified stepper pattern with equal-width, continuous step segments for consistent cross-flow guidance.
+- Translation checkpoint UX was inserted as a dedicated step with side-by-side source/result editing (left/right by UI language pair), plus translate/skip/manual-review progression gating.
+- Member address book and checkout were upgraded: members can manage saved delivery addresses and checkout now runs a 3-step flow (address, confirmation, payment).
+- Product cover fallback resolution is now standardized across shop/dashboard/order touchpoints: `posterUrl` -> `defaultPosterId` asset -> first gallery image -> placeholder.
+- Upload/API/schema updates now cover product media types and constraints, including optional gallery limits and explicit product video handling.
 
 ## Repository Structure
 

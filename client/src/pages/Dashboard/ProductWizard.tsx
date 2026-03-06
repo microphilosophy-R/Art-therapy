@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Video, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
 import { PosterSelector, type PosterValue } from '../../components/therapyPlans/PosterSelector';
 import { WizardStepper } from '../../components/ui/WizardStepper';
@@ -262,20 +263,20 @@ export const ProductWizard = () => {
     targetKey: keyof ProductFormValues;
     multiline?: boolean;
   }> = [
-    {
-      field: 'title',
-      label: t('dashboard.products.fields.title'),
-      sourceKey: translationSourceLang === 'zh' ? 'title' : 'titleEn',
-      targetKey: translationSourceLang === 'zh' ? 'titleEn' : 'title',
-    },
-    {
-      field: 'description',
-      label: t('dashboard.products.fields.description'),
-      sourceKey: translationSourceLang === 'zh' ? 'description' : 'descriptionEn',
-      targetKey: translationSourceLang === 'zh' ? 'descriptionEn' : 'description',
-      multiline: true,
-    },
-  ];
+      {
+        field: 'title',
+        label: t('dashboard.products.fields.title'),
+        sourceKey: translationSourceLang === 'zh' ? 'title' : 'titleEn',
+        targetKey: translationSourceLang === 'zh' ? 'titleEn' : 'title',
+      },
+      {
+        field: 'description',
+        label: t('dashboard.products.fields.description'),
+        sourceKey: translationSourceLang === 'zh' ? 'description' : 'descriptionEn',
+        targetKey: translationSourceLang === 'zh' ? 'descriptionEn' : 'description',
+        multiline: true,
+      },
+    ];
 
   const handleTranslationFieldChange = (
     key: keyof ProductFormValues,
@@ -486,380 +487,394 @@ export const ProductWizard = () => {
         formatStepLabel={(id) => `${t('dashboard.products.stepPrefix')} ${id}`}
       />
 
-      {/* Step 1: Basic Info */}
-      {currentStep === 1 && (
-        <div className="space-y-4">
-          {userLang === 'zh' ? (
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (zh) {t('dashboard.products.fields.required')}</label>
-              <input
-                type="text"
-                value={values.title}
-                onChange={(e) => set('title', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-              />
-              {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (en) {t('dashboard.products.fields.required')}</label>
-              <input
-                type="text"
-                value={values.titleEn}
-                onChange={(e) => set('titleEn', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-              />
-              {errors.titleEn && <p className="text-sm text-red-600 mt-1">{errors.titleEn}</p>}
-            </div>
-          )}
+      <div className="pt-4 overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="w-full"
+          >
 
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.category')} {t('dashboard.products.fields.required')}</label>
-            <select
-              value={values.category}
-              onChange={(e) => set('category', e.target.value as ProductCategory)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            >
-              <option value="PAINTING">{t('dashboard.products.categories.painting')}</option>
-              <option value="SCULPTURE">{t('dashboard.products.categories.sculpture')}</option>
-              <option value="CRAFTS">{t('dashboard.products.categories.crafts')}</option>
-              <option value="DIGITAL_ART">{t('dashboard.products.categories.digitalArt')}</option>
-              <option value="MERCHANDISE">{t('dashboard.products.categories.merchandise')}</option>
-              <option value="OTHER">{t('dashboard.products.categories.other')}</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.price')} {t('dashboard.products.fields.required')}</label>
-              <input
-                type="number"
-                step="0.01"
-                value={values.price}
-                onChange={(e) => set('price', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-              />
-              {errors.price && <p className="text-sm text-red-600 mt-1">{errors.price}</p>}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.stock')} {t('dashboard.products.fields.required')}</label>
-              <input
-                type="number"
-                value={values.stock}
-                onChange={(e) => set('stock', e.target.value)}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-              />
-              {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
-            </div>
-          </div>
-
-          {userLang === 'zh' ? (
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (zh) {t('dashboard.products.fields.required')}</label>
-              <textarea
-                value={values.description}
-                onChange={(e) => set('description', e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-              />
-              {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (en) {t('dashboard.products.fields.required')}</label>
-              <textarea
-                value={values.descriptionEn}
-                onChange={(e) => set('descriptionEn', e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-              />
-              {errors.descriptionEn && <p className="text-sm text-red-600 mt-1">{errors.descriptionEn}</p>}
-            </div>
-          )}
-
-          <div>
-            <p className="text-sm font-medium text-stone-700 mb-2">
-              {t('dashboard.products.fields.poster')} {t('dashboard.products.fields.required')}
-            </p>
-            <PosterSelector
-              value={values.poster}
-              onChange={(poster) => {
-                set('poster', poster);
-                if (poster?.type === 'default') {
-                  setPosterFile(null);
-                  setUploadedPosterUrl(null);
-                }
-              }}
-              onFileSelected={(file) => {
-                setPosterFile(file);
-                setUploadedPosterUrl(null);
-              }}
-              disabled={isLoading}
-            />
-            {errors.poster && <p className="text-sm text-red-600 mt-1">{errors.poster}</p>}
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Media */}
-      {currentStep === 2 && (
-        <div className="space-y-4">
-          {mediaUploadError && (
-            <p className="text-sm text-red-600">{mediaUploadError}</p>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              {t('dashboard.products.fields.images')} {t('common.optional')}
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            />
-            {errors.images && <p className="text-sm text-red-600 mt-1">{errors.images}</p>}
-
-            {values.images.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mt-3">
-                {values.images.map((file, i) => (
-                  <div key={i} className="relative">
-                    <img src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(i)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
-                    >
-                      <X className="h-3.5 w-3.5 mx-auto" />
-                    </button>
+            {/* Step 1: Basic Info */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                {userLang === 'zh' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (zh) {t('dashboard.products.fields.required')}</label>
+                    <input
+                      type="text"
+                      value={values.title}
+                      onChange={(e) => set('title', e.target.value)}
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                    />
+                    {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (en) {t('dashboard.products.fields.required')}</label>
+                    <input
+                      type="text"
+                      value={values.titleEn}
+                      onChange={(e) => set('titleEn', e.target.value)}
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                    />
+                    {errors.titleEn && <p className="text-sm text-red-600 mt-1">{errors.titleEn}</p>}
+                  </div>
+                )}
 
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              {t('dashboard.products.fields.video')} {t('common.optional')}
-            </label>
-            <input
-              type="file"
-              accept="video/mp4,video/quicktime,video/webm"
-              onChange={handleVideoChange}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            />
-            {videoError && <p className="text-sm text-red-600 mt-1">{videoError}</p>}
-            {videoFile && (
-              <div className="mt-3 rounded-lg border border-stone-200 p-3 space-y-2">
-                <div className="flex items-center justify-between text-sm text-stone-700">
-                  <span className="inline-flex items-center gap-2">
-                    <Video className="h-4 w-4" />
-                    {videoFile.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setVideoFile(null)}
-                    className="text-stone-500 hover:text-red-600"
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.category')} {t('dashboard.products.fields.required')}</label>
+                  <select
+                    value={values.category}
+                    onChange={(e) => set('category', e.target.value as ProductCategory)}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
+                    <option value="PAINTING">{t('dashboard.products.categories.painting')}</option>
+                    <option value="SCULPTURE">{t('dashboard.products.categories.sculpture')}</option>
+                    <option value="CRAFTS">{t('dashboard.products.categories.crafts')}</option>
+                    <option value="DIGITAL_ART">{t('dashboard.products.categories.digitalArt')}</option>
+                    <option value="MERCHANDISE">{t('dashboard.products.categories.merchandise')}</option>
+                    <option value="OTHER">{t('dashboard.products.categories.other')}</option>
+                  </select>
                 </div>
-                <video
-                  src={URL.createObjectURL(videoFile)}
-                  controls
-                  className="w-full max-h-56 rounded-md bg-black"
-                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.price')} {t('dashboard.products.fields.required')}</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={values.price}
+                      onChange={(e) => set('price', e.target.value)}
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                    />
+                    {errors.price && <p className="text-sm text-red-600 mt-1">{errors.price}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.stock')} {t('dashboard.products.fields.required')}</label>
+                    <input
+                      type="number"
+                      value={values.stock}
+                      onChange={(e) => set('stock', e.target.value)}
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                    />
+                    {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
+                  </div>
+                </div>
+
+                {userLang === 'zh' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (zh) {t('dashboard.products.fields.required')}</label>
+                    <textarea
+                      value={values.description}
+                      onChange={(e) => set('description', e.target.value)}
+                      rows={6}
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                    />
+                    {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (en) {t('dashboard.products.fields.required')}</label>
+                    <textarea
+                      value={values.descriptionEn}
+                      onChange={(e) => set('descriptionEn', e.target.value)}
+                      rows={6}
+                      className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                    />
+                    {errors.descriptionEn && <p className="text-sm text-red-600 mt-1">{errors.descriptionEn}</p>}
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-sm font-medium text-stone-700 mb-2">
+                    {t('dashboard.products.fields.poster')} {t('dashboard.products.fields.required')}
+                  </p>
+                  <PosterSelector
+                    value={values.poster}
+                    onChange={(poster) => {
+                      set('poster', poster);
+                      if (poster?.type === 'default') {
+                        setPosterFile(null);
+                        setUploadedPosterUrl(null);
+                      }
+                    }}
+                    onFileSelected={(file) => {
+                      setPosterFile(file);
+                      setUploadedPosterUrl(null);
+                    }}
+                    disabled={isLoading}
+                  />
+                  {errors.poster && <p className="text-sm text-red-600 mt-1">{errors.poster}</p>}
+                </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
 
-      {/* Step 3: Translation */}
-      {currentStep === 3 && (
-        <div className="space-y-4">
-          <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-stone-900">{t('translation.optionalStepTitle')}</h3>
-                <p className="text-xs text-stone-500">
-                  {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
-                </p>
-                <p className="text-xs text-stone-500 mt-1">{t('translation.manualEditHint')}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSkipTranslation}
-                  disabled={isLoading || isTranslating}
-                >
-                  {t('translation.skip')}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleTranslate}
-                  loading={isTranslating}
-                  disabled={isLoading || isTranslating}
-                >
-                  {t('translation.translateNow')}
-                </Button>
-              </div>
-            </div>
+            {/* Step 2: Media */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                {mediaUploadError && (
+                  <p className="text-sm text-red-600">{mediaUploadError}</p>
+                )}
 
-            {translationMessage && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                {translationMessage}
-              </p>
-            )}
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    {t('dashboard.products.fields.images')} {t('common.optional')}
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                  />
+                  {errors.images && <p className="text-sm text-red-600 mt-1">{errors.images}</p>}
 
-            <div className="hidden md:grid md:grid-cols-2 gap-3 px-1">
-              <p className="text-xs font-medium text-stone-600">
-                {t('translation.sourceColumn', { lang: t(`translation.sourceDetected.${translationSourceLang}`) })}
-              </p>
-              <p className="text-xs font-medium text-stone-600">
-                {t('translation.resultColumn', { lang: t(`translation.sourceDetected.${translationTargetLang}`) })}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {translationRows.map((row) => {
-                const state = translationState[row.field];
-                const sourceValue = String(values[row.sourceKey] ?? '');
-                const targetValue = String(values[row.targetKey] ?? '');
-                const statusClass =
-                  state.status === 'success'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : state.status === 'failed'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : state.status === 'pending'
-                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                        : 'bg-stone-50 text-stone-600 border-stone-200';
-                return (
-                  <div
-                    key={row.field}
-                    className="rounded-md border border-stone-200 p-3"
-                  >
-                    <p className="text-sm font-medium text-stone-800 mb-2">{row.label}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        {row.multiline ? (
-                          <textarea
-                            rows={4}
-                            value={sourceValue}
-                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
-                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={sourceValue}
-                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
-                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        {row.multiline ? (
-                          <textarea
-                            rows={4}
-                            value={targetValue}
-                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
-                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={targetValue}
-                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
-                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                          />
-                        )}
-                      </div>
+                  {values.images.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                      {values.images.map((file, i) => (
+                        <div key={i} className="relative">
+                          <img src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(i)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
+                          >
+                            <X className="h-3.5 w-3.5 mx-auto" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
-                        {t(`translation.status.${state.status}`)}
-                      </span>
-                      {state.errorCode && state.status === 'failed' && (
-                        <span className="text-xs text-rose-600">{state.errorCode}</span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-700 mb-1">
+                    {t('dashboard.products.fields.video')} {t('common.optional')}
+                  </label>
+                  <input
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm"
+                    onChange={handleVideoChange}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+                  />
+                  {videoError && <p className="text-sm text-red-600 mt-1">{videoError}</p>}
+                  {videoFile && (
+                    <div className="mt-3 rounded-lg border border-stone-200 p-3 space-y-2">
+                      <div className="flex items-center justify-between text-sm text-stone-700">
+                        <span className="inline-flex items-center gap-2">
+                          <Video className="h-4 w-4" />
+                          {videoFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setVideoFile(null)}
+                          className="text-stone-500 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <video
+                        src={URL.createObjectURL(videoFile)}
+                        controls
+                        className="w-full max-h-56 rounded-md bg-black"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Translation */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-stone-900">{t('translation.optionalStepTitle')}</h3>
+                      <p className="text-xs text-stone-500">
+                        {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
+                      </p>
+                      <p className="text-xs text-stone-500 mt-1">{t('translation.manualEditHint')}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSkipTranslation}
+                        disabled={isLoading || isTranslating}
+                      >
+                        {t('translation.skip')}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleTranslate}
+                        loading={isTranslating}
+                        disabled={isLoading || isTranslating}
+                      >
+                        {t('translation.translateNow')}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {translationMessage && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                      {translationMessage}
+                    </p>
+                  )}
+
+                  <div className="hidden md:grid md:grid-cols-2 gap-6 pl-4 pr-1">
+                    <p className="text-sm font-serif font-medium text-ink-600 tracking-wide uppercase">
+                      {t('translation.sourceColumn', { lang: t(`translation.sourceDetected.${translationSourceLang}`) })}
+                    </p>
+                    <p className="text-sm font-serif font-medium text-ink-600 tracking-wide uppercase">
+                      {t('translation.resultColumn', { lang: t(`translation.sourceDetected.${translationTargetLang}`) })}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {translationRows.map((row) => {
+                      const state = translationState[row.field];
+                      const sourceValue = String(values[row.sourceKey] ?? '');
+                      const targetValue = String(values[row.targetKey] ?? '');
+                      const statusClass =
+                        state.status === 'success'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : state.status === 'failed'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : state.status === 'pending'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-ivory-200 text-ink-600 border-ink-200';
+                      return (
+                        <div
+                          key={row.field}
+                          className="rounded-2xl border border-ink-200 bg-white p-5 shadow-sm transition-all hover:shadow-gentle"
+                        >
+                          <p className="text-sm font-semibold text-ink-900 mb-4 tracking-wide">{row.label}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              {row.multiline ? (
+                                <textarea
+                                  rows={5}
+                                  value={sourceValue}
+                                  onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                                  className="w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 py-3 text-[15px] leading-relaxed text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={sourceValue}
+                                  onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                                  className="h-12 w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 text-[15px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                                />
+                              )}
+                            </div>
+                            <div>
+                              {row.multiline ? (
+                                <textarea
+                                  rows={5}
+                                  value={targetValue}
+                                  onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                                  className="w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 py-3 text-[15px] leading-relaxed text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={targetValue}
+                                  onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                                  className="h-12 w-full rounded-xl border border-ink-200 bg-ivory-50 px-4 text-[15px] text-ink-900 focus:outline-none focus:ring-2 focus:ring-celadon-500 focus:border-celadon-500 transition-all font-sans"
+                                />
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                              {t(`translation.status.${state.status}`)}
+                            </span>
+                            {state.errorCode && state.status === 'failed' && (
+                              <span className="text-xs text-rose-600">{state.errorCode}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {translationMode && (
+                    <p className="text-xs text-stone-500">
+                      {t('translation.modeLabel')}: {translationMode.toUpperCase()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Preview */}
+            {currentStep === 4 && (
+              <div className="space-y-4">
+                <div className="space-y-4 bg-ivory-50 p-8 rounded-3xl border border-ink-100 shadow-gentle">
+                  <h2 className="text-xl font-serif text-ink-900">{values.title || values.titleEn}</h2>
+                  <div className="flex gap-4 text-sm text-stone-600">
+                    <span>{t('dashboard.products.previewLabels.category')} {values.category}</span>
+                    <span>{t('dashboard.products.previewLabels.price')}{values.price}</span>
+                    <span>{t('dashboard.products.previewLabels.stock')} {values.stock}</span>
+                  </div>
+                  <p className="text-stone-700 whitespace-pre-wrap">{values.description || values.descriptionEn}</p>
+
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-stone-700">
+                      {t('dashboard.products.fields.poster')}
+                    </p>
+                    <div className="aspect-[16/9] max-w-2xl w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-100">
+                      {posterPreviewUrl ? (
+                        <img src={posterPreviewUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-stone-400 text-sm">
+                          {t('dashboard.products.fields.poster')}
+                        </div>
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {translationMode && (
-              <p className="text-xs text-stone-500">
-                {t('translation.modeLabel')}: {translationMode.toUpperCase()}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+                  {previewVideoUrl && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-stone-700">
+                        {t('dashboard.products.fields.video')}
+                      </p>
+                      <video
+                        src={previewVideoUrl}
+                        controls
+                        className="max-w-2xl w-full max-h-64 rounded-lg bg-black"
+                      />
+                    </div>
+                  )}
 
-      {/* Step 4: Preview */}
-      {currentStep === 4 && (
-        <div className="space-y-4">
-          <div className="space-y-4 bg-stone-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold text-stone-900">{values.title || values.titleEn}</h2>
-            <div className="flex gap-4 text-sm text-stone-600">
-              <span>{t('dashboard.products.previewLabels.category')} {values.category}</span>
-              <span>{t('dashboard.products.previewLabels.price')}{values.price}</span>
-              <span>{t('dashboard.products.previewLabels.stock')} {values.stock}</span>
-            </div>
-            <p className="text-stone-700 whitespace-pre-wrap">{values.description || values.descriptionEn}</p>
-
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-stone-700">
-                {t('dashboard.products.fields.poster')}
-              </p>
-              <div className="aspect-[16/9] max-w-2xl w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-100">
-                {posterPreviewUrl ? (
-                  <img src={posterPreviewUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-stone-400 text-sm">
-                    {t('dashboard.products.fields.poster')}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {previewVideoUrl && (
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-stone-700">
-                  {t('dashboard.products.fields.video')}
-                </p>
-                <video
-                  src={previewVideoUrl}
-                  controls
-                  className="max-w-2xl w-full max-h-64 rounded-lg bg-black"
-                />
-              </div>
-            )}
-
-            {values.images.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-stone-700">
-                  {t('dashboard.products.fields.images')}
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {values.images.map((file, i) => (
-                    <img key={i} src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
-                  ))}
+                  {values.images.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-stone-700">
+                        {t('dashboard.products.fields.images')}
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {values.images.map((file, i) => (
+                          <img key={i} src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between border-t border-stone-200 pt-6">
-        <Button variant="ghost" onClick={() => navigate('/dashboard')} disabled={isLoading}>
+      <div className="flex items-center justify-between border-t border-ink-200 pt-8 mt-12 bg-ivory-300/50 -mx-6 px-6 pb-6 md:-mx-8 md:px-8">
+        <Button variant="ghost" className="text-stone-500 hover:text-stone-700" onClick={() => navigate('/dashboard')} disabled={isLoading}>
           <LogOut className="h-4 w-4 mr-1.5" />
           {t('dashboard.products.buttons.exit')}
         </Button>
@@ -876,7 +891,7 @@ export const ProductWizard = () => {
               {t('dashboard.products.buttons.next')}
             </Button>
           ) : (
-            <Button onClick={handleSubmit} loading={isLoading} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
+            <Button onClick={handleSubmit} loading={isLoading} disabled={isLoading} className="bg-celadon-600 hover:bg-celadon-700 text-ivory-50 font-medium px-8">
               {t('dashboard.products.buttons.submitReview')}
             </Button>
           )}

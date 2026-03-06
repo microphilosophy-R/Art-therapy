@@ -2,22 +2,123 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { z } from 'zod';
 
-const createOrderSchema = z.object({
-    province: z.string().min(1, 'Province is required'),
-    city: z.string().min(1, 'City is required'),
-    district: z.string().min(1, 'District is required'),
-    addressDetail: z.string().min(5, 'Detailed address is required'),
-    recipientName: z.string().min(1, 'Recipient name is required'),
-    phone: z.string().min(11, 'Valid phone number required'),
-});
+const legacyAddressSchema = z
+    .object({
+        province: z.string().min(1, 'Province is required'),
+        city: z.string().min(1, 'City is required'),
+        district: z.string().min(1, 'District is required'),
+        addressDetail: z.string().min(5, 'Detailed address is required').optional(),
+        details: z.string().min(5, 'Detailed address is required').optional(),
+        recipientName: z.string().min(1, 'Recipient name is required'),
+        phone: z.string().min(11, 'Valid phone number required').optional(),
+        mobile: z.string().min(11, 'Valid phone number required').optional(),
+        postalCode: z.string().max(20).optional().nullable(),
+        tag: z.enum(['HOME', 'COMPANY', 'SCHOOL', 'PARENTS', 'OTHER']).optional(),
+    })
+    .superRefine((val, ctx) => {
+        if (!val.addressDetail && !val.details) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Detailed address is required',
+                path: ['addressDetail'],
+            });
+        }
+        if (!val.phone && !val.mobile) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: 'Valid phone number required',
+                path: ['phone'],
+            });
+        }
+    });
+
+const createOrderSchema = z.union([
+    z.object({ addressId: z.string().min(1, 'Address ID is required') }),
+    legacyAddressSchema,
+    z.object({ shippingAddress: legacyAddressSchema }),
+]);
 
 const fulfillOrderSchema = z.object({
     carrierName: z.string().min(1, 'Carrier name is required'),
     trackingNumber: z.string().min(1, 'Tracking number is required'),
 });
+const prismaAny = prisma as any;
+
+type NormalizedOrderAddress = {
+    memberAddressId: string | null;
+    province: string;
+    city: string;
+    district: string;
+    addressDetail: string;
+    recipientName: string;
+    phone: string;
+    postalCode: string | null;
+    addressTag: 'HOME' | 'COMPANY' | 'SCHOOL' | 'PARENTS' | 'OTHER' | null;
+};
+
+const mapOrderResponse = (order: any) => ({
+    ...order,
+    shippingAddress: {
+        province: order.province,
+        city: order.city,
+        district: order.district,
+        addressDetail: order.addressDetail,
+        details: order.addressDetail,
+        recipientName: order.recipientName,
+        phone: order.phone,
+        mobile: order.phone,
+        postalCode: order.postalCode ?? null,
+        tag: order.addressTag ?? null,
+    },
+});
+
+const normalizeOrderAddress = async (
+    userId: string,
+    payload: z.infer<typeof createOrderSchema>,
+): Promise<NormalizedOrderAddress> => {
+    if ('addressId' in payload) {
+        const memberAddress = await prismaAny.memberAddress.findFirst({
+            where: { id: payload.addressId, userId },
+        });
+        if (!memberAddress) throw new Error('ADDRESS_NOT_FOUND');
+        return {
+            memberAddressId: memberAddress.id,
+            province: memberAddress.province,
+            city: memberAddress.city,
+            district: memberAddress.district,
+            addressDetail: memberAddress.addressDetail,
+            recipientName: memberAddress.recipientName,
+            phone: memberAddress.mobile,
+            postalCode: memberAddress.postalCode ?? null,
+            addressTag: memberAddress.tag,
+        };
+    }
+
+    const legacy = 'shippingAddress' in payload ? payload.shippingAddress : payload;
+    return {
+        memberAddressId: null,
+        province: legacy.province.trim(),
+        city: legacy.city.trim(),
+        district: legacy.district.trim(),
+        addressDetail: (legacy.addressDetail ?? legacy.details ?? '').trim(),
+        recipientName: legacy.recipientName.trim(),
+        phone: (legacy.phone ?? legacy.mobile ?? '').trim(),
+        postalCode: legacy.postalCode?.trim() || null,
+        addressTag: legacy.tag ?? null,
+    };
+};
 
 export const createOrder = async (req: Request, res: Response) => {
-    const addressData = req.body as z.infer<typeof createOrderSchema>;
+    const input = req.body as z.infer<typeof createOrderSchema>;
+    let addressData: NormalizedOrderAddress;
+    try {
+        addressData = await normalizeOrderAddress(req.user!.id, input);
+    } catch (error) {
+        if (error instanceof Error && error.message === 'ADDRESS_NOT_FOUND') {
+            return res.status(404).json({ message: 'Address not found' });
+        }
+        throw error;
+    }
 
     // 1. Fetch cart items
     const cartItems = await prisma.cartItem.findMany({
@@ -45,13 +146,22 @@ export const createOrder = async (req: Request, res: Response) => {
 
     // 3. Create order in a transaction to ensure atomicity
     const order = await prisma.$transaction(async (tx) => {
+        const txAny = tx as any;
         // Create the Order
-        const newOrder = await tx.order.create({
+        const newOrder = await txAny.order.create({
             data: {
                 userId: req.user!.id,
                 totalAmount,
                 status: 'PENDING',
-                ...addressData,
+                memberAddressId: addressData.memberAddressId,
+                province: addressData.province,
+                city: addressData.city,
+                district: addressData.district,
+                addressDetail: addressData.addressDetail,
+                recipientName: addressData.recipientName,
+                phone: addressData.phone,
+                postalCode: addressData.postalCode,
+                addressTag: addressData.addressTag,
                 items: {
                     create: cartItems.map((item) => ({
                         productId: item.productId,
@@ -65,21 +175,21 @@ export const createOrder = async (req: Request, res: Response) => {
 
         // Update product stock
         for (const item of cartItems) {
-            await tx.product.update({
+            await txAny.product.update({
                 where: { id: item.productId },
                 data: { stock: { decrement: item.quantity } },
             });
         }
 
         // Clear user's cart
-        await tx.cartItem.deleteMany({
+        await txAny.cartItem.deleteMany({
             where: { userId: req.user!.id },
         });
 
         return newOrder;
     });
 
-    res.status(201).json(order);
+    res.status(201).json(mapOrderResponse(order));
 };
 
 export const getMyOrders = async (req: Request, res: Response) => {
@@ -98,7 +208,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
         orderBy: { createdAt: 'desc' },
     });
 
-    res.json(orders);
+    res.json(orders.map(mapOrderResponse));
 };
 
 export const getOrderById = async (req: Request, res: Response) => {
@@ -123,7 +233,7 @@ export const getOrderById = async (req: Request, res: Response) => {
     // Ensure user owns the order, OR user is a seller who has products in this order.
     // We'll do a simple check: is it the buyer?
     if (order.userId === req.user!.id) {
-        return res.json(order);
+        return res.json(mapOrderResponse(order));
     }
 
     // If not buyer, check if seller
@@ -134,7 +244,7 @@ export const getOrderById = async (req: Request, res: Response) => {
     if (userProfile) {
         const hasSellerProduct = order.items.some(item => item.product.userProfileId === userProfile.id);
         if (hasSellerProduct) {
-            return res.json(order);
+            return res.json(mapOrderResponse(order));
         }
     }
 
@@ -171,7 +281,7 @@ export const getArtistOrders = async (req: Request, res: Response) => {
         orderBy: { createdAt: 'desc' }
     });
 
-    res.json(orders);
+    res.json(orders.map(mapOrderResponse));
 };
 
 export const fulfillOrder = async (req: Request, res: Response) => {
@@ -216,7 +326,7 @@ export const fulfillOrder = async (req: Request, res: Response) => {
         include: { items: { include: { product: true } } }
     });
 
-    res.json(updatedOrder);
+    res.json(mapOrderResponse(updatedOrder));
 };
 
 export const OrderController = {

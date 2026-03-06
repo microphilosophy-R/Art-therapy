@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+const chinaMobileRegex = /^1\d{10}$/;
+const chinaPostalCodeRegex = /^\d{6}$/;
+const addressTagEnum = z.enum(['HOME', 'COMPANY', 'SCHOOL', 'PARENTS', 'OTHER']);
+
 export const updateProfileSchema = z.object({
   firstName: z.string().min(1).max(50).optional(),
   lastName: z.string().min(1).max(50).optional(),
@@ -24,6 +28,29 @@ export const updateProfileSchema = z.object({
   showcaseConfig: z.any().optional(),
 });
 
+export const memberAddressPayloadSchema = z.object({
+  recipientName: z.string().min(1).max(50),
+  mobile: z.string().regex(chinaMobileRegex, 'Invalid China mobile number'),
+  province: z.string().min(1).max(50),
+  city: z.string().min(1).max(50),
+  district: z.string().min(1).max(50),
+  addressDetail: z.string().min(5).max(200),
+  postalCode: z
+    .string()
+    .regex(chinaPostalCodeRegex, 'Invalid postal code')
+    .optional()
+    .nullable(),
+  tag: addressTagEnum.default('HOME'),
+  isDefault: z.boolean().optional(),
+});
+
+export const createMemberAddressSchema = memberAddressPayloadSchema;
+export const updateMemberAddressSchema = memberAddressPayloadSchema.partial();
+export const setDefaultMemberAddressSchema = z.object({
+  // Supports an empty body while still using validation middleware.
+  noop: z.boolean().optional(),
+});
+
 export const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
@@ -35,3 +62,5 @@ export const acceptPrivacySchema = z.object({
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
+export type CreateMemberAddressInput = z.infer<typeof createMemberAddressSchema>;
+export type UpdateMemberAddressInput = z.infer<typeof updateMemberAddressSchema>;

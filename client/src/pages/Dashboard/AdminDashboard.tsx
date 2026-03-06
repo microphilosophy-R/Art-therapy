@@ -14,6 +14,7 @@ import { getUnreadCount } from '../../api/messages';
 import { getPendingProfiles, reviewProfile } from '../../api/therapists';
 import { AdminPlansTab } from './tabs/AdminPlansTab';
 import { AdminReviewTab } from './tabs/AdminReviewTab';
+import { AdminReviewOpsTab } from './tabs/AdminReviewOpsTab';
 import { MessagesTab } from './tabs/MessagesTab';
 
 import { Avatar } from '../../components/ui/Avatar';
@@ -25,7 +26,7 @@ import { PageLoader } from '../../components/ui/Spinner';
 import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
 
-type Tab = 'overview' | 'users' | 'appointments' | 'revenue' | 'plans' | 'review' | 'messages';
+type Tab = 'overview' | 'users' | 'appointments' | 'plans' | 'review' | 'reviewOps' | 'messages';
 
 const ROLE_OPTION_VALUES: UserRole[] = ['MEMBER', 'ADMIN'];
 
@@ -42,48 +43,119 @@ const statusBadgeVariant = (status: AppointmentStatus) => {
   return 'default' as const;
 };
 
-// ─── Overview Tab ────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Overview Tab 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const OverviewTab = () => {
   const { t } = useTranslation();
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+
   const { data: platformStats } = useQuery({
     queryKey: ['admin-platform-stats'],
     queryFn: getAdminPlatformStats,
   });
-  const { data: revenueStats } = useQuery({
-    queryKey: ['admin-payment-stats', '', ''],
-    queryFn: () => getAdminPaymentStats(),
+  const { data: revenueStats, isLoading: isRevenueLoading } = useQuery({
+    queryKey: ['admin-payment-stats', from, to],
+    queryFn: () => getAdminPaymentStats(from || undefined, to || undefined),
   });
 
   const cards = [
-    { icon: Users, label: t('dashboard.admin.totalUsers'), value: platformStats?.userCount ?? '—', color: 'text-purple-600 bg-purple-50' },
-    { icon: Shield, label: t('dashboard.admin.therapists'), value: platformStats?.therapistCount ?? '—', color: 'text-teal-600 bg-teal-50' },
-    { icon: Calendar, label: t('dashboard.admin.appointmentsCount'), value: platformStats?.appointmentCount ?? '—', color: 'text-blue-600 bg-blue-50' },
-    { icon: DollarSign, label: t('dashboard.admin.grossRevenue'), value: revenueStats ? formatCurrency(revenueStats.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
-    { icon: TrendingUp, label: t('dashboard.admin.platformFees'), value: revenueStats ? formatCurrency(revenueStats.totalPlatformFees) : '—', color: 'text-amber-600 bg-amber-50' },
-    { icon: RotateCcw, label: t('dashboard.admin.totalRefunds'), value: revenueStats ? formatCurrency(revenueStats.totalRefunds) : '—', color: 'text-rose-600 bg-rose-50' },
+    { icon: Users, label: t('dashboard.admin.totalUsers'), value: platformStats?.userCount ?? '-', color: 'text-purple-600 bg-purple-50' },
+    { icon: Shield, label: t('dashboard.admin.therapists'), value: platformStats?.therapistCount ?? '-', color: 'text-teal-600 bg-teal-50' },
+    { icon: Calendar, label: t('dashboard.admin.appointmentsCount'), value: platformStats?.appointmentCount ?? '-', color: 'text-blue-600 bg-blue-50' },
+    { icon: DollarSign, label: t('dashboard.admin.grossRevenue'), value: revenueStats ? formatCurrency(revenueStats.totalGrossRevenue) : '-', color: 'text-green-600 bg-green-50' },
+    { icon: TrendingUp, label: t('dashboard.admin.platformFees'), value: revenueStats ? formatCurrency(revenueStats.totalPlatformFees) : '-', color: 'text-amber-600 bg-amber-50' },
+    { icon: UserCheck, label: t('dashboard.admin.therapistPayouts'), value: revenueStats ? formatCurrency(revenueStats.totalTherapistPayouts) : '-', color: 'text-cyan-600 bg-cyan-50' },
+    { icon: RotateCcw, label: t('dashboard.admin.totalRefunds'), value: revenueStats ? formatCurrency(revenueStats.totalRefunds) : '-', color: 'text-rose-600 bg-rose-50' },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {cards.map(({ icon: Icon, label, value, color }) => (
-        <Card key={label}>
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-              <Icon className="h-5 w-5" />
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-sm font-medium text-stone-700 mb-3">{t('dashboard.admin.revenueFilter')}</p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.from')}</label>
+              <DatePicker
+                value={from}
+                onChange={(val) => setFrom(val.split('T')[0])}
+                showTime={false}
+                className="h-8 !px-2"
+              />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-stone-900">{String(value)}</p>
-              <p className="text-xs text-stone-500 mt-0.5">{label}</p>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.to')}</label>
+              <DatePicker
+                value={to}
+                onChange={(val) => setTo(val.split('T')[0])}
+                showTime={false}
+                className="h-8 !px-2"
+              />
             </div>
-          </CardContent>
-        </Card>
-      ))}
+            {(from || to) && (
+              <Button variant="ghost" size="sm" onClick={() => { setFrom(''); setTo(''); }}>
+                {t('common.clear')}
+              </Button>
+            )}
+          </div>
+          <p className="text-xs text-stone-400 mt-2">
+            {from || to
+              ? t('dashboard.admin.period', { from: from || '-', to: to || '-' })
+              : t('dashboard.admin.allTime')}
+          </p>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {cards.map(({ icon: Icon, label, value, color }) => (
+          <Card key={label}>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-900">{String(value)}</p>
+                <p className="text-xs text-stone-500 mt-0.5">{label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {isRevenueLoading ? (
+        <PageLoader />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-teal-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-900">{revenueStats?.paymentCount ?? '-'}</p>
+                <p className="text-xs text-stone-500">{t('dashboard.admin.paidBookings')}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center">
+                <RotateCcw className="h-5 w-5 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-stone-900">{revenueStats?.refundCount ?? '-'}</p>
+                <p className="text-xs text-stone-500">{t('dashboard.admin.refundsIssued')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
 
-// ─── Users Tab ────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Users Tab 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const UsersTab = () => {
   const { t } = useTranslation();
@@ -194,7 +266,7 @@ const UsersTab = () => {
   );
 };
 
-// ─── Appointments Tab ─────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Appointments Tab 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const AppointmentsTab = () => {
   const { t } = useTranslation();
@@ -226,12 +298,12 @@ const AppointmentsTab = () => {
   });
 
   const tableHeaders = [
-    t('dashboard.admin.tableHeaders.name'),
-    t('dashboard.admin.tableHeaders.name'),
-    t('dashboard.admin.tableHeaders.dateTime'),
-    t('dashboard.admin.tableHeaders.format'),
-    t('dashboard.admin.tableHeaders.status'),
-    t('dashboard.admin.tableHeaders.actions'),
+    { id: 'client', label: t('dashboard.admin.tableHeaders.client') },
+    { id: 'therapist', label: t('dashboard.admin.tableHeaders.therapist') },
+    { id: 'dateTime', label: t('dashboard.admin.tableHeaders.dateTime') },
+    { id: 'format', label: t('dashboard.admin.tableHeaders.format') },
+    { id: 'status', label: t('dashboard.admin.tableHeaders.status') },
+    { id: 'actions', label: t('dashboard.admin.tableHeaders.actions') },
   ];
 
   return (
@@ -262,9 +334,9 @@ const AppointmentsTab = () => {
             <table className="w-full text-sm">
               <thead className="bg-stone-50 border-b border-stone-100">
                 <tr>
-                  {tableHeaders.map((h) => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
-                      {h}
+                  {tableHeaders.map((header) => (
+                    <th key={header.id} className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wide">
+                      {header.label}
                     </th>
                   ))}
                 </tr>
@@ -273,12 +345,12 @@ const AppointmentsTab = () => {
                 {(data?.data ?? []).map((appt) => (
                   <tr key={appt.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-6 py-3 font-medium text-stone-900">
-                      {appt.client ? `${appt.client.firstName} ${appt.client.lastName}` : '—'}
+                      {appt.client ? `${appt.client.firstName} ${appt.client.lastName}` : '-'}
                     </td>
                     <td className="px-6 py-3 text-stone-600">
                       {appt.therapist?.user
                         ? `${appt.therapist.user.firstName} ${appt.therapist.user.lastName}`
-                        : '—'}
+                        : '-'}
                     </td>
                     <td className="px-6 py-3 text-stone-500 text-xs whitespace-nowrap">
                       {formatDateTime(appt.startTime)}
@@ -340,112 +412,7 @@ const AppointmentsTab = () => {
   );
 };
 
-// ─── Revenue Tab ──────────────────────────────────────────────────────────────
-
-const RevenueTab = () => {
-  const { t } = useTranslation();
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-payment-stats', from, to],
-    queryFn: () => getAdminPaymentStats(from || undefined, to || undefined),
-  });
-
-  const revenueCards = [
-    { label: t('dashboard.admin.grossRevenue'), value: data ? formatCurrency(data.totalGrossRevenue) : '—', color: 'text-green-600 bg-green-50' },
-    { label: t('dashboard.admin.platformFeesCard'), value: data ? formatCurrency(data.totalPlatformFees) : '—', color: 'text-teal-600 bg-teal-50' },
-    { label: t('dashboard.admin.therapistPayouts'), value: data ? formatCurrency(data.totalTherapistPayouts) : '—', color: 'text-blue-600 bg-blue-50' },
-    { label: t('dashboard.admin.totalRefunds'), value: data ? formatCurrency(data.totalRefunds) : '—', color: 'text-rose-600 bg-rose-50' },
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Date filter */}
-      <Card>
-        <CardContent className="p-5">
-          <p className="text-sm font-medium text-stone-700 mb-3">{t('dashboard.admin.revenueFilter')}</p>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.from')}</label>
-              <DatePicker
-                value={from}
-                onChange={(val) => setFrom(val.split('T')[0])}
-                showTime={false}
-                className="h-8 !px-2"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-stone-500 w-8">{t('dashboard.admin.to')}</label>
-              <DatePicker
-                value={to}
-                onChange={(val) => setTo(val.split('T')[0])}
-                showTime={false}
-                className="h-8 !px-2"
-              />
-            </div>
-            {(from || to) && (
-              <Button variant="ghost" size="sm" onClick={() => { setFrom(''); setTo(''); }}>
-                {t('common.clear')}
-              </Button>
-            )}
-          </div>
-          <p className="text-xs text-stone-400 mt-2">
-            {from || to
-              ? t('dashboard.admin.period', { from: from || '…', to: to || '…' })
-              : t('dashboard.admin.allTime')}
-          </p>
-        </CardContent>
-      </Card>
-
-      {isLoading ? (
-        <PageLoader />
-      ) : (
-        <>
-          {/* Revenue stat cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {revenueCards.map(({ label, value }) => (
-              <Card key={label}>
-                <CardContent className="p-5">
-                  <p className="text-2xl font-bold text-stone-900">{value}</p>
-                  <p className="text-xs text-stone-500 mt-1">{label}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Count stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-xl bg-teal-50 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-teal-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-stone-900">{data?.paymentCount ?? '—'}</p>
-                  <p className="text-xs text-stone-500">{t('dashboard.admin.paidBookings')}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center">
-                  <RotateCcw className="h-5 w-5 text-rose-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-stone-900">{data?.refundCount ?? '—'}</p>
-                  <p className="text-xs text-stone-500">{t('dashboard.admin.refundsIssued')}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
-    </div>
-  );
-};
-
-// ─── Profiles Tab ─────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Profiles Tab 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const AdminProfilesTab = () => {
   const { t } = useTranslation();
@@ -509,7 +476,7 @@ const AdminProfilesTab = () => {
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
                     <span>{profile.locationCity}</span>
-                    <span>¥{Number(profile.sessionPrice).toFixed(0)}/{t('therapists.card.perSession')}</span>
+                    <span>楼{Number(profile.sessionPrice).toFixed(0)}/{t('therapists.card.perSession')}</span>
                     {profile.consultEnabled && (
                       <span className="text-teal-600 font-medium">{t('admin.profiles.consultEnabled')}</span>
                     )}
@@ -570,7 +537,7 @@ const AdminProfilesTab = () => {
   );
 };
 
-// ─── Certificates Tab ─────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Certificates Tab 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const AdminCertificatesTab = () => {
   const qc = useQueryClient();
@@ -656,7 +623,7 @@ const AdminCertificatesTab = () => {
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Main Component 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -675,9 +642,9 @@ export const AdminDashboard = () => {
     { id: 'overview', label: t('dashboard.admin.overview') },
     { id: 'users', label: t('dashboard.admin.users') },
     { id: 'appointments', label: t('dashboard.admin.appointments') },
-    { id: 'revenue', label: t('dashboard.admin.revenue') },
     { id: 'plans', label: t('dashboard.admin.plans') },
     { id: 'review', label: t('dashboard.admin.reviewQueue') },
+    { id: 'reviewOps', label: t('dashboard.admin.reviewOps', 'Review Ops') },
     { id: 'messages', label: t('dashboard.admin.messages'), badge: unreadCount },
   ];
 
@@ -723,11 +690,12 @@ export const AdminDashboard = () => {
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'appointments' && <AppointmentsTab />}
-        {activeTab === 'revenue' && <RevenueTab />}
         {activeTab === 'plans' && <AdminPlansTab />}
         {activeTab === 'review' && <AdminReviewTab />}
+        {activeTab === 'reviewOps' && <AdminReviewOpsTab />}
         {activeTab === 'messages' && <MessagesTab />}
       </div>
     </div>
   );
 };
+

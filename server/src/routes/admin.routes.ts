@@ -4,6 +4,7 @@ import { listPendingCertificates, reviewCertificate } from '../controllers/membe
 import { ProductController } from '../controllers/shop/product.controller';
 import { getPendingProfiles, reviewProfile } from '../controllers/profile.controller';
 import { getPendingPlans, reviewPlan } from '../controllers/therapyPlan.controller';
+import { getReviewTimeline, getScheduleTimeline } from '../controllers/adminTimeline.controller';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 
@@ -22,3 +23,5 @@ adminRouter.get('/profiles/pending', getPendingProfiles);
 adminRouter.post('/profiles/:id/review', reviewProfile);
 adminRouter.get('/therapy-plans/pending', getPendingPlans);
 adminRouter.post('/therapy-plans/:id/review', reviewPlan);
+adminRouter.get('/review-timeline', getReviewTimeline);
+adminRouter.get('/schedule-timeline', getScheduleTimeline);

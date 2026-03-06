@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Lock, Shield, CheckCircle, AlertCircle, Eye, EyeOff, Camera, Briefcase, Image, Star, FileText, Upload, X, Globe, QrCode, Plus, Trash2 } from 'lucide-react';
+import { User, Lock, Shield, CheckCircle, AlertCircle, Eye, EyeOff, Camera, Briefcase, Image, Star, FileText, Upload, X, Globe, QrCode, Plus, Trash2, MapPin } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Avatar } from '../components/ui/Avatar';
 import { DatePicker } from '../components/ui/DatePicker';
@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { validateFile } from '../utils/fileValidation';
 import ReactFlagsSelect from 'react-flags-select';
+import { AddressBookPanel } from '../components/profile/AddressBookPanel';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'Required'),
@@ -50,7 +51,7 @@ type ProfileForm = z.infer<typeof profileSchema>;
 type PasswordForm = z.infer<typeof passwordSchema>;
 type ProfessionalForm = z.infer<typeof professionalSchema>;
 
-type Tab = 'info' | 'security' | 'privacy' | 'professional' | 'exhibition' | 'showcase' | 'preview';
+type Tab = 'info' | 'security' | 'privacy' | 'addresses' | 'professional' | 'exhibition' | 'showcase' | 'preview';
 
 function Toast({ message, type }: { message: string; type: 'success' | 'error' }) {
   return (
@@ -245,6 +246,7 @@ export function UserProfile() {
     { id: 'info', label: t('profile.tabs.info'), icon: User },
     { id: 'security', label: t('profile.tabs.security'), icon: Lock },
     { id: 'privacy', label: t('profile.tabs.privacy'), icon: Shield },
+    { id: 'addresses', label: t('profile.tabs.addresses', 'Addresses'), icon: MapPin },
     ...(hasTherapistOrCounselorCert ? [{ id: 'professional' as Tab, label: t('profile.tabs.professional'), icon: Briefcase }] : []),
     { id: 'exhibition' as Tab, label: t('profile.tabs.exhibition'), icon: Image },
     { id: 'showcase' as Tab, label: t('profile.tabs.showcase'), icon: Star },
@@ -561,6 +563,13 @@ export function UserProfile() {
             )}
 
             {/* ── Professional ── */}
+            {activeTab === 'addresses' && (
+              <AddressBookPanel
+                title={t('profile.addresses.title', 'Delivery Addresses')}
+                subtitle={t('profile.addresses.subtitle', 'Manage up to 6 delivery addresses for product orders.')}
+              />
+            )}
+
             {activeTab === 'professional' && hasTherapistOrCounselorCert && (
               <form onSubmit={professionalForm.handleSubmit((d) => professionalMutation.mutate(d))} className="space-y-5">
                 <div className="mb-6">

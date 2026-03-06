@@ -92,12 +92,12 @@ export const ArtistOrdersTab = () => {
                                     {order.shippingAddress ? (
                                         <div className="text-sm text-stone-700 bg-stone-50 p-3 rounded-lg border border-stone-100">
                                             <p className="font-medium text-stone-900 mb-1">
-                                                {(order.shippingAddress as any).recipientName} &middot; {(order.shippingAddress as any).phoneNumber}
+                                                {order.shippingAddress.recipientName} &middot; {(order.shippingAddress.phone || order.shippingAddress.mobile)}
                                             </p>
                                             <p>
-                                                {(order.shippingAddress as any).province}, {(order.shippingAddress as any).city}, {(order.shippingAddress as any).district}
+                                                {order.shippingAddress.province}, {order.shippingAddress.city}, {order.shippingAddress.district}
                                             </p>
-                                            <p>{(order.shippingAddress as any).detailedAddress}</p>
+                                            <p>{order.shippingAddress.addressDetail || order.shippingAddress.details}</p>
                                         </div>
                                     ) : (
                                         <p className="text-sm text-stone-500 italic">{t('shop.artist.orders.noShippingDetails')}</p>

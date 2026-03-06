@@ -150,6 +150,14 @@ enum ProductStatus {
   REJECTED
 }
 
+enum AddressTag {
+  HOME
+  COMPANY
+  SCHOOL
+  PARENTS
+  OTHER
+}
+
 enum CertificateType {
   COUNSELOR
   THERAPIST
@@ -196,6 +204,7 @@ model User {
   templates                 TherapyPlanTemplate[]    @relation("UserTemplates")
   cartItems                 CartItem[]
   orders                    Order[]
+  memberAddresses           MemberAddress[]
   userProfile               UserProfile?
 }
 
@@ -589,6 +598,8 @@ model Order {
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id])
+  memberAddressId String?
+  memberAddress   MemberAddress? @relation(fields: [memberAddressId], references: [id], onDelete: SetNull)
 
   totalAmount Int // Amount in cents (CNY/RMB)
   status      OrderStatus @default(PENDING)
@@ -600,6 +611,8 @@ model Order {
   addressDetail String
   recipientName String
   phone         String
+  postalCode    String?
+  addressTag    AddressTag?
 
   // Logistics
   carrierName    String?
@@ -613,6 +626,29 @@ model Order {
 
   @@index([userId])
   @@index([status])
+  @@index([memberAddressId])
+}
+
+model MemberAddress {
+  id            String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipientName  String
+  mobile         String
+  province       String
+  city           String
+  district       String
+  addressDetail  String
+  postalCode     String?
+  tag            AddressTag @default(HOME)
+  isDefault      Boolean    @default(false)
+
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isDefault])
+  @@index([userId, createdAt])
 }
 
 model OrderItem {

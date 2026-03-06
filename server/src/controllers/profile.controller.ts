@@ -2,7 +2,15 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma';
 import { uploadAsset, deleteAsset } from '../services/upload.service';
-import type { UpdateProfileInput, UpdatePasswordInput } from '../schemas/user.schemas';
+import type {
+  UpdateProfileInput,
+  UpdatePasswordInput,
+  CreateMemberAddressInput,
+  UpdateMemberAddressInput,
+} from '../schemas/user.schemas';
+
+const MAX_MEMBER_ADDRESSES = 6;
+const prismaAny = prisma as any;
 
 export const getProfile = async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
@@ -276,6 +284,157 @@ export const updateShowcaseOrder = async (req: Request, res: Response) => {
   });
 
   res.json({ message: 'Showcase updated' });
+};
+
+export const listMemberAddresses = async (req: Request, res: Response) => {
+  const addresses = await prismaAny.memberAddress.findMany({
+    where: { userId: req.user!.id },
+    orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
+  });
+  res.json(addresses);
+};
+
+export const createMemberAddress = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const body = req.body as CreateMemberAddressInput;
+  const existingCount = await prismaAny.memberAddress.count({ where: { userId } });
+
+  if (existingCount >= MAX_MEMBER_ADDRESSES) {
+    return res.status(400).json({ message: `Maximum ${MAX_MEMBER_ADDRESSES} addresses allowed` });
+  }
+
+  const makeDefault = body.isDefault === true || existingCount === 0;
+
+  const created = await prisma.$transaction(async (tx) => {
+    const txAny = tx as any;
+    if (makeDefault) {
+      await txAny.memberAddress.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    return txAny.memberAddress.create({
+      data: {
+        userId,
+        recipientName: body.recipientName.trim(),
+        mobile: body.mobile.trim(),
+        province: body.province.trim(),
+        city: body.city.trim(),
+        district: body.district.trim(),
+        addressDetail: body.addressDetail.trim(),
+        postalCode: body.postalCode?.trim() || null,
+        tag: body.tag,
+        isDefault: makeDefault,
+      },
+    });
+  });
+
+  res.status(201).json(created);
+};
+
+export const updateMemberAddress = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { id } = req.params;
+  const body = req.body as UpdateMemberAddressInput;
+
+  const existing = await prismaAny.memberAddress.findFirst({ where: { id, userId } });
+  if (!existing) return res.status(404).json({ message: 'Address not found' });
+
+  const shouldMakeDefault = body.isDefault === true;
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const txAny = tx as any;
+    if (shouldMakeDefault) {
+      await txAny.memberAddress.updateMany({
+        where: { userId, isDefault: true, id: { not: id } },
+        data: { isDefault: false },
+      });
+    }
+
+    const next = await txAny.memberAddress.update({
+      where: { id },
+      data: {
+        recipientName: body.recipientName?.trim(),
+        mobile: body.mobile?.trim(),
+        province: body.province?.trim(),
+        city: body.city?.trim(),
+        district: body.district?.trim(),
+        addressDetail: body.addressDetail?.trim(),
+        postalCode: body.postalCode !== undefined ? body.postalCode?.trim() || null : undefined,
+        tag: body.tag,
+        isDefault: body.isDefault,
+      },
+    });
+
+    // Keep at least one default if user explicitly unsets default.
+    if (body.isDefault === false && next.isDefault === false) {
+      const hasDefault = await txAny.memberAddress.count({
+        where: { userId, isDefault: true, id: { not: id } },
+      });
+      if (hasDefault === 0) {
+        return txAny.memberAddress.update({
+          where: { id },
+          data: { isDefault: true },
+        });
+      }
+    }
+
+    return next;
+  });
+
+  res.json(updated);
+};
+
+export const deleteMemberAddress = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { id } = req.params;
+
+  const existing = await prismaAny.memberAddress.findFirst({ where: { id, userId } });
+  if (!existing) return res.status(404).json({ message: 'Address not found' });
+
+  await prisma.$transaction(async (tx) => {
+    const txAny = tx as any;
+    await txAny.memberAddress.delete({ where: { id } });
+
+    if (existing.isDefault) {
+      const replacement = await txAny.memberAddress.findFirst({
+        where: { userId },
+        orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+      });
+      if (replacement) {
+        await txAny.memberAddress.update({
+          where: { id: replacement.id },
+          data: { isDefault: true },
+        });
+      }
+    }
+  });
+
+  res.status(204).send();
+};
+
+export const setDefaultMemberAddress = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const { id } = req.params;
+
+  const existing = await prismaAny.memberAddress.findFirst({ where: { id, userId } });
+  if (!existing) return res.status(404).json({ message: 'Address not found' });
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const txAny = tx as any;
+    await txAny.memberAddress.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false },
+    });
+
+    return txAny.memberAddress.update({
+      where: { id },
+      data: { isDefault: true },
+    });
+  });
+
+  res.json(updated);
 };
 
 export const getPendingProfiles = async (req: Request, res: Response) => {

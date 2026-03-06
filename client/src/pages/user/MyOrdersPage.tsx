@@ -116,11 +116,11 @@ export const MyOrdersPage = () => {
                                         <h3 className="font-semibold text-gray-900 mb-2 border-b pb-2">{t('shop.orders.shippingInfo')}</h3>
                                         <div className="text-sm text-gray-600 space-y-1">
                                             <div className="font-medium text-gray-900">{order.shippingAddress.recipientName}</div>
-                                            <div>{order.shippingAddress.phone}</div>
+                                            <div>{order.shippingAddress.phone || order.shippingAddress.mobile}</div>
                                             <div className="mt-2">
                                                 {order.shippingAddress.province} {order.shippingAddress.city} {order.shippingAddress.district}
                                             </div>
-                                            <div>{order.shippingAddress.details}</div>
+                                            <div>{order.shippingAddress.addressDetail || order.shippingAddress.details}</div>
                                         </div>
                                     </div>
 

@@ -552,6 +552,8 @@
       "appointmentsTotal": "{{total}} total",
       "tableHeaders": {
         "name": "Name",
+        "client": "Client",
+        "therapist": "Therapist",
         "email": "Email",
         "role": "Role",
         "joined": "Joined",
@@ -768,7 +770,8 @@
         "descriptionRequired": "Description is required",
         "descriptionMinLength": "Description must be at least 10 characters",
         "imageRequired": "At least one image is required",
-        "imageMaxCount": "Maximum 9 images allowed"
+        "imageMaxCount": "Maximum 9 images allowed",
+        "imageUploadFailed": "Image upload failed. Please try again."
       },
       "buttons": {
         "exit": "Exit",
@@ -1494,11 +1497,15 @@
   "translation": {
     "optionalStepTitle": "Optional Translation Assist",
     "optionalHint": "You can skip this and continue with manual editing.",
+    "manualEditHint": "You can edit both sides manually. Clicking Translate will overwrite the result side.",
     "translateNow": "Translate now",
     "skip": "Skip",
     "skipped": "Translation step skipped. Manual mode remains available.",
     "manualFallback": "Auto translation is unavailable right now. Please continue in manual mode.",
     "partialFailure": "Some fields could not be translated. Please review and edit manually.",
+    "reviewRequired": "Please complete the translation step before continuing.",
+    "sourceColumn": "Source ({{lang}})",
+    "resultColumn": "Result ({{lang}})",
     "sourcePrefix": "Detected source",
     "modeLabel": "Mode",
     "sourceDetected": {

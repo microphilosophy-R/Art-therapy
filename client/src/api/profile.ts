@@ -102,6 +102,35 @@ export interface GalleryImage {
   createdAt: string;
 }
 
+export type AddressTag = 'HOME' | 'COMPANY' | 'SCHOOL' | 'PARENTS' | 'OTHER';
+
+export interface MemberAddress {
+  id: string;
+  recipientName: string;
+  mobile: string;
+  province: string;
+  city: string;
+  district: string;
+  addressDetail: string;
+  postalCode?: string | null;
+  tag: AddressTag;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MemberAddressPayload {
+  recipientName: string;
+  mobile: string;
+  province: string;
+  city: string;
+  district: string;
+  addressDetail: string;
+  postalCode?: string | null;
+  tag: AddressTag;
+  isDefault?: boolean;
+}
+
 export const addGalleryImage = async (file: File): Promise<GalleryImage> => {
   const formData = new FormData();
   formData.append('image', file);
@@ -117,4 +146,31 @@ export const deleteGalleryImage = async (imageId: string): Promise<void> => {
 
 export const reorderGalleryImages = async (order: string[]): Promise<void> => {
   await api.patch('/profile/gallery/reorder', { order });
+};
+
+export const getMemberAddresses = async (): Promise<MemberAddress[]> => {
+  const { data } = await api.get('/profile/addresses');
+  return data;
+};
+
+export const createMemberAddress = async (payload: MemberAddressPayload): Promise<MemberAddress> => {
+  const { data } = await api.post('/profile/addresses', payload);
+  return data;
+};
+
+export const updateMemberAddress = async (
+  id: string,
+  payload: Partial<MemberAddressPayload> & { isDefault?: boolean }
+): Promise<MemberAddress> => {
+  const { data } = await api.put(`/profile/addresses/${id}`, payload);
+  return data;
+};
+
+export const deleteMemberAddress = async (id: string): Promise<void> => {
+  await api.delete(`/profile/addresses/${id}`);
+};
+
+export const setDefaultMemberAddress = async (id: string): Promise<MemberAddress> => {
+  const { data } = await api.post(`/profile/addresses/${id}/default`, {});
+  return data;
 };

@@ -39,35 +39,18 @@ const defaultValues: ProductFormValues = {
   images: [],
 };
 
-const detectSourceLang = (
-  zhValue: string,
-  enValue: string,
-  lastEdited: TranslateLang | null,
-): TranslateLang | null => {
-  const zh = zhValue.trim();
-  const en = enValue.trim();
-
-  if (lastEdited === 'zh' && zh) return 'zh';
-  if (lastEdited === 'en' && en) return 'en';
-  if (zh && !en) return 'zh';
-  if (en && !zh) return 'en';
-  if (zh && en) return 'zh';
-  return null;
-};
-
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 export const ProductWizard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const userLang: TranslateLang = i18n.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+  const translationSourceLang: TranslateLang = userLang;
+  const translationTargetLang: TranslateLang = userLang === 'zh' ? 'en' : 'zh';
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [values, setValues] = useState<ProductFormValues>(defaultValues);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [lastEditedLang, setLastEditedLang] = useState<Record<ProductLocalizedField, TranslateLang | null>>({
-    title: null,
-    description: null,
-  });
   const [translationState, setTranslationState] = useState<Record<ProductLocalizedField, TranslationFieldState>>({
     title: { status: 'idle', sourceLang: null },
     description: { status: 'idle', sourceLang: null },
@@ -75,7 +58,9 @@ export const ProductWizard = () => {
   const [translationSkipped, setTranslationSkipped] = useState(false);
   const [translationMode, setTranslationMode] = useState<'auto' | 'manual' | null>(null);
   const [translationMessage, setTranslationMessage] = useState<string | null>(null);
+  const [translationReviewed, setTranslationReviewed] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isUploadingStep2, setIsUploadingStep2] = useState(false);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -114,7 +99,6 @@ export const ProductWizard = () => {
     };
     const rule = mapped[String(key)];
     if (rule) {
-      setLastEditedLang((prev) => ({ ...prev, [rule.field]: rule.lang }));
       setTranslationState((prev) => ({
         ...prev,
         [rule.field]: { status: 'idle', sourceLang: rule.lang },
@@ -122,6 +106,7 @@ export const ProductWizard = () => {
       setTranslationSkipped(false);
       setTranslationMode(null);
       setTranslationMessage(null);
+      setTranslationReviewed(false);
     }
   };
 
@@ -129,14 +114,19 @@ export const ProductWizard = () => {
     const errs: Partial<Record<keyof ProductFormValues, string>> = {};
     const titleZh = values.title.trim();
     const titleEn = values.titleEn.trim();
-    if (!titleZh && !titleEn) {
-      errs.title = t('dashboard.products.validation.titleRequired');
-      errs.titleEn = t('dashboard.products.validation.titleRequired');
+    const titlePrimary = userLang === 'zh' ? titleZh : titleEn;
+    if (!titlePrimary) {
+      if (userLang === 'zh') errs.title = t('dashboard.products.validation.titleRequired');
+      else errs.titleEn = t('dashboard.products.validation.titleRequired');
     }
-    if (titleZh && titleZh.length < 2) errs.title = t('dashboard.products.validation.titleMinLength');
-    if (titleEn && titleEn.length < 2) errs.titleEn = t('dashboard.products.validation.titleMinLength');
-    if (titleZh && titleZh.length > 100) errs.title = t('dashboard.products.validation.titleMaxLength');
-    if (titleEn && titleEn.length > 100) errs.titleEn = t('dashboard.products.validation.titleMaxLength');
+    if (titlePrimary && titlePrimary.length < 2) {
+      if (userLang === 'zh') errs.title = t('dashboard.products.validation.titleMinLength');
+      else errs.titleEn = t('dashboard.products.validation.titleMinLength');
+    }
+    if (titlePrimary && titlePrimary.length > 100) {
+      if (userLang === 'zh') errs.title = t('dashboard.products.validation.titleMaxLength');
+      else errs.titleEn = t('dashboard.products.validation.titleMaxLength');
+    }
 
     const price = parseFloat(values.price);
     if (!values.price) errs.price = t('dashboard.products.validation.priceRequired');
@@ -146,21 +136,22 @@ export const ProductWizard = () => {
     if (!values.stock) errs.stock = t('dashboard.products.validation.stockRequired');
     else if (isNaN(stock) || stock < 0) errs.stock = t('dashboard.products.validation.stockNonNegative');
 
+    const descriptionPrimary = userLang === 'zh' ? values.description.trim() : values.descriptionEn.trim();
+    if (!descriptionPrimary) {
+      if (userLang === 'zh') errs.description = t('dashboard.products.validation.descriptionRequired');
+      else errs.descriptionEn = t('dashboard.products.validation.descriptionRequired');
+    }
+    if (descriptionPrimary && descriptionPrimary.length < 10) {
+      if (userLang === 'zh') errs.description = t('dashboard.products.validation.descriptionMinLength');
+      else errs.descriptionEn = t('dashboard.products.validation.descriptionMinLength');
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const validateStep2 = (): boolean => {
     const errs: Partial<Record<keyof ProductFormValues, string>> = {};
-    const descZh = values.description.trim();
-    const descEn = values.descriptionEn.trim();
-    if (!descZh && !descEn) {
-      errs.description = t('dashboard.products.validation.descriptionRequired');
-      errs.descriptionEn = t('dashboard.products.validation.descriptionRequired');
-    }
-    if (descZh && descZh.length < 10) errs.description = t('dashboard.products.validation.descriptionMinLength');
-    if (descEn && descEn.length < 10) errs.descriptionEn = t('dashboard.products.validation.descriptionMinLength');
-
     if (values.images.length === 0) errs.images = t('dashboard.products.validation.imageRequired');
     else if (values.images.length > 9) errs.images = t('dashboard.products.validation.imageMaxCount');
 
@@ -171,15 +162,30 @@ export const ProductWizard = () => {
   const handleNext = async () => {
     if (currentStep === 1 && !validateStep1()) return;
     if (currentStep === 2 && !validateStep2()) return;
+    if (currentStep === 3 && !translationReviewed) {
+      setTranslationMessage(t('translation.reviewRequired', 'Please complete the translation checkpoint before final submission.'));
+      return;
+    }
 
     if (currentStep === 2) {
-      // Upload images
-      const urls: string[] = [];
-      for (const file of values.images) {
-        const url = await uploadMutation.mutateAsync(file);
-        urls.push(url);
+      setIsUploadingStep2(true);
+      setErrors((prev) => ({ ...prev, images: undefined }));
+      try {
+        const urls: string[] = [];
+        for (const file of values.images) {
+          const url = await uploadMutation.mutateAsync(file);
+          urls.push(url);
+        }
+        setImageUrls(urls);
+      } catch {
+        setErrors((prev) => ({
+          ...prev,
+          images: t('dashboard.products.validation.imageUploadFailed'),
+        }));
+        return;
+      } finally {
+        setIsUploadingStep2(false);
       }
-      setImageUrls(urls);
     }
 
     setCurrentStep((prev) => (prev + 1) as Step);
@@ -199,26 +205,56 @@ export const ProductWizard = () => {
     };
   };
 
+  const translationRows: Array<{
+    field: ProductLocalizedField;
+    label: string;
+    sourceKey: keyof ProductFormValues;
+    targetKey: keyof ProductFormValues;
+    multiline?: boolean;
+  }> = [
+    {
+      field: 'title',
+      label: t('dashboard.products.fields.title'),
+      sourceKey: translationSourceLang === 'zh' ? 'title' : 'titleEn',
+      targetKey: translationSourceLang === 'zh' ? 'titleEn' : 'title',
+    },
+    {
+      field: 'description',
+      label: t('dashboard.products.fields.description'),
+      sourceKey: translationSourceLang === 'zh' ? 'description' : 'descriptionEn',
+      targetKey: translationSourceLang === 'zh' ? 'descriptionEn' : 'description',
+      multiline: true,
+    },
+  ];
+
+  const handleTranslationFieldChange = (
+    key: keyof ProductFormValues,
+    field: ProductLocalizedField,
+    value: string,
+  ) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+    setTranslationState((prev) => ({
+      ...prev,
+      [field]: { status: 'idle', sourceLang: translationSourceLang },
+    }));
+    setTranslationSkipped(false);
+    setTranslationMode('manual');
+    setTranslationMessage(null);
+    setTranslationReviewed(true);
+  };
+
   const handleSkipTranslation = () => {
     setTranslationSkipped(true);
     setTranslationMode('manual');
     setTranslationMessage(null);
+    setTranslationReviewed(true);
   };
 
   const handleTranslate = async () => {
-    const fields: Array<{
-      field: ProductLocalizedField;
-      zhKey: keyof ProductFormValues;
-      enKey: keyof ProductFormValues;
-    }> = [
-      { field: 'title', zhKey: 'title', enKey: 'titleEn' },
-      { field: 'description', zhKey: 'description', enKey: 'descriptionEn' },
-    ];
-
     const tasks: Array<{
       field: ProductLocalizedField;
       targetKey: keyof ProductFormValues;
-      sourceLang: TranslateLang;
       request: TranslateBatchItemInput;
     }> = [];
 
@@ -227,27 +263,22 @@ export const ProductWizard = () => {
       description: { status: 'idle', sourceLang: null },
     };
 
-    fields.forEach(({ field, zhKey, enKey }) => {
-      const zhText = String(values[zhKey] ?? '').trim();
-      const enText = String(values[enKey] ?? '').trim();
-      const sourceLang = detectSourceLang(zhText, enText, lastEditedLang[field]);
-      if (!sourceLang) {
-        preState[field] = { status: 'failed', sourceLang: null, errorCode: 'EMPTY_SOURCE' };
+    translationRows.forEach((row) => {
+      const sourceText = String(values[row.sourceKey] ?? '').trim();
+      if (!sourceText) {
+        preState[row.field] = { status: 'failed', sourceLang: translationSourceLang, errorCode: 'EMPTY_SOURCE' };
         return;
       }
-      const targetLang: TranslateLang = sourceLang === 'zh' ? 'en' : 'zh';
-      const sourceText = sourceLang === 'zh' ? zhText : enText;
-      const targetKey = sourceLang === 'zh' ? enKey : zhKey;
-      preState[field] = { status: 'pending', sourceLang };
+
+      preState[row.field] = { status: 'pending', sourceLang: translationSourceLang };
       tasks.push({
-        field,
-        targetKey,
-        sourceLang,
+        field: row.field,
+        targetKey: row.targetKey,
         request: {
-          key: String(targetKey),
+          key: String(row.targetKey),
           text: sourceText,
-          sourceLang,
-          targetLang,
+          sourceLang: translationSourceLang,
+          targetLang: translationTargetLang,
         },
       });
     });
@@ -256,10 +287,12 @@ export const ProductWizard = () => {
     setTranslationSkipped(false);
     setTranslationMode(null);
     setTranslationMessage(null);
+    setTranslationReviewed(false);
 
     if (!tasks.length) {
       setTranslationMode('manual');
       setTranslationMessage(t('translation.manualFallback'));
+      setTranslationReviewed(true);
       return;
     }
 
@@ -292,11 +325,11 @@ export const ProductWizard = () => {
         tasks.forEach((task) => {
           const result = resultMap.get(task.request.key);
           if (result?.status === 'ok') {
-            next[task.field] = { status: 'success', sourceLang: task.sourceLang };
+            next[task.field] = { status: 'success', sourceLang: translationSourceLang };
           } else {
             next[task.field] = {
               status: 'failed',
-              sourceLang: task.sourceLang,
+              sourceLang: translationSourceLang,
               errorCode: result?.errorCode ?? 'TRANSLATION_FAILED',
             };
           }
@@ -318,15 +351,20 @@ export const ProductWizard = () => {
       setTranslationMessage(t('translation.manualFallback'));
       setTranslationState((prev) => ({
         ...prev,
-        title: { status: 'failed', sourceLang: prev.title.sourceLang, errorCode: 'NETWORK_ERROR' },
-        description: { status: 'failed', sourceLang: prev.description.sourceLang, errorCode: 'NETWORK_ERROR' },
+        title: { status: 'failed', sourceLang: translationSourceLang, errorCode: 'NETWORK_ERROR' },
+        description: { status: 'failed', sourceLang: translationSourceLang, errorCode: 'NETWORK_ERROR' },
       }));
     } finally {
       setIsTranslating(false);
+      setTranslationReviewed(true);
     }
   };
 
   const handleSubmit = async () => {
+    if (!translationReviewed) {
+      setTranslationMessage(t('translation.reviewRequired', 'Please complete the translation checkpoint before final submission.'));
+      return;
+    }
     const titleLocalized = buildRequiredLocalized(values.title, values.titleEn);
     const descriptionLocalized = buildRequiredLocalized(values.description, values.descriptionEn);
     await createMutation.mutateAsync({
@@ -357,13 +395,14 @@ export const ProductWizard = () => {
   const steps = [
     { id: 1, name: t('dashboard.products.steps.basicInfo') },
     { id: 2, name: t('dashboard.products.steps.description') },
-    { id: 3, name: t('dashboard.products.steps.preview') },
+    { id: 3, name: t('dashboard.products.steps.translation', 'Translation') },
+    { id: 4, name: t('dashboard.products.steps.preview') },
   ];
 
-  const isLoading = uploadMutation.isPending || createMutation.isPending || isTranslating;
+  const isLoading = uploadMutation.isPending || createMutation.isPending || isTranslating || isUploadingStep2;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold text-stone-900">{t('dashboard.products.createTitle')}</h1>
 
       {/* Stepper */}
@@ -395,26 +434,29 @@ export const ProductWizard = () => {
       {/* Step 1: Basic Info */}
       {currentStep === 1 && (
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (zh) {t('dashboard.products.fields.required')}</label>
-            <input
-              type="text"
-              value={values.title}
-              onChange={(e) => set('title', e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            />
-            {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (en) {t('dashboard.products.fields.required')}</label>
-            <input
-              type="text"
-              value={values.titleEn}
-              onChange={(e) => set('titleEn', e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            />
-            {errors.titleEn && <p className="text-sm text-red-600 mt-1">{errors.titleEn}</p>}
-          </div>
+          {userLang === 'zh' ? (
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (zh) {t('dashboard.products.fields.required')}</label>
+              <input
+                type="text"
+                value={values.title}
+                onChange={(e) => set('title', e.target.value)}
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+              />
+              {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.title')} (en) {t('dashboard.products.fields.required')}</label>
+              <input
+                type="text"
+                value={values.titleEn}
+                onChange={(e) => set('titleEn', e.target.value)}
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+              />
+              {errors.titleEn && <p className="text-sm text-red-600 mt-1">{errors.titleEn}</p>}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.category')} {t('dashboard.products.fields.required')}</label>
@@ -456,33 +498,36 @@ export const ProductWizard = () => {
               {errors.stock && <p className="text-sm text-red-600 mt-1">{errors.stock}</p>}
             </div>
           </div>
+
+          {userLang === 'zh' ? (
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (zh) {t('dashboard.products.fields.required')}</label>
+              <textarea
+                value={values.description}
+                onChange={(e) => set('description', e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+              />
+              {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (en) {t('dashboard.products.fields.required')}</label>
+              <textarea
+                value={values.descriptionEn}
+                onChange={(e) => set('descriptionEn', e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+              />
+              {errors.descriptionEn && <p className="text-sm text-red-600 mt-1">{errors.descriptionEn}</p>}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Step 2: Description & Images */}
+      {/* Step 2: Media */}
       {currentStep === 2 && (
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (zh) {t('dashboard.products.fields.required')}</label>
-            <textarea
-              value={values.description}
-              onChange={(e) => set('description', e.target.value)}
-              rows={6}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            />
-            {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.description')} (en) {t('dashboard.products.fields.required')}</label>
-            <textarea
-              value={values.descriptionEn}
-              onChange={(e) => set('descriptionEn', e.target.value)}
-              rows={6}
-              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
-            />
-            {errors.descriptionEn && <p className="text-sm text-red-600 mt-1">{errors.descriptionEn}</p>}
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.images')} {t('dashboard.products.fields.required')}</label>
             <input
@@ -513,7 +558,7 @@ export const ProductWizard = () => {
         </div>
       )}
 
-      {/* Step 3: Preview */}
+      {/* Step 3: Translation */}
       {currentStep === 3 && (
         <div className="space-y-4">
           <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
@@ -523,6 +568,7 @@ export const ProductWizard = () => {
                 <p className="text-xs text-stone-500">
                   {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
                 </p>
+                <p className="text-xs text-stone-500 mt-1">{t('translation.manualEditHint')}</p>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -550,37 +596,78 @@ export const ProductWizard = () => {
               </p>
             )}
 
-            <div className="space-y-2">
-              {[
-                { field: 'title' as const, label: `${t('dashboard.products.fields.title')} (zh/en)` },
-                { field: 'description' as const, label: `${t('dashboard.products.fields.description')} (zh/en)` },
-              ].map((row) => {
+            <div className="hidden md:grid md:grid-cols-2 gap-3 px-1">
+              <p className="text-xs font-medium text-stone-600">
+                {t('translation.sourceColumn', { lang: t(`translation.sourceDetected.${translationSourceLang}`) })}
+              </p>
+              <p className="text-xs font-medium text-stone-600">
+                {t('translation.resultColumn', { lang: t(`translation.sourceDetected.${translationTargetLang}`) })}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {translationRows.map((row) => {
                 const state = translationState[row.field];
-                const sourceLabel = state.sourceLang ? t(`translation.sourceDetected.${state.sourceLang}`) : '-';
+                const sourceValue = String(values[row.sourceKey] ?? '');
+                const targetValue = String(values[row.targetKey] ?? '');
+                const statusClass =
+                  state.status === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : state.status === 'failed'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : state.status === 'pending'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-stone-50 text-stone-600 border-stone-200';
                 return (
                   <div
                     key={row.field}
-                    className="flex items-center justify-between rounded-md border border-stone-200 px-3 py-2"
+                    className="rounded-md border border-stone-200 p-3"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-stone-800">{row.label}</p>
-                      <p className="text-xs text-stone-500">
-                        {t('translation.sourcePrefix')}: {sourceLabel}
-                      </p>
+                    <p className="text-sm font-medium text-stone-800 mb-2">{row.label}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        {row.multiline ? (
+                          <textarea
+                            rows={4}
+                            value={sourceValue}
+                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={sourceValue}
+                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        {row.multiline ? (
+                          <textarea
+                            rows={4}
+                            value={targetValue}
+                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={targetValue}
+                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        )}
+                      </div>
                     </div>
-                    <span
-                      className={`text-xs font-medium ${
-                        state.status === 'success'
-                          ? 'text-emerald-700'
-                          : state.status === 'failed'
-                            ? 'text-rose-700'
-                            : state.status === 'pending'
-                              ? 'text-amber-700'
-                              : 'text-stone-500'
-                      }`}
-                    >
-                      {t(`translation.status.${state.status}`)}
-                    </span>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                        {t(`translation.status.${state.status}`)}
+                      </span>
+                      {state.errorCode && state.status === 'failed' && (
+                        <span className="text-xs text-rose-600">{state.errorCode}</span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -592,7 +679,12 @@ export const ProductWizard = () => {
               </p>
             )}
           </div>
+        </div>
+      )}
 
+      {/* Step 4: Preview */}
+      {currentStep === 4 && (
+        <div className="space-y-4">
           <div className="space-y-4 bg-stone-50 p-6 rounded-lg">
             <h2 className="text-xl font-semibold text-stone-900">{values.title || values.titleEn}</h2>
             <div className="flex gap-4 text-sm text-stone-600">
@@ -624,7 +716,7 @@ export const ProductWizard = () => {
             </Button>
           )}
 
-          {currentStep < 3 ? (
+          {currentStep < 4 ? (
             <Button onClick={handleNext} loading={isLoading} disabled={isLoading}>
               {t('dashboard.products.buttons.next')}
             </Button>

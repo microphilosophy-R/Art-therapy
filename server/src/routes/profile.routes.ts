@@ -1,9 +1,33 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
-import { getProfile, updateProfile, updatePassword, acceptPrivacy, uploadAvatar, submitProfileForReview, uploadPortrait, addGalleryImage, deleteGalleryImage, reorderGalleryImages, updateShowcaseOrder } from '../controllers/profile.controller';
+import {
+  getProfile,
+  updateProfile,
+  updatePassword,
+  acceptPrivacy,
+  uploadAvatar,
+  submitProfileForReview,
+  uploadPortrait,
+  addGalleryImage,
+  deleteGalleryImage,
+  reorderGalleryImages,
+  updateShowcaseOrder,
+  listMemberAddresses,
+  createMemberAddress,
+  updateMemberAddress,
+  deleteMemberAddress,
+  setDefaultMemberAddress,
+} from '../controllers/profile.controller';
 import { authenticate } from '../middleware/authenticate';
 import { validate } from '../middleware/validate';
-import { updateProfileSchema, updatePasswordSchema, acceptPrivacySchema } from '../schemas/user.schemas';
+import {
+  updateProfileSchema,
+  updatePasswordSchema,
+  acceptPrivacySchema,
+  createMemberAddressSchema,
+  updateMemberAddressSchema,
+  setDefaultMemberAddressSchema,
+} from '../schemas/user.schemas';
 
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
@@ -40,3 +64,8 @@ profileRouter.delete('/gallery/:imageId', deleteGalleryImage);
 profileRouter.patch('/gallery/reorder', reorderGalleryImages);
 profileRouter.post('/submit-for-review', submitProfileForReview);
 profileRouter.patch('/showcase', updateShowcaseOrder);
+profileRouter.get('/addresses', listMemberAddresses);
+profileRouter.post('/addresses', validate(createMemberAddressSchema), createMemberAddress);
+profileRouter.put('/addresses/:id', validate(updateMemberAddressSchema), updateMemberAddress);
+profileRouter.delete('/addresses/:id', deleteMemberAddress);
+profileRouter.post('/addresses/:id/default', validate(setDefaultMemberAddressSchema), setDefaultMemberAddress);

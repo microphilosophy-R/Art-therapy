@@ -90,7 +90,7 @@ export interface StepChangePayload {
   pdfFiles: File[];
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 type LocalizedBaseField = 'title' | 'slogan' | 'introduction';
 type LocalizedLang = 'zh' | 'en';
 type TranslationStatus = 'idle' | 'pending' | 'success' | 'failed';
@@ -116,9 +116,9 @@ interface TherapyPlanFormProps {
    * If it throws, the step will NOT advance.
    */
   onBeforeStepChange?: (fromStep: number, payload: StepChangePayload) => Promise<void>;
-  /** Called when therapist clicks "Submit for Review" on step 4. */
+  /** Called when therapist clicks "Submit for Review" on final step. */
   onSubmitForReview?: () => Promise<void>;
-  /** Called when therapist clicks "Save Draft & Exit" on step 4. */
+  /** Called when therapist clicks "Save Draft & Exit" on final step. */
   onSaveDraftAndExit?: () => void;
   /** Called when therapist clicks the Exit button on any step. */
   onExit: () => void;
@@ -141,22 +141,6 @@ interface TherapyPlanFormProps {
   isAddingPdf?: boolean;
   consultEnabled?: boolean;
 }
-
-const detectSourceLang = (
-  zhValue: string,
-  enValue: string,
-  lastEdited: LocalizedLang | null,
-): LocalizedLang | null => {
-  const zh = zhValue.trim();
-  const en = enValue.trim();
-
-  if (lastEdited === 'zh' && zh) return 'zh';
-  if (lastEdited === 'en' && en) return 'en';
-  if (zh && !en) return 'zh';
-  if (en && !zh) return 'en';
-  if (zh && en) return 'zh';
-  return null;
-};
 
 export const TherapyPlanForm = ({
   initialValues,
@@ -181,22 +165,21 @@ export const TherapyPlanForm = ({
   videoUploadPercent = 0,
   consultEnabled = false,
 }: TherapyPlanFormProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const userLang: LocalizedLang = i18n.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+  const translationSourceLang: TranslateLang = userLang;
+  const translationTargetLang: TranslateLang = userLang === 'zh' ? 'en' : 'zh';
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [values, setValues] = useState<TherapyPlanFormValues>({ ...defaultValues, ...initialValues });
   const [errors, setErrors] = useState<Partial<Record<keyof TherapyPlanFormValues, string>>>({});
-  const [lastEditedLang, setLastEditedLang] = useState<Record<LocalizedBaseField, LocalizedLang | null>>({
-    title: null,
-    slogan: null,
-    introduction: null,
-  });
   const [translationState, setTranslationState] = useState<Record<LocalizedBaseField, TranslationFieldState>>(
     defaultTranslationState,
   );
   const [translationSkipped, setTranslationSkipped] = useState(false);
   const [translationMode, setTranslationMode] = useState<'auto' | 'manual' | null>(null);
   const [translationMessage, setTranslationMessage] = useState<string | null>(null);
+  const [translationReviewed, setTranslationReviewed] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
 
   // Track whether the user has made changes since the last auto-save
@@ -232,16 +215,6 @@ export const TherapyPlanForm = ({
     return '';
   });
 
-  useEffect(() => {
-    setLastEditedLang({
-      title: detectSourceLang(values.title, values.titleEn, null),
-      slogan: detectSourceLang(values.slogan, values.sloganEn, null),
-      introduction: detectSourceLang(values.introduction, values.introductionEn, null),
-    });
-    // Initialize once from initial form state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // ── Value helpers ─────────────────────────────────────────────────────────
 
   const set = <K extends keyof TherapyPlanFormValues>(key: K, val: TherapyPlanFormValues[K]) => {
@@ -258,7 +231,6 @@ export const TherapyPlanForm = ({
 
     const mapped = fieldMap[String(key)];
     if (mapped) {
-      setLastEditedLang((prev) => ({ ...prev, [mapped.field]: mapped.lang }));
       setTranslationState((prev) => ({
         ...prev,
         [mapped.field]: { status: 'idle', sourceLang: mapped.lang },
@@ -266,6 +238,7 @@ export const TherapyPlanForm = ({
       setTranslationSkipped(false);
       setTranslationMode(null);
       setTranslationMessage(null);
+      setTranslationReviewed(false);
     }
     setHasStepChanges(true);
   };
@@ -319,26 +292,37 @@ export const TherapyPlanForm = ({
     const errs: Partial<Record<keyof TherapyPlanFormValues, string>> = {};
     const titleZh = values.title.trim();
     const titleEn = values.titleEn.trim();
-    if (!titleZh && !titleEn) {
-      errs.title = t('common.errors.required');
-      errs.titleEn = t('common.errors.required');
+    const titlePrimary = userLang === 'zh' ? titleZh : titleEn;
+    if (!titlePrimary) {
+      if (userLang === 'zh') errs.title = t('common.errors.required');
+      else errs.titleEn = t('common.errors.required');
     }
-    if (titleZh && titleZh.length < 5) errs.title = t('therapyPlans.form.titleMinLength');
-    if (titleEn && titleEn.length < 5) errs.titleEn = t('therapyPlans.form.titleMinLength');
-    if (titleZh && titleZh.length > 100) errs.title = t('therapyPlans.form.titleMaxLength');
-    if (titleEn && titleEn.length > 100) errs.titleEn = t('therapyPlans.form.titleMaxLength');
+    if (titlePrimary && titlePrimary.length < 5) {
+      if (userLang === 'zh') errs.title = t('therapyPlans.form.titleMinLength');
+      else errs.titleEn = t('therapyPlans.form.titleMinLength');
+    }
+    if (titlePrimary && titlePrimary.length > 100) {
+      if (userLang === 'zh') errs.title = t('therapyPlans.form.titleMaxLength');
+      else errs.titleEn = t('therapyPlans.form.titleMaxLength');
+    }
 
-    if (values.slogan && values.slogan.length > 60) errs.slogan = t('therapyPlans.form.sloganMaxLengthError');
-    if (values.sloganEn && values.sloganEn.length > 60) errs.sloganEn = t('therapyPlans.form.sloganMaxLengthError');
+    const sloganPrimary = userLang === 'zh' ? values.slogan : values.sloganEn;
+    if (sloganPrimary && sloganPrimary.length > 60) {
+      if (userLang === 'zh') errs.slogan = t('therapyPlans.form.sloganMaxLengthError');
+      else errs.sloganEn = t('therapyPlans.form.sloganMaxLengthError');
+    }
 
     const introZh = values.introduction.trim();
     const introEn = values.introductionEn.trim();
-    if (!introZh && !introEn) {
-      errs.introduction = t('common.errors.required');
-      errs.introductionEn = t('common.errors.required');
+    const introPrimary = userLang === 'zh' ? introZh : introEn;
+    if (!introPrimary) {
+      if (userLang === 'zh') errs.introduction = t('common.errors.required');
+      else errs.introductionEn = t('common.errors.required');
     }
-    if (introZh && introZh.length < 20) errs.introduction = t('therapyPlans.form.introMinLength');
-    if (introEn && introEn.length < 20) errs.introductionEn = t('therapyPlans.form.introMinLength');
+    if (introPrimary && introPrimary.length < 20) {
+      if (userLang === 'zh') errs.introduction = t('therapyPlans.form.introMinLength');
+      else errs.introductionEn = t('therapyPlans.form.introMinLength');
+    }
 
     if (!values.location.trim()) errs.location = t('common.errors.required');
     if (!values.contactInfo.trim()) errs.contactInfo = t('common.errors.required');
@@ -377,6 +361,10 @@ export const TherapyPlanForm = ({
   const handleNext = async () => {
     if (currentStep === 1 && !validateStep1()) return;
     if (currentStep === 2 && !validateStep2()) return;
+    if (currentStep === 4 && !translationReviewed) {
+      setTranslationMessage(t('translation.reviewRequired', 'Please complete the translation checkpoint before final submission.'));
+      return;
+    }
 
     if (onBeforeStepChange) {
       setIsAutoSaving(true);
@@ -423,6 +411,10 @@ export const TherapyPlanForm = ({
 
   const handleSubmitForReview = async () => {
     if (!onSubmitForReview) return;
+    if (!translationReviewed) {
+      setTranslationMessage(t('translation.reviewRequired', 'Please complete the translation checkpoint before final submission.'));
+      return;
+    }
     if (onBeforeStepChange && hasStepChanges) {
       setIsAutoSaving(true);
       try {
@@ -471,27 +463,63 @@ export const TherapyPlanForm = ({
     onSaveDraftAndExit();
   };
 
+  const translationRows: Array<{
+    field: LocalizedBaseField;
+    label: string;
+    sourceKey: keyof TherapyPlanFormValues;
+    targetKey: keyof TherapyPlanFormValues;
+    multiline?: boolean;
+  }> = [
+    {
+      field: 'title',
+      label: t('therapyPlans.form.title'),
+      sourceKey: translationSourceLang === 'zh' ? 'title' : 'titleEn',
+      targetKey: translationSourceLang === 'zh' ? 'titleEn' : 'title',
+    },
+    {
+      field: 'slogan',
+      label: t('therapyPlans.form.slogan'),
+      sourceKey: translationSourceLang === 'zh' ? 'slogan' : 'sloganEn',
+      targetKey: translationSourceLang === 'zh' ? 'sloganEn' : 'slogan',
+    },
+    {
+      field: 'introduction',
+      label: t('therapyPlans.form.introduction'),
+      sourceKey: translationSourceLang === 'zh' ? 'introduction' : 'introductionEn',
+      targetKey: translationSourceLang === 'zh' ? 'introductionEn' : 'introduction',
+      multiline: true,
+    },
+  ];
+
+  const handleTranslationFieldChange = (
+    key: keyof TherapyPlanFormValues,
+    field: LocalizedBaseField,
+    value: string,
+  ) => {
+    setValues((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+    setTranslationState((prev) => ({
+      ...prev,
+      [field]: { status: 'idle', sourceLang: translationSourceLang },
+    }));
+    setTranslationSkipped(false);
+    setTranslationMode('manual');
+    setTranslationMessage(null);
+    setTranslationReviewed(true);
+    setHasStepChanges(true);
+  };
+
   const handleSkipTranslation = () => {
     setTranslationSkipped(true);
     setTranslationMode('manual');
     setTranslationMessage(null);
+    setTranslationReviewed(true);
   };
 
   const handleTranslateStep4 = async () => {
-    const fields: Array<{
-      field: LocalizedBaseField;
-      zhKey: keyof TherapyPlanFormValues;
-      enKey: keyof TherapyPlanFormValues;
-    }> = [
-      { field: 'title', zhKey: 'title', enKey: 'titleEn' },
-      { field: 'slogan', zhKey: 'slogan', enKey: 'sloganEn' },
-      { field: 'introduction', zhKey: 'introduction', enKey: 'introductionEn' },
-    ];
-
     const tasks: Array<{
       field: LocalizedBaseField;
       targetKey: keyof TherapyPlanFormValues;
-      sourceLang: TranslateLang;
       request: TranslateBatchItemInput;
     }> = [];
 
@@ -501,28 +529,22 @@ export const TherapyPlanForm = ({
       introduction: { status: 'idle', sourceLang: null },
     };
 
-    fields.forEach(({ field, zhKey, enKey }) => {
-      const zhText = String(values[zhKey] ?? '').trim();
-      const enText = String(values[enKey] ?? '').trim();
-      const sourceLang = detectSourceLang(zhText, enText, lastEditedLang[field]) as TranslateLang | null;
-      if (!sourceLang) {
-        preState[field] = { status: 'failed', sourceLang: null, errorCode: 'EMPTY_SOURCE' };
+    translationRows.forEach((row) => {
+      const sourceText = String(values[row.sourceKey] ?? '').trim();
+      if (!sourceText) {
+        preState[row.field] = { status: 'failed', sourceLang: translationSourceLang, errorCode: 'EMPTY_SOURCE' };
         return;
       }
 
-      const targetLang: TranslateLang = sourceLang === 'zh' ? 'en' : 'zh';
-      const sourceText = sourceLang === 'zh' ? zhText : enText;
-      const targetKey = sourceLang === 'zh' ? enKey : zhKey;
-      preState[field] = { status: 'pending', sourceLang };
+      preState[row.field] = { status: 'pending', sourceLang: translationSourceLang };
       tasks.push({
-        field,
-        targetKey,
-        sourceLang,
+        field: row.field,
+        targetKey: row.targetKey,
         request: {
-          key: String(targetKey),
+          key: String(row.targetKey),
           text: sourceText,
-          sourceLang,
-          targetLang,
+          sourceLang: translationSourceLang,
+          targetLang: translationTargetLang,
         },
       });
     });
@@ -531,10 +553,12 @@ export const TherapyPlanForm = ({
     setTranslationSkipped(false);
     setTranslationMessage(null);
     setTranslationMode(null);
+    setTranslationReviewed(false);
 
     if (!tasks.length) {
       setTranslationMode('manual');
       setTranslationMessage(t('translation.manualFallback'));
+      setTranslationReviewed(true);
       return;
     }
 
@@ -542,7 +566,6 @@ export const TherapyPlanForm = ({
     try {
       const response = await translateBatch(tasks.map((task) => task.request));
       const resultMap = new Map(response.results.map((result) => [result.key, result]));
-      let hasTranslatedUpdate = false;
 
       setValues((prev) => {
         const next = { ...prev };
@@ -550,17 +573,18 @@ export const TherapyPlanForm = ({
           const result = resultMap.get(task.request.key);
           if (result?.status === 'ok' && typeof result.translatedText === 'string') {
             (next[task.targetKey] as string) = result.translatedText;
-            hasTranslatedUpdate = true;
           }
         });
         return next;
       });
-      if (hasTranslatedUpdate) setHasStepChanges(true);
+      setHasStepChanges(true);
 
       setErrors((prev) => ({
         ...prev,
         title: undefined,
         titleEn: undefined,
+        slogan: undefined,
+        sloganEn: undefined,
         introduction: undefined,
         introductionEn: undefined,
       }));
@@ -572,12 +596,12 @@ export const TherapyPlanForm = ({
           if (result?.status === 'ok') {
             next[task.field] = {
               status: 'success',
-              sourceLang: task.sourceLang,
+              sourceLang: translationSourceLang,
             };
           } else {
             next[task.field] = {
               status: 'failed',
-              sourceLang: task.sourceLang,
+              sourceLang: translationSourceLang,
               errorCode: result?.errorCode ?? 'TRANSLATION_FAILED',
             };
           }
@@ -602,7 +626,7 @@ export const TherapyPlanForm = ({
         tasks.forEach((task) => {
           next[task.field] = {
             status: 'failed',
-            sourceLang: task.sourceLang,
+            sourceLang: translationSourceLang,
             errorCode: 'NETWORK_ERROR',
           };
         });
@@ -610,14 +634,9 @@ export const TherapyPlanForm = ({
       });
     } finally {
       setIsTranslating(false);
+      setTranslationReviewed(true);
     }
   };
-
-  const translationRows = [
-    { field: 'title' as const, label: `${t('therapyPlans.form.title')} (zh/en)` },
-    { field: 'slogan' as const, label: `${t('therapyPlans.form.slogan')} (zh/en)` },
-    { field: 'introduction' as const, label: `${t('therapyPlans.form.introduction')} (zh/en)` },
-  ];
 
   // ── Stepper steps ─────────────────────────────────────────────────────────
 
@@ -625,7 +644,8 @@ export const TherapyPlanForm = ({
     { id: 1, name: t('therapyPlans.form.steps.metadata') },
     { id: 2, name: t('therapyPlans.form.steps.schedule') },
     { id: 3, name: t('therapyPlans.form.steps.imports') },
-    { id: 4, name: t('therapyPlans.form.steps.preview') },
+    { id: 4, name: t('therapyPlans.form.steps.translation', 'Translation') },
+    { id: 5, name: t('therapyPlans.form.steps.preview') },
   ];
 
   const isNextBusy = isAutoSaving || !!isSaving;
@@ -733,8 +753,131 @@ export const TherapyPlanForm = ({
           />
         )}
         {currentStep === 4 && (
+          <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-stone-900">
+                  {t('translation.optionalStepTitle')}
+                </h4>
+                <p className="text-xs text-stone-500">
+                  {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
+                </p>
+                <p className="text-xs text-stone-500 mt-1">
+                  {t('translation.manualEditHint')}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSkipTranslation}
+                  disabled={isTranslating || isSubmittingForReview}
+                >
+                  {t('translation.skip')}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleTranslateStep4}
+                  loading={isTranslating}
+                  disabled={isTranslating || isSubmittingForReview}
+                >
+                  {t('translation.translateNow')}
+                </Button>
+              </div>
+            </div>
+
+            {translationMessage && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                {translationMessage}
+              </p>
+            )}
+
+            <div className="hidden md:grid md:grid-cols-2 gap-3 px-1">
+              <p className="text-xs font-medium text-stone-600">
+                {t('translation.sourceColumn', { lang: t(`translation.sourceDetected.${translationSourceLang}`) })}
+              </p>
+              <p className="text-xs font-medium text-stone-600">
+                {t('translation.resultColumn', { lang: t(`translation.sourceDetected.${translationTargetLang}`) })}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {translationRows.map((row) => {
+                const state = translationState[row.field];
+                const sourceValue = String(values[row.sourceKey] ?? '');
+                const targetValue = String(values[row.targetKey] ?? '');
+                const statusClass =
+                  state.status === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : state.status === 'failed'
+                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                      : state.status === 'pending'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-stone-50 text-stone-600 border-stone-200';
+                return (
+                  <div
+                    key={row.field}
+                    className="rounded-md border border-stone-200 p-3"
+                  >
+                    <p className="text-sm font-medium text-stone-800 mb-2">{row.label}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        {row.multiline ? (
+                          <textarea
+                            rows={4}
+                            value={sourceValue}
+                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={sourceValue}
+                            onChange={(e) => handleTranslationFieldChange(row.sourceKey, row.field, e.target.value)}
+                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        {row.multiline ? (
+                          <textarea
+                            rows={4}
+                            value={targetValue}
+                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                            className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={targetValue}
+                            onChange={(e) => handleTranslationFieldChange(row.targetKey, row.field, e.target.value)}
+                            className="h-10 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${statusClass}`}>
+                        {t(`translation.status.${state.status}`)}
+                      </span>
+                      {state.errorCode && state.status === 'failed' && (
+                        <span className="text-xs text-rose-600">{state.errorCode}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {translationMode && (
+              <p className="text-xs text-stone-500">
+                {t('translation.modeLabel')}: {translationMode.toUpperCase()}
+              </p>
+            )}
+          </div>
+        )}
+        {currentStep === 5 && (
           <div className="space-y-4">
-            {/* Plan ID display */}
             {planId && (
               <div className="flex items-center gap-2 text-xs text-stone-400">
                 <span className="font-medium">{t('therapyPlans.form.planId', 'Plan ID')}:</span>
@@ -750,85 +893,6 @@ export const TherapyPlanForm = ({
               existingGalleryCount={galleryImages.length}
               existingVideoUrl={existingVideoUrl}
               existingPdfCount={existingPdfs.length}
-              translationPanel={(
-                <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div>
-                      <h4 className="text-sm font-semibold text-stone-900">
-                        {t('translation.optionalStepTitle')}
-                      </h4>
-                      <p className="text-xs text-stone-500">
-                        {translationSkipped ? t('translation.skipped') : t('translation.optionalHint')}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleSkipTranslation}
-                        disabled={isTranslating || isSubmittingForReview}
-                      >
-                        {t('translation.skip')}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleTranslateStep4}
-                        loading={isTranslating}
-                        disabled={isTranslating || isSubmittingForReview}
-                      >
-                        {t('translation.translateNow')}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {translationMessage && (
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                      {translationMessage}
-                    </p>
-                  )}
-
-                  <div className="space-y-2">
-                    {translationRows.map((row) => {
-                      const state = translationState[row.field];
-                      const sourceLabel = state.sourceLang
-                        ? t(`translation.sourceDetected.${state.sourceLang}`)
-                        : '-';
-                      return (
-                        <div
-                          key={row.field}
-                          className="flex items-center justify-between rounded-md border border-stone-200 px-3 py-2"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-stone-800">{row.label}</p>
-                            <p className="text-xs text-stone-500">
-                              {t('translation.sourcePrefix')}: {sourceLabel}
-                            </p>
-                          </div>
-                          <span
-                            className={`text-xs font-medium ${
-                              state.status === 'success'
-                                ? 'text-emerald-700'
-                                : state.status === 'failed'
-                                  ? 'text-rose-700'
-                                  : state.status === 'pending'
-                                    ? 'text-amber-700'
-                                    : 'text-stone-500'
-                            }`}
-                          >
-                            {t(`translation.status.${state.status}`)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {translationMode && (
-                    <p className="text-xs text-stone-500">
-                      {t('translation.modeLabel')}: {translationMode.toUpperCase()}
-                    </p>
-                  )}
-                </div>
-              )}
             />
           </div>
         )}
@@ -861,7 +925,7 @@ export const TherapyPlanForm = ({
             </Button>
           )}
 
-          {currentStep < 4 ? (
+          {currentStep < 5 ? (
             <Button
               type="button"
               onClick={handleNext}
@@ -891,7 +955,7 @@ export const TherapyPlanForm = ({
                   type="button"
                   onClick={handleSubmitForReview}
                   loading={isSubmittingForReview}
-                  disabled={isSubmittingForReview}
+                  disabled={isSubmittingForReview || !translationReviewed}
                   className="bg-teal-600 hover:bg-teal-700 text-white"
                 >
                   {t('therapyPlans.form.submitForReview')}

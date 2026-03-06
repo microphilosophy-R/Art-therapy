@@ -46,7 +46,8 @@ export const Step1Metadata = ({
     isLoading,
     consultEnabled = false,
 }: Step1Props) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const userLang = i18n.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
 
     const planTypeOptions = [
         { value: 'PERSONAL_CONSULT', label: t('common.planType.PERSONAL_CONSULT'), disabled: !consultEnabled },
@@ -137,58 +138,63 @@ export const Step1Metadata = ({
                 </div>
             )}
 
-            <Input
-                label={`${t('therapyPlans.form.title')} (zh)`}
-                placeholder={t('therapyPlans.form.titlePlaceholder', 'e.g. Intro to Creative Healing')}
-                value={values.title}
-                onChange={(e) => set('title', e.target.value)}
-                error={errors.title}
-                maxLength={100}
-            />
-            <Input
-                label={`${t('therapyPlans.form.title')} (en)`}
-                placeholder="e.g. Intro to Creative Healing"
-                value={values.titleEn}
-                onChange={(e) => set('titleEn', e.target.value)}
-                error={errors.titleEn as string | undefined}
-                maxLength={100}
-            />
-
-            <Input
-                label={`${t('therapyPlans.form.slogan', 'Slogan')} (zh)`}
-                placeholder={t('therapyPlans.form.sloganPlaceholder', 'A brief, catchy subtitle (e.g. Escape to Nature)')}
-                value={values.slogan}
-                onChange={(e) => set('slogan', e.target.value)}
-                error={errors.slogan}
-                maxLength={60}
-            />
-            <Input
-                label={`${t('therapyPlans.form.slogan', 'Slogan')} (en)`}
-                placeholder="A brief, catchy subtitle"
-                value={values.sloganEn}
-                onChange={(e) => set('sloganEn', e.target.value)}
-                error={errors.sloganEn as string | undefined}
-                maxLength={60}
-            />
-
-            <Textarea
-                label={`${t('therapyPlans.form.introduction')} (zh)`}
-                placeholder={t('therapyPlans.form.introductionPlaceholder')}
-                rows={4}
-                value={values.introduction}
-                onChange={(e) => set('introduction', e.target.value)}
-                error={errors.introduction}
-                maxLength={2000}
-            />
-            <Textarea
-                label={`${t('therapyPlans.form.introduction')} (en)`}
-                placeholder="Describe your plan in English"
-                rows={4}
-                value={values.introductionEn}
-                onChange={(e) => set('introductionEn', e.target.value)}
-                error={errors.introductionEn as string | undefined}
-                maxLength={2000}
-            />
+            {userLang === 'zh' ? (
+                <>
+                    <Input
+                        label={`${t('therapyPlans.form.title')} (zh)`}
+                        placeholder={t('therapyPlans.form.titlePlaceholder', 'e.g. Intro to Creative Healing')}
+                        value={values.title}
+                        onChange={(e) => set('title', e.target.value)}
+                        error={errors.title}
+                        maxLength={100}
+                    />
+                    <Input
+                        label={`${t('therapyPlans.form.slogan', 'Slogan')} (zh)`}
+                        placeholder={t('therapyPlans.form.sloganPlaceholder', 'A brief, catchy subtitle (e.g. Escape to Nature)')}
+                        value={values.slogan}
+                        onChange={(e) => set('slogan', e.target.value)}
+                        error={errors.slogan}
+                        maxLength={60}
+                    />
+                    <Textarea
+                        label={`${t('therapyPlans.form.introduction')} (zh)`}
+                        placeholder={t('therapyPlans.form.introductionPlaceholder')}
+                        rows={4}
+                        value={values.introduction}
+                        onChange={(e) => set('introduction', e.target.value)}
+                        error={errors.introduction}
+                        maxLength={2000}
+                    />
+                </>
+            ) : (
+                <>
+                    <Input
+                        label={`${t('therapyPlans.form.title')} (en)`}
+                        placeholder="e.g. Intro to Creative Healing"
+                        value={values.titleEn}
+                        onChange={(e) => set('titleEn', e.target.value)}
+                        error={errors.titleEn as string | undefined}
+                        maxLength={100}
+                    />
+                    <Input
+                        label={`${t('therapyPlans.form.slogan', 'Slogan')} (en)`}
+                        placeholder="A brief, catchy subtitle"
+                        value={values.sloganEn}
+                        onChange={(e) => set('sloganEn', e.target.value)}
+                        error={errors.sloganEn as string | undefined}
+                        maxLength={60}
+                    />
+                    <Textarea
+                        label={`${t('therapyPlans.form.introduction')} (en)`}
+                        placeholder="Describe your plan in English"
+                        rows={4}
+                        value={values.introductionEn}
+                        onChange={(e) => set('introductionEn', e.target.value)}
+                        error={errors.introductionEn as string | undefined}
+                        maxLength={2000}
+                    />
+                </>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input

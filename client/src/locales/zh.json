@@ -609,6 +609,8 @@
       "appointmentsTotal": "共 {{total}} 条",
       "tableHeaders": {
         "name": "姓名",
+        "client": "\u5ba2\u6237",
+        "therapist": "\u6cbb\u7597\u5e08",
         "email": "邮箱",
         "role": "角色",
         "joined": "注册时间",
@@ -824,7 +826,8 @@
         "descriptionRequired": "描述为必填项",
         "descriptionMinLength": "描述至少需要10个字符",
         "imageRequired": "至少需要一张图片",
-        "imageMaxCount": "最多只能上传9张图片"
+        "imageMaxCount": "最多只能上传9张图片",
+        "imageUploadFailed": "\u56fe\u7247\u4e0a\u4f20\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5"
       },
       "buttons": {
         "exit": "退出",
@@ -1551,11 +1554,15 @@
   "translation": {
     "optionalStepTitle": "可选翻译辅助",
     "optionalHint": "你可以跳过此步骤，继续手动编辑。",
+    "manualEditHint": "\u53ef\u624b\u52a8\u7f16\u8f91\u5de6\u53f3\u4e24\u4fa7\uff0c\u70b9\u51fb\u201c\u7acb\u5373\u7ffb\u8bd1\u201d\u4f1a\u8986\u76d6\u53f3\u4fa7\u7ed3\u679c\u3002",
     "translateNow": "立即翻译",
     "skip": "跳过",
     "skipped": "已跳过翻译步骤，仍可手动编辑。",
     "manualFallback": "自动翻译暂不可用，请改为手动模式。",
     "partialFailure": "部分字段翻译失败，请手动检查并补充。",
+    "reviewRequired": "\u8bf7\u5148\u5b8c\u6210\u7ffb\u8bd1\u6b65\u9aa4\u518d\u7ee7\u7eed\u3002",
+    "sourceColumn": "\u6e90\u8bed\u8a00\uff08{{lang}}\uff09",
+    "resultColumn": "\u7ffb\u8bd1\u7ed3\u679c\uff08{{lang}}\uff09",
     "sourcePrefix": "识别源语言",
     "modeLabel": "模式",
     "sourceDetected": {

@@ -75,3 +75,49 @@ export const reviewCertificate = async (
 ): Promise<AdminCertificate> => {
   return manageCertificate(id, payload);
 };
+
+export interface ReviewTimelineItem {
+  id: string;
+  entityType: 'plan' | 'product' | 'certificate';
+  title: string;
+  ownerName: string;
+  status: string;
+  submittedAt: string;
+  reviewedAt: string | null;
+  startAt: string;
+  endAt: string;
+  isPending: boolean;
+}
+
+export interface ScheduleTimelineItem {
+  id: string;
+  entityType: 'appointment' | 'plan';
+  title: string;
+  ownerName: string;
+  status: string;
+  startTime: string;
+  endTime: string;
+}
+
+export const getAdminReviewTimeline = async (params?: {
+  from?: string;
+  to?: string;
+  types?: Array<'plans' | 'products' | 'certificates'>;
+}): Promise<ReviewTimelineItem[]> => {
+  const { data } = await api.get('/admin/review-timeline', {
+    params: {
+      from: params?.from,
+      to: params?.to,
+      types: params?.types?.join(','),
+    },
+  });
+  return data;
+};
+
+export const getAdminScheduleTimeline = async (params?: {
+  from?: string;
+  to?: string;
+}): Promise<ScheduleTimelineItem[]> => {
+  const { data } = await api.get('/admin/schedule-timeline', { params });
+  return data;
+};

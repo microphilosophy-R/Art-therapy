@@ -97,9 +97,21 @@ export interface OrderItem {
 export interface Order {
     id: string;
     userId: string;
+    memberAddressId?: string | null;
     totalAmount: number;
     status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
-    shippingAddress: any;
+    shippingAddress: {
+        province: string;
+        city: string;
+        district: string;
+        addressDetail: string;
+        details?: string;
+        recipientName: string;
+        phone: string;
+        mobile?: string;
+        postalCode?: string | null;
+        tag?: 'HOME' | 'COMPANY' | 'SCHOOL' | 'PARENTS' | 'OTHER' | null;
+    };
     carrierName: string | null;
     trackingNumber: string | null;
     items: OrderItem[];
@@ -112,8 +124,25 @@ export interface Order {
     createdAt: string;
 }
 
-export const createOrder = async (shippingAddress: any) => {
-    const { data } = await api.post('/orders', { shippingAddress });
+export type CreateOrderPayload =
+    | { addressId: string }
+    | {
+        shippingAddress: {
+            province: string;
+            city: string;
+            district: string;
+            addressDetail?: string;
+            details?: string;
+            recipientName: string;
+            phone?: string;
+            mobile?: string;
+            postalCode?: string | null;
+            tag?: 'HOME' | 'COMPANY' | 'SCHOOL' | 'PARENTS' | 'OTHER';
+        };
+    };
+
+export const createOrder = async (payload: CreateOrderPayload) => {
+    const { data } = await api.post('/orders', payload);
     return data as Order;
 };
 

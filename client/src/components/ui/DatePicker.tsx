@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
-import { parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { zhCN } from 'date-fns/locale/zh-CN';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -35,10 +35,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {label && <label className="text-sm font-medium text-stone-700">{label}</label>}
       <ReactDatePicker
         selected={selectedDate}
-        onChange={(date: Date | null) =>
-          onChange(date ? (showTime ? date.toISOString() : date.toISOString().split('T')[0]) : '')
-        }
+        onChange={(date: Date | null) => {
+          if (!date) {
+            onChange('');
+            return;
+          }
+          onChange(showTime ? format(date, "yyyy-MM-dd'T'HH:mm") : format(date, 'yyyy-MM-dd'));
+        }}
         showTimeSelect={showTime}
+        timeFormat="HH:mm"
+        timeIntervals={15}
+        timeCaption={i18n.language.startsWith('zh') ? '时间' : 'Time'}
         dateFormat={showTime ? 'yyyy/MM/dd HH:mm' : 'yyyy/MM/dd'}
         locale={i18n.language.startsWith('zh') ? 'zh' : undefined}
         placeholderText={placeholder}

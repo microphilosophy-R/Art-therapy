@@ -143,6 +143,7 @@ export const Step2Schedule = ({
                     value={values.startTime}
                     onChange={(val) => handleStartTimeChange(val)}
                     error={errors.startTime}
+                    showTime
                 />
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
@@ -225,6 +226,7 @@ export const Step2Schedule = ({
                     value={values.endTime}
                     onChange={(val) => handleEndTimeChange(val)}
                     error={errors.endTime}
+                    showTime
                 />
             </div>
 

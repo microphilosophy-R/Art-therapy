@@ -6,6 +6,7 @@ import { getProducts } from '../../api/shop';
 import { Button } from '../ui/Button';
 import { Loader2, ArrowRight, ShoppingBag } from 'lucide-react';
 import { pickLocalizedText } from '../../utils/i18nContent';
+import { getProductCoverUrl } from '../../utils/productMedia';
 
 export const FeaturedProductsRow = () => {
     const { t, i18n } = useTranslation();
@@ -49,6 +50,7 @@ export const FeaturedProductsRow = () => {
                             ? `${sellerUser.firstName} ${sellerUser.lastName}`.trim()
                             : 'Unknown Seller';
                         const title = pickLocalizedText(product.titleI18n, i18n.language, product.title);
+                        const coverUrl = getProductCoverUrl(product);
 
                         return (
                             <Link
@@ -57,9 +59,9 @@ export const FeaturedProductsRow = () => {
                                 className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full"
                             >
                             <div className="aspect-square relative overflow-hidden bg-gray-100">
-                                {product.images?.[0] ? (
+                                {coverUrl ? (
                                     <img
-                                        src={product.images[0].url}
+                                        src={coverUrl}
                                         alt={title}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />

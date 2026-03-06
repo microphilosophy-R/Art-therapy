@@ -9,6 +9,7 @@ import { Loader2, CreditCard, ShoppingBag, MapPin } from 'lucide-react';
 import { AlipayPaymentForm } from '../../components/payments/AlipayPaymentForm';
 import { WechatPaymentForm } from '../../components/payments/WechatPaymentForm';
 import { AddressBookPanel } from '../../components/profile/AddressBookPanel';
+import { getProductCoverUrl } from '../../utils/productMedia';
 
 type CheckoutStep = 1 | 2 | 3;
 
@@ -223,9 +224,9 @@ export const CheckoutPage = () => {
                             {cartItems.map((item) => (
                                 <div key={item.id} className="flex gap-4">
                                     <div className="flex-shrink-0 w-16 h-16 bg-white rounded border overflow-hidden">
-                                        {item.product.images[0] ? (
+                                        {getProductCoverUrl(item.product) ? (
                                             <img
-                                                src={item.product.images[0].url}
+                                                src={getProductCoverUrl(item.product)!}
                                                 alt={item.product.title}
                                                 className="w-full h-full object-cover"
                                             />

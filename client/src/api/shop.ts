@@ -9,6 +9,9 @@ export interface Product {
     titleI18n?: LocalizedText | null;
     description: string;
     descriptionI18n?: LocalizedText | null;
+    defaultPosterId?: number | null;
+    posterUrl?: string | null;
+    videoUrl?: string | null;
     price: number;
     stock: number;
     category: string;

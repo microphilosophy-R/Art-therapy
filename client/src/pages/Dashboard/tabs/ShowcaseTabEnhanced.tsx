@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Eye, EyeOff, GripVertical, ShoppingBag } from 'lucide-react';
 import { Spinner } from '../../../components/ui/Spinner';
 import api from '../../../api/axios';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
+import { getProductCoverUrl } from '../../../utils/productMedia';
 
 interface ShowcaseItem {
   id: string;
@@ -32,8 +33,14 @@ const SortableItem = ({ item, onToggleVisibility, t }: { item: ShowcaseItem; onT
         <GripVertical className="h-5 w-5" />
       </button>
 
-      {item.type === 'product' && item.data?.images?.[0] && (
-        <img src={item.data.images[0].url} alt="" className="w-16 h-16 object-cover rounded" />
+      {item.type === 'product' && (
+        getProductCoverUrl(item.data) ? (
+          <img src={getProductCoverUrl(item.data)!} alt="" className="w-16 h-16 object-cover rounded" />
+        ) : (
+          <div className="w-16 h-16 rounded bg-stone-100 flex items-center justify-center text-stone-300">
+            <ShoppingBag className="h-4 w-4" />
+          </div>
+        )
       )}
       {item.type === 'plan' && item.data && (
         <img src={getPosterUrl(item.data)} alt="" className="w-16 h-16 object-cover rounded" />

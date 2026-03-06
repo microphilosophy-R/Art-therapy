@@ -103,23 +103,30 @@ export const createProduct = async (req: Request, res: Response) => {
         return res.status(403).json({ message: 'User profile required to create products' });
     }
 
-    const product = await prisma.product.create({
-        data: {
-            userProfileId: userProfile.id,
-            title: titleI18n.zh,
-            titleI18n,
-            description: descriptionI18n.zh,
-            descriptionI18n,
-            price: data.price,
-            stock: data.stock,
-            category: data.category,
-            images: {
+    const createData = {
+        userProfileId: userProfile.id,
+        title: titleI18n.zh,
+        titleI18n,
+        description: descriptionI18n.zh,
+        descriptionI18n,
+        defaultPosterId: data.defaultPosterId ?? null,
+        posterUrl: data.posterUrl ?? null,
+        videoUrl: data.videoUrl ?? null,
+        price: data.price,
+        stock: data.stock,
+        category: data.category,
+        images: data.images
+            ? {
                 create: data.images.map((url, index) => ({
                     url,
                     order: index,
                 })),
-            },
-        },
+            }
+            : undefined,
+    };
+
+    const product = await prisma.product.create({
+        data: createData,
         include: { images: true }
     });
 
@@ -153,37 +160,53 @@ export const updateProduct = async (req: Request, res: Response) => {
         await prisma.productImage.deleteMany({ where: { productId: id } });
     }
 
+    const updateData: any = {
+        ...(data.title !== undefined || (data as any).titleI18n !== undefined
+            ? {
+                titleI18n: toLocalizedRequired((data as any).titleI18n, data.title ?? existingProduct.title),
+                title: toLocalizedRequired((data as any).titleI18n, data.title ?? existingProduct.title).zh,
+            }
+            : {}),
+        ...(data.description !== undefined || (data as any).descriptionI18n !== undefined
+            ? {
+                descriptionI18n: toLocalizedRequired(
+                    (data as any).descriptionI18n,
+                    data.description ?? existingProduct.description,
+                ),
+                description: toLocalizedRequired(
+                    (data as any).descriptionI18n,
+                    data.description ?? existingProduct.description,
+                ).zh,
+            }
+            : {}),
+        ...(data.price !== undefined ? { price: data.price } : {}),
+        ...(data.stock !== undefined ? { stock: data.stock } : {}),
+        ...(data.category !== undefined ? { category: data.category } : {}),
+        ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl } : {}),
+        images: data.images ? {
+            create: data.images.map((url: string, index: number) => ({
+                url,
+                order: index,
+            })),
+        } : undefined,
+    };
+
+    if (data.defaultPosterId !== undefined) {
+        updateData.defaultPosterId = data.defaultPosterId;
+        if (data.defaultPosterId != null) {
+            updateData.posterUrl = null;
+        }
+    }
+    if (data.posterUrl !== undefined) {
+        updateData.posterUrl = data.posterUrl;
+        if (data.posterUrl != null) {
+            updateData.defaultPosterId = null;
+        }
+    }
+
     const product = await prisma.product.update({
         where: { id },
-        data: {
-            ...(data.title !== undefined || (data as any).titleI18n !== undefined
-                ? {
-                    titleI18n: toLocalizedRequired((data as any).titleI18n, data.title ?? existingProduct.title),
-                    title: toLocalizedRequired((data as any).titleI18n, data.title ?? existingProduct.title).zh,
-                }
-                : {}),
-            ...(data.description !== undefined || (data as any).descriptionI18n !== undefined
-                ? {
-                    descriptionI18n: toLocalizedRequired(
-                        (data as any).descriptionI18n,
-                        data.description ?? existingProduct.description,
-                    ),
-                    description: toLocalizedRequired(
-                        (data as any).descriptionI18n,
-                        data.description ?? existingProduct.description,
-                    ).zh,
-                }
-                : {}),
-            ...(data.price !== undefined ? { price: data.price } : {}),
-            ...(data.stock !== undefined ? { stock: data.stock } : {}),
-            ...(data.category !== undefined ? { category: data.category } : {}),
-            images: data.images ? {
-                create: data.images.map((url: string, index: number) => ({
-                    url,
-                    order: index,
-                })),
-            } : undefined,
-        },
+        data: updateData,
         include: { images: true }
     });
 

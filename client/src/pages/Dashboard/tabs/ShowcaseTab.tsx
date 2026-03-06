@@ -10,6 +10,7 @@ import { Button } from '../../../components/ui/Button';
 import { PageLoader } from '../../../components/ui/Spinner';
 import { useAuthStore } from '../../../store/authStore';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
+import { getProductCoverUrl } from '../../../utils/productMedia';
 
 interface ShowcaseTabProps {
     onEditProfile: () => void;
@@ -78,8 +79,8 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                     {isArtist && products?.slice(0, 5).map(product => (
                         <Link key={product.id} to={`/shop/${product.id}`} className="min-w-[150px] w-40 shrink-0 group">
                             <div className="aspect-square bg-stone-100 rounded-xl overflow-hidden mb-2">
-                                {product.images[0] ? (
-                                    <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                {getProductCoverUrl(product) ? (
+                                    <img src={getProductCoverUrl(product)!} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-stone-300">
                                         <ShoppingBag className="w-8 h-8" />
@@ -223,9 +224,9 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                                 className="group border border-stone-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
                             >
                                 <div className="aspect-square bg-stone-100 overflow-hidden">
-                                    {product.images[0] ? (
+                                    {getProductCoverUrl(product) ? (
                                         <img
-                                            src={product.images[0].url}
+                                            src={getProductCoverUrl(product)!}
                                             alt={product.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />

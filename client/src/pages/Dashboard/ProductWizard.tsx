@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, LogOut } from 'lucide-react';
+import { LogOut, Video, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { PosterSelector, type PosterValue } from '../../components/therapyPlans/PosterSelector';
+import { WizardStepper } from '../../components/ui/WizardStepper';
 import api from '../../api/axios';
 import { translateBatch, type TranslateBatchItemInput, type TranslateLang } from '../../api/translate';
+import { validateFile } from '../../utils/fileValidation';
+import { getProductDefaultPosterUrl } from '../../utils/productMedia';
 
 type ProductCategory = 'PAINTING' | 'SCULPTURE' | 'CRAFTS' | 'DIGITAL_ART' | 'MERCHANDISE' | 'OTHER';
 type ProductLocalizedField = 'title' | 'description';
@@ -25,6 +29,7 @@ interface ProductFormValues {
   stock: string;
   description: string;
   descriptionEn: string;
+  poster: PosterValue;
   images: File[];
 }
 
@@ -36,6 +41,7 @@ const defaultValues: ProductFormValues = {
   stock: '',
   description: '',
   descriptionEn: '',
+  poster: { type: 'default', id: 1 },
   images: [],
 };
 
@@ -50,7 +56,13 @@ export const ProductWizard = () => {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [values, setValues] = useState<ProductFormValues>(defaultValues);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [mediaUploadError, setMediaUploadError] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploadedPosterUrl, setUploadedPosterUrl] = useState<string | null>(null);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [translationState, setTranslationState] = useState<Record<ProductLocalizedField, TranslationFieldState>>({
     title: { status: 'idle', sourceLang: null },
     description: { status: 'idle', sourceLang: null },
@@ -63,10 +75,12 @@ export const ProductWizard = () => {
   const [isUploadingStep2, setIsUploadingStep2] = useState(false);
 
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, type }: { file: File; type?: string }) => {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await api.post('/upload', formData);
+      const res = await api.post('/upload', formData, {
+        params: type ? { type } : undefined,
+      });
       return res.data.url;
     },
   });
@@ -80,6 +94,9 @@ export const ProductWizard = () => {
       stock: number;
       description: string;
       descriptionI18n: { zh: string; en: string };
+      defaultPosterId?: number | null;
+      posterUrl?: string | null;
+      videoUrl?: string | null;
       images: string[];
     }) => {
       const res = await api.post('/shop/products', data);
@@ -146,14 +163,17 @@ export const ProductWizard = () => {
       else errs.descriptionEn = t('dashboard.products.validation.descriptionMinLength');
     }
 
+    if (!values.poster) {
+      errs.poster = t('dashboard.products.validation.posterRequired');
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const validateStep2 = (): boolean => {
     const errs: Partial<Record<keyof ProductFormValues, string>> = {};
-    if (values.images.length === 0) errs.images = t('dashboard.products.validation.imageRequired');
-    else if (values.images.length > 9) errs.images = t('dashboard.products.validation.imageMaxCount');
+    if (values.images.length > 9) errs.images = t('dashboard.products.validation.imageMaxCount');
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -170,18 +190,48 @@ export const ProductWizard = () => {
     if (currentStep === 2) {
       setIsUploadingStep2(true);
       setErrors((prev) => ({ ...prev, images: undefined }));
+      setMediaUploadError(null);
       try {
+        let nextPosterUrl: string | null = null;
+        if (values.poster?.type === 'custom') {
+          if (posterFile) {
+            nextPosterUrl = await uploadMutation.mutateAsync({
+              file: posterFile,
+              type: 'productPoster',
+            });
+          } else if (uploadedPosterUrl) {
+            nextPosterUrl = uploadedPosterUrl;
+          } else {
+            setErrors((prev) => ({
+              ...prev,
+              poster: t('dashboard.products.validation.posterRequired'),
+            }));
+            return;
+          }
+        }
+
         const urls: string[] = [];
         for (const file of values.images) {
-          const url = await uploadMutation.mutateAsync(file);
+          const url = await uploadMutation.mutateAsync({
+            file,
+            type: 'productGallery',
+          });
           urls.push(url);
         }
+
+        let nextVideoUrl: string | null = null;
+        if (videoFile) {
+          nextVideoUrl = await uploadMutation.mutateAsync({
+            file: videoFile,
+            type: 'productVideo',
+          });
+        }
+
+        setUploadedPosterUrl(nextPosterUrl);
         setImageUrls(urls);
+        setUploadedVideoUrl(nextVideoUrl);
       } catch {
-        setErrors((prev) => ({
-          ...prev,
-          images: t('dashboard.products.validation.imageUploadFailed'),
-        }));
+        setMediaUploadError(t('dashboard.products.validation.mediaUploadFailed'));
         return;
       } finally {
         setIsUploadingStep2(false);
@@ -375,6 +425,9 @@ export const ProductWizard = () => {
       stock: parseInt(values.stock, 10),
       description: descriptionLocalized.zh,
       descriptionI18n: descriptionLocalized,
+      defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
+      posterUrl: values.poster?.type === 'custom' ? uploadedPosterUrl : null,
+      videoUrl: uploadedVideoUrl,
       images: imageUrls,
     });
   };
@@ -385,6 +438,7 @@ export const ProductWizard = () => {
       setErrors((prev) => ({ ...prev, images: t('dashboard.products.validation.imageMaxCount') }));
       return;
     }
+    setMediaUploadError(null);
     set('images', [...values.images, ...files]);
   };
 
@@ -392,44 +446,45 @@ export const ProductWizard = () => {
     set('images', values.images.filter((_, i) => i !== index));
   };
 
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const err = validateFile(file, { maxMb: 100, accept: ['mp4', 'mov', 'webm'] });
+    if (err) {
+      setVideoError(err);
+      e.target.value = '';
+      return;
+    }
+    setVideoError(null);
+    setMediaUploadError(null);
+    setVideoFile(file);
+    e.target.value = '';
+  };
+
   const steps = [
     { id: 1, name: t('dashboard.products.steps.basicInfo') },
-    { id: 2, name: t('dashboard.products.steps.description') },
+    { id: 2, name: t('dashboard.products.steps.media') },
     { id: 3, name: t('dashboard.products.steps.translation', 'Translation') },
     { id: 4, name: t('dashboard.products.steps.preview') },
   ];
 
   const isLoading = uploadMutation.isPending || createMutation.isPending || isTranslating || isUploadingStep2;
+  const posterPreviewUrl =
+    values.poster?.type === 'custom'
+      ? uploadedPosterUrl ?? values.poster.url
+      : getProductDefaultPosterUrl(values.poster?.id ?? null);
+  const previewVideoUrl = uploadedVideoUrl;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold text-stone-900">{t('dashboard.products.createTitle')}</h1>
 
-      {/* Stepper */}
-      <nav aria-label="Progress">
-        <ol className="flex space-x-8">
-          {steps.map((step) => (
-            <li key={step.name} className="flex-1">
-              <button
-                onClick={() => step.id < currentStep && setCurrentStep(step.id as Step)}
-                disabled={step.id >= currentStep}
-                className={`flex flex-col border-t-4 pt-4 ${
-                  currentStep > step.id
-                    ? 'border-teal-600 hover:border-teal-800 cursor-pointer'
-                    : currentStep === step.id
-                    ? 'border-teal-600 cursor-default'
-                    : 'border-stone-200 cursor-not-allowed'
-                }`}
-              >
-                <span className={`text-sm font-medium ${currentStep > step.id ? 'text-teal-600' : currentStep === step.id ? 'text-teal-600' : 'text-stone-400'}`}>
-                  {t('dashboard.products.stepPrefix')} {step.id} {currentStep > step.id && <CheckCircle className="inline h-4 w-4 mb-0.5 ml-1" />}
-                </span>
-                <span className="text-sm font-medium text-stone-900">{step.name}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <WizardStepper
+        steps={steps}
+        currentStep={currentStep}
+        onStepClick={(id) => setCurrentStep(id as Step)}
+        formatStepLabel={(id) => `${t('dashboard.products.stepPrefix')} ${id}`}
+      />
 
       {/* Step 1: Basic Info */}
       {currentStep === 1 && (
@@ -522,14 +577,42 @@ export const ProductWizard = () => {
               {errors.descriptionEn && <p className="text-sm text-red-600 mt-1">{errors.descriptionEn}</p>}
             </div>
           )}
+
+          <div>
+            <p className="text-sm font-medium text-stone-700 mb-2">
+              {t('dashboard.products.fields.poster')} {t('dashboard.products.fields.required')}
+            </p>
+            <PosterSelector
+              value={values.poster}
+              onChange={(poster) => {
+                set('poster', poster);
+                if (poster?.type === 'default') {
+                  setPosterFile(null);
+                  setUploadedPosterUrl(null);
+                }
+              }}
+              onFileSelected={(file) => {
+                setPosterFile(file);
+                setUploadedPosterUrl(null);
+              }}
+              disabled={isLoading}
+            />
+            {errors.poster && <p className="text-sm text-red-600 mt-1">{errors.poster}</p>}
+          </div>
         </div>
       )}
 
       {/* Step 2: Media */}
       {currentStep === 2 && (
         <div className="space-y-4">
+          {mediaUploadError && (
+            <p className="text-sm text-red-600">{mediaUploadError}</p>
+          )}
+
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">{t('dashboard.products.fields.images')} {t('dashboard.products.fields.required')}</label>
+            <label className="block text-sm font-medium text-stone-700 mb-1">
+              {t('dashboard.products.fields.images')} {t('common.optional')}
+            </label>
             <input
               type="file"
               accept="image/*"
@@ -545,13 +628,49 @@ export const ProductWizard = () => {
                   <div key={i} className="relative">
                     <img src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
                     <button
+                      type="button"
                       onClick={() => removeImage(i)}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs"
                     >
-                      ×
+                      <X className="h-3.5 w-3.5 mx-auto" />
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">
+              {t('dashboard.products.fields.video')} {t('common.optional')}
+            </label>
+            <input
+              type="file"
+              accept="video/mp4,video/quicktime,video/webm"
+              onChange={handleVideoChange}
+              className="w-full px-3 py-2 border border-stone-300 rounded-lg"
+            />
+            {videoError && <p className="text-sm text-red-600 mt-1">{videoError}</p>}
+            {videoFile && (
+              <div className="mt-3 rounded-lg border border-stone-200 p-3 space-y-2">
+                <div className="flex items-center justify-between text-sm text-stone-700">
+                  <span className="inline-flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    {videoFile.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setVideoFile(null)}
+                    className="text-stone-500 hover:text-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <video
+                  src={URL.createObjectURL(videoFile)}
+                  controls
+                  className="w-full max-h-56 rounded-md bg-black"
+                />
               </div>
             )}
           </div>
@@ -693,11 +812,47 @@ export const ProductWizard = () => {
               <span>{t('dashboard.products.previewLabels.stock')} {values.stock}</span>
             </div>
             <p className="text-stone-700 whitespace-pre-wrap">{values.description || values.descriptionEn}</p>
-            <div className="grid grid-cols-3 gap-2">
-              {values.images.map((file, i) => (
-                <img key={i} src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
-              ))}
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-stone-700">
+                {t('dashboard.products.fields.poster')}
+              </p>
+              <div className="aspect-[16/9] max-w-2xl w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-100">
+                {posterPreviewUrl ? (
+                  <img src={posterPreviewUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-stone-400 text-sm">
+                    {t('dashboard.products.fields.poster')}
+                  </div>
+                )}
+              </div>
             </div>
+
+            {previewVideoUrl && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-stone-700">
+                  {t('dashboard.products.fields.video')}
+                </p>
+                <video
+                  src={previewVideoUrl}
+                  controls
+                  className="max-w-2xl w-full max-h-64 rounded-lg bg-black"
+                />
+              </div>
+            )}
+
+            {values.images.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-stone-700">
+                  {t('dashboard.products.fields.images')}
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {values.images.map((file, i) => (
+                    <img key={i} src={URL.createObjectURL(file)} alt="" className="w-full h-24 object-cover rounded" />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

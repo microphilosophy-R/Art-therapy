@@ -52,6 +52,9 @@ export type AssetType =
   | 'artwork'
   | 'poster'
   | 'video'
+  | 'product-poster'
+  | 'product-video'
+  | 'product-image'
   | 'plan-image'
   | 'plan-pdf'
   | 'therapist-file'
@@ -73,6 +76,9 @@ const ASSET_CONFIG: Record<AssetType, {
   'artwork':        { folder: 'artwork',          resourceType: 'image', localExt: 'jpg' },
   'poster':         { folder: 'plan-posters',     resourceType: 'image', localExt: 'jpg', transformation: [{ width: 800, height: 450, crop: 'fill' }] },
   'video':          { folder: 'plan-videos',      resourceType: 'video', localExt: 'mp4' },
+  'product-poster': { folder: 'product-posters',  resourceType: 'image', localExt: 'jpg', transformation: [{ width: 800, height: 450, crop: 'fill' }] },
+  'product-video':  { folder: 'product-videos',   resourceType: 'video', localExt: 'mp4' },
+  'product-image':  { folder: 'product-images',   resourceType: 'image', localExt: 'jpg', publicIdPrefix: 'product-image-' },
   'plan-image':     { folder: 'plan-images',      resourceType: 'image', localExt: 'jpg', publicIdPrefix: 'plan-image-' },
   'plan-pdf':           { folder: 'plan-attachments',      resourceType: 'raw',   localExt: 'pdf', publicIdPrefix: 'plan-pdf-' },
   'therapist-file':     { folder: 'therapists',            resourceType: 'auto',  localExt: '' },

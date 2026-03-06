@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getCart, updateCartItem, removeFromCart } from '../../api/shop';
 import { Button } from '../../components/ui/Button';
 import { Loader2, Trash2, Minus, Plus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { getProductCoverUrl } from '../../utils/productMedia';
 
 export const CartPage = () => {
     const { t } = useTranslation();
@@ -68,12 +69,13 @@ export const CartPage = () => {
                     {cartItems.map((item) => {
                         const sellerUser = item.product.userProfile?.user ?? item.product.artist?.user;
                         const sellerName = sellerUser?.firstName || 'Unknown Seller';
+                        const coverUrl = getProductCoverUrl(item.product);
                         return (
                         <div key={item.id} className="flex gap-6 border-b pb-6">
                             <Link to={`/shop/${item.productId}`} className="flex-shrink-0 w-32 h-32 bg-gray-100 rounded-lg overflow-hidden border">
-                                {item.product.images[0] ? (
+                                {coverUrl ? (
                                     <img
-                                        src={item.product.images[0].url}
+                                        src={coverUrl}
                                         alt={item.product.title}
                                         className="w-full h-full object-cover hover:scale-105 transition-transform"
                                     />

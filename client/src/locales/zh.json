@@ -796,7 +796,9 @@
       "steps": {
         "basicInfo": "基本信息",
         "description": "描述与图片",
-        "preview": "预览与提交"
+        "preview": "预览与提交",
+        "media": "\u5a92\u4f53\u4e0a\u4f20",
+        "translation": "\u7ffb\u8bd1"
       },
       "fields": {
         "title": "标题",
@@ -805,7 +807,9 @@
         "stock": "库存",
         "description": "描述",
         "images": "图片（最多9张）",
-        "required": "*"
+        "required": "*",
+        "poster": "\u6d77\u62a5",
+        "video": "\u89c6\u9891"
       },
       "categories": {
         "painting": "绘画",
@@ -827,7 +831,9 @@
         "descriptionMinLength": "描述至少需要10个字符",
         "imageRequired": "至少需要一张图片",
         "imageMaxCount": "最多只能上传9张图片",
-        "imageUploadFailed": "\u56fe\u7247\u4e0a\u4f20\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5"
+        "imageUploadFailed": "\u56fe\u7247\u4e0a\u4f20\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5",
+        "posterRequired": "\u8bf7\u9009\u62e9\u6d77\u62a5",
+        "mediaUploadFailed": "\u5a92\u4f53\u4e0a\u4f20\u5931\u8d25\uff0c\u8bf7\u91cd\u8bd5"
       },
       "buttons": {
         "exit": "退出",
@@ -978,6 +984,7 @@
         "metadata": "基础信息",
         "schedule": "日程安排",
         "imports": "素材上传",
+        "translation": "\u7ffb\u8bd1",
         "preview": "预览发布"
       }
     },

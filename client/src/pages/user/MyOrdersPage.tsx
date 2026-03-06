@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getMyOrders } from '../../api/shop';
 import { Loader2, Package, Truck, CheckCircle2, XCircle, ShoppingBag } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { getProductCoverUrl } from '../../utils/productMedia';
 
 export const MyOrdersPage = () => {
     const { t } = useTranslation();
@@ -87,9 +88,9 @@ export const MyOrdersPage = () => {
                                     {order.items.map((item) => (
                                         <div key={item.id} className="flex gap-4">
                                             <Link to={`/shop/${item.productId}`} className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded border overflow-hidden">
-                                                {item.product.images[0] ? (
+                                                {getProductCoverUrl(item.product) ? (
                                                     <img
-                                                        src={item.product.images[0].url}
+                                                        src={getProductCoverUrl(item.product)!}
                                                         alt={item.product.title}
                                                         className="w-full h-full object-cover hover:scale-105 transition-transform"
                                                     />

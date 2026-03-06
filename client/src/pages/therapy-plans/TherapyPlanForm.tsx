@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, CheckCircle, LogOut } from 'lucide-react';
+import { AlertCircle, LogOut } from 'lucide-react';
 import type { TherapyPlan, TherapyPlanImage, TherapyPlanType, ArtSalonSubType, SessionMedium } from '../../types';
 import { Button } from '../../components/ui/Button';
+import { WizardStepper } from '../../components/ui/WizardStepper';
 import { PosterValue } from '../../components/therapyPlans/PosterSelector';
 import {
   eventsToFormDrafts,
@@ -669,33 +670,12 @@ export const TherapyPlanForm = ({
         </div>
       )}
 
-      {/* Stepper Header */}
-      <nav aria-label="Progress">
-        <ol role="list" className="space-y-4 md:flex md:space-x-8 md:space-y-0">
-          {steps.map((step) => (
-            <li key={step.name} className="md:flex-1">
-              <button
-                onClick={() => {
-                  // Only allow navigating backwards via stepper; forward requires "Next"
-                  if (step.id < currentStep) setCurrentStep(step.id as Step);
-                }}
-                disabled={step.id >= currentStep}
-                className={`group flex w-full flex-col border-l-4 py-2 pl-4 md:border-l-0 md:border-t-4 md:pb-0 md:pl-0 md:pt-4 text-left ${currentStep > step.id
-                  ? 'border-teal-600 hover:border-teal-800 cursor-pointer'
-                  : currentStep === step.id
-                    ? 'border-teal-600 cursor-default'
-                    : 'border-stone-200 cursor-not-allowed'
-                  }`}
-              >
-                <span className={`text-sm font-medium ${currentStep > step.id ? 'text-teal-600 group-hover:text-teal-800' : currentStep === step.id ? 'text-teal-600' : 'text-stone-400'}`}>
-                  {t('therapyPlans.form.step', { n: step.id })} {currentStep > step.id && <CheckCircle className="inline h-4 w-4 mb-0.5 ml-1" />}
-                </span>
-                <span className="text-sm font-medium text-stone-900">{step.name}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <WizardStepper
+        steps={steps}
+        currentStep={currentStep}
+        onStepClick={(id) => setCurrentStep(id as Step)}
+        formatStepLabel={(id) => t('therapyPlans.form.step', { n: id })}
+      />
 
       {/* Form Content */}
       <div className="pt-4">

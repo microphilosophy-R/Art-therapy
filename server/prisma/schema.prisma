@@ -550,6 +550,9 @@ model Product {
   titleI18n       Json?
   description     String
   descriptionI18n Json?
+  defaultPosterId Int?
+  posterUrl       String?
+  videoUrl        String?
   price           Decimal         @db.Decimal(10, 2)
   stock           Int             @default(0)
   category        ProductCategory @default(OTHER)

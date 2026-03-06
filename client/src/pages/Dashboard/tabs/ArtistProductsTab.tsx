@@ -6,6 +6,7 @@ import { getMyArtistProfile, getArtistProducts, deleteProduct, createProduct, up
 import { Button } from '../../../components/ui/Button';
 import { PageLoader } from '../../../components/ui/Spinner';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { getProductCoverUrl } from '../../../utils/productMedia';
 
 export const ArtistProductsTab = () => {
     const { t } = useTranslation();
@@ -154,8 +155,8 @@ export const ArtistProductsTab = () => {
                     {products?.map((product) => (
                         <div key={product.id} className="bg-white border text-left border-stone-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
                             <div className="h-48 bg-stone-100 overflow-hidden relative">
-                                {product.images && product.images.length > 0 ? (
-                                    <img src={product.images[0].url} alt={product.title} className="w-full h-full object-cover" />
+                                {getProductCoverUrl(product) ? (
+                                    <img src={getProductCoverUrl(product)!} alt={product.title} className="w-full h-full object-cover" />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-stone-400">
                                         {t('shop.artist.products.noImage')}

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Loader2, ArrowLeft, ShoppingCart, Minus, Plus } from 'lucide-react';
 import { pickLocalizedText } from '../../utils/i18nContent';
 import { followUser, getFollowStatus, unfollowUser } from '../../api/follows';
+import { getProductCoverUrl } from '../../utils/productMedia';
 
 export const ProductDetailsPage = () => {
     const { t, i18n } = useTranslation();
@@ -62,6 +63,13 @@ export const ProductDetailsPage = () => {
     const canFollowSeller = !!(isAuthenticated && user?.role === 'MEMBER' && sellerUserId && sellerUserId !== user.id);
     const productTitle = pickLocalizedText(product.titleI18n, i18n.language, product.title);
     const productDescription = pickLocalizedText(product.descriptionI18n, i18n.language, product.description);
+    const productMediaImages = useMemo(() => {
+        const coverUrl = getProductCoverUrl(product);
+        const gallery = product.images ?? [];
+        if (!coverUrl) return gallery;
+        return [{ id: 'cover', url: coverUrl }, ...gallery.filter((img) => img.url !== coverUrl)];
+    }, [product]);
+    const activeMedia = productMediaImages[activeImage] ?? productMediaImages[0];
 
     const { data: followStatus } = useQuery({
         queryKey: ['follow-status', sellerUserId],
@@ -89,9 +97,9 @@ export const ProductDetailsPage = () => {
                 {/* Image Gallery */}
                 <div className="space-y-4">
                     <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
-                        {product.images.length > 0 ? (
+                        {activeMedia ? (
                             <img
-                                src={product.images[activeImage].url}
+                                src={activeMedia.url}
                                 alt={productTitle}
                                 className="w-full h-full object-cover"
                             />
@@ -101,9 +109,9 @@ export const ProductDetailsPage = () => {
                             </div>
                         )}
                     </div>
-                    {product.images.length > 1 && (
+                    {productMediaImages.length > 1 && (
                         <div className="flex gap-4 overflow-x-auto pb-2">
-                            {product.images.map((img, idx) => (
+                            {productMediaImages.map((img, idx) => (
                                 <button
                                     key={img.id}
                                     onClick={() => setActiveImage(idx)}
@@ -173,6 +181,16 @@ export const ProductDetailsPage = () => {
                     <div className="prose prose-teal max-w-none text-gray-600 mb-8 whitespace-pre-line">
                         {productDescription}
                     </div>
+
+                    {product.videoUrl && (
+                        <div className="mb-8 rounded-lg border border-stone-200 bg-stone-50 p-3">
+                            <video
+                                src={product.videoUrl}
+                                controls
+                                className="w-full max-h-72 rounded-md bg-black"
+                            />
+                        </div>
+                    )}
 
                     <div className="mt-auto border-t pt-6 space-y-6">
                         {product.stock > 0 ? (

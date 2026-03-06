@@ -8,6 +8,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
 import { useAuthStore } from '../../../store/authStore';
+import { getProductCoverUrl } from '../../../utils/productMedia';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
   DRAFT: 'outline',
@@ -88,8 +89,12 @@ export const ProductsTab = () => {
           {products.map((product: any) => (
             <div key={product.id} className="border border-stone-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
               <div className="flex gap-4">
-                {product.images?.[0] && (
-                  <img src={product.images[0].url} alt={product.title} className="w-24 h-16 object-cover rounded" />
+                {getProductCoverUrl(product) ? (
+                  <img src={getProductCoverUrl(product)!} alt={product.title} className="w-24 h-16 object-cover rounded" />
+                ) : (
+                  <div className="w-24 h-16 rounded bg-stone-100 flex items-center justify-center text-stone-300">
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
                 )}
                 <div className="flex-1">
                   <div className="flex items-start justify-between">

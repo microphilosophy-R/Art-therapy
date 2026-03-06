@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Loader2 } from 'lucide-react';
 import { pickLocalizedText } from '../../utils/i18nContent';
+import { getProductCoverUrl } from '../../utils/productMedia';
 
 export const ShopPage = () => {
     const { t, i18n } = useTranslation();
@@ -60,13 +61,14 @@ export const ShopPage = () => {
                         const sellerUser = product.userProfile?.user ?? product.artist?.user;
                         const sellerName = sellerUser?.firstName || 'Unknown Seller';
                         const title = pickLocalizedText(product.titleI18n, i18n.language, product.title);
+                        const coverUrl = getProductCoverUrl(product);
                         return (
                         <Link key={product.id} to={`/shop/${product.id}`} className="group">
                             <Card className="h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
                                 <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                                    {product.images[0] ? (
+                                    {coverUrl ? (
                                         <img
-                                            src={product.images[0].url}
+                                            src={coverUrl}
                                             alt={title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />

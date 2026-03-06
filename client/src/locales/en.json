@@ -740,6 +740,8 @@
       "steps": {
         "basicInfo": "Basic Info",
         "description": "Description & Images",
+        "media": "Media Uploads",
+        "translation": "Translation",
         "preview": "Preview & Submit"
       },
       "fields": {
@@ -749,6 +751,8 @@
         "stock": "Stock",
         "description": "Description",
         "images": "Images (Max 9)",
+        "poster": "Poster",
+        "video": "Video",
         "required": "*"
       },
       "categories": {
@@ -771,7 +775,9 @@
         "descriptionMinLength": "Description must be at least 10 characters",
         "imageRequired": "At least one image is required",
         "imageMaxCount": "Maximum 9 images allowed",
-        "imageUploadFailed": "Image upload failed. Please try again."
+        "imageUploadFailed": "Image upload failed. Please try again.",
+        "posterRequired": "Poster is required",
+        "mediaUploadFailed": "Media upload failed. Please try again."
       },
       "buttons": {
         "exit": "Exit",
@@ -922,6 +928,7 @@
         "metadata": "Basic Metadata",
         "schedule": "Schedule",
         "imports": "Optional Imports",
+        "translation": "Translation",
         "preview": "Preview & Submit"
       }
     },

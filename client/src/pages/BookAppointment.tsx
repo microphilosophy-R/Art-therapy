@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { ChevronLeft, Calendar, Clock, Video, MapPin, Zap } from 'lucide-react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -42,6 +43,7 @@ export const BookAppointment = () => {
   const [notes] = useState('');
   const [appointmentId, setAppointmentId] = useState<string | null>(null);
   const [, setBrowseExpanded] = useState(false);
+  const [isWorkflowActive, setIsWorkflowActive] = useState(false);
 
   // Duration state — initialised after therapist loads
   const [selectedDuration, setSelectedDuration] = useState<number>(60);
@@ -69,14 +71,14 @@ export const BookAppointment = () => {
   }, [therapist]);
 
   // Main browse slots query
-  const { data: slotsData, isLoading: loadingSlots } = useQuery({
+  const { data: slotsData, isLoading: loadingSlots, error: slotsError } = useQuery({
     queryKey: ['slots', therapistId, selectedDate, selectedDuration],
     queryFn: () => getAvailableSlots(therapistId!, selectedDate, selectedDuration),
     enabled: !!therapistId,
   });
 
   // Quick-pick slots query
-  const { data: quickPickSlotsData } = useQuery({
+  const { data: quickPickSlotsData, error: quickPickSlotsError } = useQuery({
     queryKey: ['slots-quick', therapistId, quickPickSearchDate, selectedDuration],
     queryFn: () => getAvailableSlots(therapistId!, quickPickSearchDate, selectedDuration),
     enabled: !!therapistId && !quickPickSlot,
@@ -123,6 +125,11 @@ export const BookAppointment = () => {
   if (!therapist) return null;
 
   const slots: TimeSlot[] = slotsData ?? [];
+  const slotsApiError = (slotsError ?? quickPickSlotsError) as AxiosError<{ code?: string; message?: string }> | null;
+  const consultPlanBlocked = slotsApiError?.response?.data?.code === 'CONSULT_PLAN_UNCONFIGURED';
+  const consultPlanBlockedMessage =
+    slotsApiError?.response?.data?.message ??
+    t('booking.step1.consultPlanUnavailable');
 
   // Duration selector — reused in Section A and B
   const DurationSelector = ({ className = '' }: { className?: string }) => (
@@ -142,8 +149,6 @@ export const BookAppointment = () => {
       </select>
     </div>
   );
-
-  const [isWorkflowActive, setIsWorkflowActive] = useState(false);
 
   const workflowData = {
     title: t('common.planType.PERSONAL_CONSULT'),
@@ -185,6 +190,10 @@ export const BookAppointment = () => {
               {loadingSlots ? (
                 <div className="py-4 text-center text-stone-400 text-sm">
                   {t('booking.step1.loadingSlots')}
+                </div>
+              ) : consultPlanBlocked ? (
+                <div className="py-4 text-center text-amber-700 text-sm">
+                  {consultPlanBlockedMessage}
                 </div>
               ) : slots.length === 0 ? (
                 <div className="py-4 text-center text-stone-400 text-sm">
@@ -290,7 +299,9 @@ export const BookAppointment = () => {
                 ) : (
                   <>
                     <span className="text-sm text-stone-500 flex-1">
-                      {t('booking.step1.searchingQuickPick', 'Finding next available slot…')}
+                      {consultPlanBlocked
+                        ? consultPlanBlockedMessage
+                        : t('booking.step1.searchingQuickPick', 'Finding next available slot…')}
                     </span>
                     <DurationSelector />
                   </>
@@ -331,6 +342,10 @@ export const BookAppointment = () => {
               <div className="py-4 text-center text-stone-400 text-sm">
                 {t('booking.step1.loadingSlots')}
               </div>
+            ) : consultPlanBlocked ? (
+              <div className="py-4 text-center text-amber-700 text-sm">
+                {consultPlanBlockedMessage}
+              </div>
             ) : slots.length === 0 ? (
               <div className="py-4 text-center text-stone-400 text-sm">
                 {t('booking.step1.noSlots')}
@@ -354,7 +369,7 @@ export const BookAppointment = () => {
           </CardContent>
           <CardFooter className="justify-end border-t border-stone-100 pt-4">
             <Button
-              disabled={!selectedSlot}
+              disabled={!selectedSlot || consultPlanBlocked}
               onClick={() => setIsWorkflowActive(true)}
             >
               {t('common.continue')}

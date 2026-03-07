@@ -15,7 +15,6 @@ import { StripeUnavailable } from '../../components/payments/StripeUnavailable';
 import { AlipayPaymentForm } from '../../components/payments/AlipayPaymentForm';
 import { WechatPaymentForm } from '../../components/payments/WechatPaymentForm';
 import { PriceDisplay } from '../../components/ui/PriceDisplay';
-import { formatDate, formatTime } from '../../utils/formatters';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -29,6 +28,28 @@ export const TherapyPlanSignup = () => {
     const [discountCode, setDiscountCode] = useState('');
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(i18n.language.startsWith('zh') ? 'alipay' : null);
     const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
+    const isZh = i18n.language.startsWith('zh');
+    const locale = isZh ? 'zh-CN' : 'en-US';
+
+    const formatLocalizedDate = (value: string) => {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return value;
+        return parsed.toLocaleDateString(locale, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+    };
+
+    const formatLocalizedTime = (value: string) => {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return value;
+        return parsed.toLocaleTimeString(locale, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: !isZh,
+        });
+    };
 
     const { data: plan, isLoading } = useQuery({
         queryKey: ['therapy-plan', id],
@@ -67,10 +88,6 @@ export const TherapyPlanSignup = () => {
     const handlePaymentError = (msg: string) => {
         console.error('Payment error:', msg);
     };
-
-    const priceDisplay = plan.price != null
-        ? `楼${Number(plan.price).toFixed(2)}`
-        : null;
 
     return (
         <div className="bg-stone-50 min-h-screen">
@@ -209,14 +226,14 @@ export const TherapyPlanSignup = () => {
                                     <span className="flex items-center gap-2 text-stone-600">
                                         <Calendar className="h-4 w-4" /> {t('therapyPlans.detail.startTime')}
                                     </span>
-                                    <span className="font-medium text-stone-900">{plan.startTime ? formatDate(plan.startTime) : ''}</span>
+                                    <span className="font-medium text-stone-900">{plan.startTime ? formatLocalizedDate(plan.startTime) : ''}</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-stone-100">
                                     <span className="flex items-center gap-2 text-stone-600">
                                         <Clock className="h-4 w-4" /> {t('therapyPlans.detail.time')}
                                     </span>
                                     <span className="font-medium text-stone-900">
-                                        {plan.startTime ? formatTime(plan.startTime) : ''} 鈥?{plan.endTime ? formatTime(plan.endTime) : ''}
+                                        {plan.startTime ? formatLocalizedTime(plan.startTime) : ''} - {plan.endTime ? formatLocalizedTime(plan.endTime) : ''}
                                     </span>
                                 </div>
                                 {plan.location && (

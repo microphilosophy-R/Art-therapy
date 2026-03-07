@@ -31,7 +31,7 @@ export const TherapistPlansTab = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['therapy-plans', 'my'],
-    queryFn: () => listTherapyPlans({ limit: 50 }),
+    queryFn: () => listTherapyPlans({ role: 'creator', limit: 50 }),
   });
 
   const submitMutation = useMutation({

@@ -229,6 +229,11 @@ export interface TherapyPlan {
   introductionI18n?: LocalizedText | null;
   startTime: string;
   endTime?: string | null;
+  consultDateStart?: string | null;
+  consultDateEnd?: string | null;
+  consultWorkStartMin?: number | null;
+  consultWorkEndMin?: number | null;
+  consultTimezone?: string | null;
   location: string;
   maxParticipants?: number | null;
   contactInfo: string;

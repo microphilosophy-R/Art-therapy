@@ -23,7 +23,7 @@ import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { PageLoader } from '../../components/ui/Spinner';
-import { formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
+import { formatCNY, formatCurrency, formatDateTime, formatRelative } from '../../utils/formatters';
 import type { UserRole, AppointmentStatus } from '../../types';
 
 type Tab = 'overview' | 'users' | 'appointments' | 'plans' | 'review' | 'reviewOps' | 'messages';
@@ -476,7 +476,7 @@ const AdminProfilesTab = () => {
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-stone-400">
                     <span>{profile.locationCity}</span>
-                    <span>楼{Number(profile.sessionPrice).toFixed(0)}/{t('therapists.card.perSession')}</span>
+                    <span>{formatCNY(Number(profile.sessionPrice))}/{t('therapists.card.perSession')}</span>
                     {profile.consultEnabled && (
                       <span className="text-teal-600 font-medium">{t('admin.profiles.consultEnabled')}</span>
                     )}
@@ -627,14 +627,14 @@ const AdminCertificatesTab = () => {
 
 export const AdminDashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, accessToken } = useAuthStore();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   const { data: unreadData } = useQuery({
     queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     refetchInterval: 30000,
-    enabled: !!user,
+    enabled: isAuthenticated && !!user?.id && !!accessToken,
   });
   const unreadCount = unreadData?.count ?? 0;
 

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { useAuthStore } from '../../store/authStore';
 import { pickLocalizedText } from '../../utils/i18nContent';
 import { followUser, getFollowStatus, unfollowUser } from '../../api/follows';
+import { formatCNY } from '../../utils/formatters';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
   DRAFT: 'outline',
@@ -95,7 +96,52 @@ export const TherapyPlanDetail = () => {
     },
   });
 
-  if (isLoading) return <div className="flex justify-center py-16"><Spinner /></div>;
+  const therapistUserId = plan?.therapist?.user?.id;
+  const canFollowOwner = !!(user?.role === 'MEMBER' && therapistUserId && therapistUserId !== user.id);
+
+  const { data: followStatus } = useQuery({
+    queryKey: ['follow-status', therapistUserId],
+    queryFn: () => getFollowStatus(therapistUserId!),
+    enabled: canFollowOwner,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: async () => {
+      if (!therapistUserId) throw new Error('Therapist not found');
+      return followUser(therapistUserId);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', therapistUserId] }),
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: async () => {
+      if (!therapistUserId) throw new Error('Therapist not found');
+      return unfollowUser(therapistUserId);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', therapistUserId] }),
+  });
+
+  const shouldRedirectToTherapist = plan?.type === 'PERSONAL_CONSULT' && !!plan?.therapistId;
+
+  useEffect(() => {
+    if (!shouldRedirectToTherapist || !plan?.therapistId) return;
+    navigate(`/therapists/${plan.therapistId}`, { replace: true });
+  }, [navigate, plan?.therapistId, shouldRedirectToTherapist]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8 animate-pulse">
+        <div className="h-5 w-28 bg-stone-200 rounded mb-6" />
+        <div className="aspect-[16/9] w-full rounded-xl bg-stone-200 mb-6" />
+        <div className="h-8 w-3/4 bg-stone-200 rounded mb-3" />
+        <div className="h-4 w-1/2 bg-stone-200 rounded mb-8" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="h-24 rounded-lg bg-stone-200" />
+          <div className="h-24 rounded-lg bg-stone-200" />
+        </div>
+      </div>
+    );
+  }
   if (!plan) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
@@ -113,7 +159,6 @@ export const TherapyPlanDetail = () => {
   const planIntroduction = pickLocalizedText(plan.introductionI18n, i18n.language, plan.introduction);
   const therapist = plan.therapist;
   const therapistUser = therapist?.user;
-  const therapistUserId = therapistUser?.id;
 
   const galleryImages = plan.images?.length
     ? plan.images.map((img) => img.url)
@@ -136,27 +181,15 @@ export const TherapyPlanDetail = () => {
 
   const canSignUp = (user?.role === 'MEMBER' || !user) && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled && !isPendingPayment && !isPastSignupDeadline;
   const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && (isEnrolled || isPendingPayment);
-  const canFollowOwner = !!(user?.role === 'MEMBER' && therapistUserId && therapistUserId !== user.id);
 
-  const { data: followStatus } = useQuery({
-    queryKey: ['follow-status', therapistUserId],
-    queryFn: () => getFollowStatus(therapistUserId!),
-    enabled: canFollowOwner,
-  });
+  if (shouldRedirectToTherapist) {
+    return <div className="flex justify-center py-16"><Spinner /></div>;
+  }
 
-  const followMutation = useMutation({
-    mutationFn: () => followUser(therapistUserId!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', therapistUserId] }),
-  });
-
-  const unfollowMutation = useMutation({
-    mutationFn: () => unfollowUser(therapistUserId!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', therapistUserId] }),
-  });
-
-  const priceDisplay = plan.price != null
-    ? `楼${Number(plan.price).toFixed(2)}`
-    : null;
+  const numericPrice = Number(plan.price ?? 0);
+  const isPayablePlan = plan.price != null && numericPrice > 0;
+  const isFreePlan = !isPayablePlan;
+  const priceDisplay = isPayablePlan ? formatCNY(numericPrice) : null;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -301,7 +334,9 @@ export const TherapyPlanDetail = () => {
                       ? t('therapyPlans.detail.enrolled')
                       : isPendingPayment
                         ? t('payment.waitingForPayment', 'Waiting for Payment')
-                        : t('therapyPlans.detail.signUp')}
+                        : isFreePlan
+                          ? t('therapyPlans.detail.signUpFree', 'Sign Up for Free')
+                          : t('therapyPlans.detail.signUp')}
                   </p>
                   {priceDisplay && !isEnrolled && !isPendingPayment && (
                     <p className="text-2xl font-bold text-teal-700 mt-0.5">{priceDisplay}</p>
@@ -318,16 +353,20 @@ export const TherapyPlanDetail = () => {
                           navigate('/login', { state: { from: `/therapy-plans/${id}` } });
                           return;
                         }
-                        if (priceDisplay) {
+                        if (isPayablePlan) {
                           setIsCheckingOut(true);
                         } else {
                           signupMutation.mutate();
                         }
                       }}
                     >
-                      {priceDisplay
-                        ? `${t('therapyPlans.detail.signUp')} 路 ${priceDisplay}`
-                        : t('therapyPlans.detail.signUp')}
+                      {!user
+                        ? isFreePlan
+                          ? t('therapyPlans.detail.signInToSignUpFree', 'Sign In to Sign Up for Free')
+                          : t('therapyPlans.detail.signInToSignUp', 'Sign In to Sign Up')
+                        : priceDisplay
+                        ? `${t('therapyPlans.detail.signUp')} \u00B7 ${priceDisplay}`
+                        : t('therapyPlans.detail.signUpFree', 'Sign Up for Free')}
                     </Button>
                   )}
                   {(canCancelSignup || isPendingPayment) && (
@@ -506,4 +545,6 @@ export const TherapyPlanDetail = () => {
     </div>
   );
 };
+
+
 

@@ -17,8 +17,13 @@ export interface CreateTherapyPlanPayload {
   sloganI18n?: LocalizedText | null;
   introduction: string;
   introductionI18n?: LocalizedText;
-  startTime: string;
+  startTime?: string;
   endTime?: string;
+  consultDateStart?: string;
+  consultDateEnd?: string;
+  consultWorkStartMin?: number;
+  consultWorkEndMin?: number;
+  consultTimezone?: string;
   location: string;
   maxParticipants?: number | null;
   contactInfo: string;
@@ -34,6 +39,24 @@ export type UpdateTherapyPlanPayload = Partial<CreateTherapyPlanPayload>;
 export interface ReviewTherapyPlanPayload {
   action: 'APPROVE' | 'REJECT';
   rejectionReason?: string;
+}
+
+export interface ScheduleConflictItem {
+  type: 'appointment' | 'plan';
+  id: string;
+  title?: string;
+  startTime: string;
+}
+
+export interface CheckTherapyPlanConflictsPayload {
+  startTime: string;
+  endTime?: string | null;
+  excludePlanId?: string;
+}
+
+export interface CheckTherapyPlanConflictsResponse {
+  hasConflict: boolean;
+  conflicts: ScheduleConflictItem[];
 }
 
 export const listTherapyPlans = async (
@@ -69,6 +92,13 @@ export const deleteTherapyPlan = async (id: string): Promise<void> => {
 
 export const submitTherapyPlanForReview = async (id: string): Promise<TherapyPlan> => {
   const { data } = await api.post(`/therapy-plans/${id}/submit`);
+  return data;
+};
+
+export const checkTherapyPlanConflicts = async (
+  payload: CheckTherapyPlanConflictsPayload,
+): Promise<CheckTherapyPlanConflictsResponse> => {
+  const { data } = await api.post('/therapy-plans/check-conflicts', payload);
   return data;
 };
 

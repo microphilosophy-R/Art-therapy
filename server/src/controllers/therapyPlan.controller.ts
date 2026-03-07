@@ -19,9 +19,15 @@ import type {
   UpdateTherapyPlanInput,
   ReviewTherapyPlanInput,
   ListTherapyPlansQuery,
+  CheckTherapyPlanConflictsInput,
   UpsertPlanEventsInput,
 } from '../schemas/therapyPlan.schemas';
 import { buildIcsCalendar, type IcsEvent } from '../services/ics.service';
+import {
+  ACTIVE_PERSONAL_CONSULT_STATUSES,
+  CONSULT_TIMEZONE,
+  deriveWindowFromConsultFields,
+} from '../utils/consultSchedule';
 type LocalizedText = {
   zh?: string;
   en?: string;
@@ -89,6 +95,24 @@ const THERAPIST_PLAN_INCLUDE = {
   },
 } satisfies Prisma.TherapyPlanInclude;
 
+const PUBLIC_RELEASE_STATUSES = [
+  'PUBLISHED',
+  'SIGN_UP_CLOSED',
+  'IN_PROGRESS',
+  'FINISHED',
+  'IN_GALLERY',
+] as const;
+const PUBLIC_RELEASE_STATUS_SET = new Set<string>(PUBLIC_RELEASE_STATUSES);
+
+const isPlanPubliclyReleased = (plan: {
+  status: string;
+  reviewedAt: Date | null;
+  publishedAt: Date | null;
+}) =>
+  PUBLIC_RELEASE_STATUS_SET.has(plan.status) &&
+  plan.reviewedAt !== null &&
+  plan.publishedAt !== null;
+
 const logToFile = (msg: string) => {
   try {
     fs.appendFileSync(path.join(process.cwd(), 'debug.log'), `${new Date().toISOString()} - ${msg}\n`);
@@ -122,6 +146,31 @@ export const createPlan = async (req: Request, res: Response) => {
     });
   }
 
+  try {
+    if (body.type === 'PERSONAL_CONSULT') {
+      await assertNoOtherActivePersonalConsultPlan(userProfile.id);
+    }
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json(err.payload ?? { message: err.message });
+  }
+
+  let scheduleData: ReturnType<typeof applyConsultScheduleToPlanData>;
+  try {
+    scheduleData = applyConsultScheduleToPlanData({
+      type: body.type,
+      startTime: body.startTime,
+      endTime: body.endTime ?? null,
+      consultDateStart: (body as any).consultDateStart,
+      consultDateEnd: (body as any).consultDateEnd,
+      consultWorkStartMin: (body as any).consultWorkStartMin,
+      consultWorkEndMin: (body as any).consultWorkEndMin,
+      consultTimezone: (body as any).consultTimezone,
+      allowPartialForPersonalDraft: true,
+    });
+  } catch (err: any) {
+    return res.status(400).json({ message: err.message ?? 'Invalid consult schedule fields' });
+  }
+
   const plan = await prisma.therapyPlan.create({
     data: {
       userProfileId: userProfile.id,
@@ -132,8 +181,13 @@ export const createPlan = async (req: Request, res: Response) => {
       sloganI18n,
       introduction: introductionI18n.zh,
       introductionI18n,
-      startTime: new Date(body.startTime),
-      endTime: body.endTime ? new Date(body.endTime) : null,
+      startTime: scheduleData.startTime ?? new Date(),
+      endTime: scheduleData.endTime ?? null,
+      consultDateStart: scheduleData.consultDateStart ?? null,
+      consultDateEnd: scheduleData.consultDateEnd ?? null,
+      consultWorkStartMin: scheduleData.consultWorkStartMin ?? null,
+      consultWorkEndMin: scheduleData.consultWorkEndMin ?? null,
+      consultTimezone: scheduleData.consultTimezone ?? null,
       location: body.location,
       maxParticipants: body.maxParticipants ?? null,
       contactInfo: body.contactInfo,
@@ -159,72 +213,86 @@ export const listPlans = async (req: Request, res: Response) => {
   const skip = (page - 1) * limit;
   const user = req.user;
   const userHasTherapistCert = user?.approvedCertificates?.includes('THERAPIST' as any);
+  const isAdmin = user?.role === 'ADMIN';
+  const isMember = user?.role === 'MEMBER';
+  const andConditions: Prisma.TherapyPlanWhereInput[] = [];
+  let creatorProfileId: string | null = null;
 
-  let where: any = {};
-
-  if (!user || (user.role === 'MEMBER' && !userHasTherapistCert)) {
-    // Public and clients see plans that are in any active/visible lifecycle status
-    const publicStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY'];
-    where = { status: { in: query.status ? [query.status] : publicStatuses } };
-  } else if (user.role === 'MEMBER' && userHasTherapistCert) {
-    // Therapists see only their own plans (all statuses)
-    const profile = await prisma.userProfile.findUnique({ where: { userId: user.id } });
-    if (!profile) {
-      return res.json({
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
+  if (query.role === 'creator') {
+    if (isAdmin) {
+      if (query.status) andConditions.push({ status: query.status as any });
+    } else if (isMember && userHasTherapistCert) {
+      const profile = await prisma.userProfile.findUnique({
+        where: { userId: user!.id },
+        select: { id: true },
       });
+      if (!profile) {
+        return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+      }
+      creatorProfileId = profile.id;
+      andConditions.push({ userProfileId: profile.id });
+      if (query.status) andConditions.push({ status: query.status as any });
+    } else {
+      return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
     }
-    where = { userProfileId: profile.id };
-  } else if (user.role === 'ADMIN') {
-    // Admins see everything; optionally filter by status or type
-    if (query.status) where.status = query.status;
+  } else if (query.role === 'participant') {
+    if (!user) {
+      return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+    }
+    andConditions.push({ participants: { some: { userId: user.id } } });
+    if (query.status) andConditions.push({ status: query.status as any });
+  } else if (isAdmin) {
+    if (query.status) andConditions.push({ status: query.status as any });
+  } else {
+    // Public browsing scope for unauthenticated users, regular members, and therapist members.
+    if (query.status && !PUBLIC_RELEASE_STATUS_SET.has(query.status)) {
+      return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+    }
+    andConditions.push({
+      status: { in: query.status ? [query.status as any] : [...PUBLIC_RELEASE_STATUSES] as any },
+    });
+    andConditions.push({ reviewedAt: { not: null } });
+    andConditions.push({ publishedAt: { not: null } });
   }
 
-  if (query.type) where.type = query.type;
+  if (query.type) andConditions.push({ type: query.type as any });
+  if (query.therapistId) andConditions.push({ userProfileId: query.therapistId });
 
   const now = new Date();
   if (query.timeFilter === 'past') {
-    where.AND = [
-      where.status ? { status: where.status } : {},
-      where.type ? { type: where.type } : {},
-      where.userProfileId ? { userProfileId: where.userProfileId } : {},
-      {
-        OR: [
-          { endTime: { lt: now } },
-          { AND: [{ endTime: null }, { startTime: { lt: now } }] },
-        ],
-      },
-    ];
-    delete where.status;
-    delete where.type;
-    delete where.userProfileId;
+    andConditions.push({
+      OR: [
+        { endTime: { lt: now } },
+        { AND: [{ endTime: null }, { startTime: { lt: now } }] },
+      ],
+    });
   } else if (query.timeFilter === 'upcoming') {
-    where.AND = [
-      where.status ? { status: where.status } : {},
-      where.type ? { type: where.type } : {},
-      where.userProfileId ? { userProfileId: where.userProfileId } : {},
-      {
-        OR: [
-          { endTime: { gte: now } },
-          { AND: [{ endTime: null }, { startTime: { gte: now } }] },
-        ],
-      },
-    ];
-    delete where.status;
-    delete where.type;
-    delete where.userProfileId;
+    andConditions.push({
+      OR: [
+        { endTime: { gte: now } },
+        { AND: [{ endTime: null }, { startTime: { gte: now } }] },
+      ],
+    });
   }
+
+  // If both therapistId and role=creator are provided for a non-admin therapist, keep strict ownership.
+  if (creatorProfileId && query.therapistId && query.therapistId !== creatorProfileId) {
+    return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+  }
+
+  const where: Prisma.TherapyPlanWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const orderBy =
+    query.sortBy
+      ? [{ [query.sortBy]: (query.order ?? 'desc') as Prisma.SortOrder }]
+      : [{ publishedAt: 'desc' as Prisma.SortOrder }, { createdAt: 'desc' as Prisma.SortOrder }];
 
   const [plans, total] = await Promise.all([
     prisma.therapyPlan.findMany({
       where,
       skip,
       take: limit,
-      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: orderBy as Prisma.TherapyPlanOrderByWithRelationInput[],
       include: THERAPIST_PLAN_INCLUDE,
     }),
     prisma.therapyPlan.count({ where }),
@@ -253,8 +321,7 @@ export const getPlan = async (req: Request, res: Response) => {
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
   // Visibility rules
-  const publicStatuses = new Set(['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS', 'FINISHED', 'IN_GALLERY']);
-  if (!publicStatuses.has(plan.status)) {
+  if (!isPlanPubliclyReleased(plan)) {
     if (!user) return res.status(404).json({ message: 'Plan not found' });
     if (user.role === 'MEMBER' && !userHasTherapistCert) return res.status(404).json({ message: 'Plan not found' });
     if (user.role === 'MEMBER' && userHasTherapistCert) {
@@ -292,6 +359,95 @@ export const updatePlan = async (req: Request, res: Response) => {
     }
   }
 
+  const nextType = (body.type ?? plan.type) as string;
+
+  try {
+    if (
+      nextType === 'PERSONAL_CONSULT' &&
+      ACTIVE_PERSONAL_CONSULT_STATUSES.includes(plan.status as any)
+    ) {
+      await assertNoOtherActivePersonalConsultPlan(plan.userProfileId ?? '', id);
+    }
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json(err.payload ?? { message: err.message });
+  }
+
+  let schedulePatch: Record<string, any> = {};
+  if (nextType === 'PERSONAL_CONSULT') {
+    const incomingHasConsultField =
+      (body as any).consultDateStart !== undefined ||
+      (body as any).consultDateEnd !== undefined ||
+      (body as any).consultWorkStartMin !== undefined ||
+      (body as any).consultWorkEndMin !== undefined;
+
+    const existingHasConsultField =
+      plan.consultDateStart != null ||
+      plan.consultDateEnd != null ||
+      plan.consultWorkStartMin != null ||
+      plan.consultWorkEndMin != null;
+
+    if (incomingHasConsultField || existingHasConsultField) {
+      const consultDateStart =
+        (body as any).consultDateStart ??
+        (plan.consultDateStart ? plan.consultDateStart.toISOString().slice(0, 10) : undefined);
+      const consultDateEnd =
+        (body as any).consultDateEnd ??
+        (plan.consultDateEnd ? plan.consultDateEnd.toISOString().slice(0, 10) : undefined);
+      const consultWorkStartMin =
+        (body as any).consultWorkStartMin ?? plan.consultWorkStartMin ?? undefined;
+      const consultWorkEndMin =
+        (body as any).consultWorkEndMin ?? plan.consultWorkEndMin ?? undefined;
+
+      if (
+        consultDateStart == null ||
+        consultDateEnd == null ||
+        consultWorkStartMin == null ||
+        consultWorkEndMin == null
+      ) {
+        return res.status(400).json({
+          message:
+            'PERSONAL_CONSULT plans require consultDateStart, consultDateEnd, consultWorkStartMin, and consultWorkEndMin',
+        });
+      }
+
+      try {
+        const derived = deriveWindowFromConsultFields({
+          consultDateStart,
+          consultDateEnd,
+          consultWorkStartMin,
+          consultWorkEndMin,
+        });
+        schedulePatch = {
+          startTime: derived.startTime,
+          endTime: derived.endTime,
+          consultDateStart: new Date(`${derived.consultDateStart}T00:00:00.000Z`),
+          consultDateEnd: new Date(`${derived.consultDateEnd}T00:00:00.000Z`),
+          consultWorkStartMin: derived.consultWorkStartMin,
+          consultWorkEndMin: derived.consultWorkEndMin,
+          consultTimezone: (body as any).consultTimezone ?? plan.consultTimezone ?? CONSULT_TIMEZONE,
+        };
+      } catch (err: any) {
+        return res.status(400).json({ message: err.message ?? 'Invalid consult schedule fields' });
+      }
+    }
+  } else {
+    schedulePatch = {
+      ...(body.startTime !== undefined ? { startTime: new Date(body.startTime) } : {}),
+      ...(body.endTime !== undefined ? { endTime: body.endTime ? new Date(body.endTime) : null } : {}),
+    };
+
+    if (plan.type === 'PERSONAL_CONSULT' || body.type === 'PERSONAL_CONSULT') {
+      schedulePatch = {
+        ...schedulePatch,
+        consultDateStart: null,
+        consultDateEnd: null,
+        consultWorkStartMin: null,
+        consultWorkEndMin: null,
+        consultTimezone: null,
+      };
+    }
+  }
+
   const updated = await prisma.therapyPlan.update({
     where: { id },
     data: {
@@ -314,8 +470,7 @@ export const updatePlan = async (req: Request, res: Response) => {
           introduction: toLocalizedRequired((body as any).introductionI18n, body.introduction ?? plan.introduction).zh,
         }
         : {}),
-      ...(body.startTime !== undefined ? { startTime: new Date(body.startTime) } : {}),
-      ...(body.endTime !== undefined ? { endTime: body.endTime ? new Date(body.endTime) : null } : {}),
+      ...schedulePatch,
       ...(body.location !== undefined ? { location: body.location } : {}),
       ...(body.maxParticipants !== undefined ? { maxParticipants: body.maxParticipants } : {}),
       ...(body.contactInfo !== undefined ? { contactInfo: body.contactInfo } : {}),
@@ -337,6 +492,28 @@ export const updatePlan = async (req: Request, res: Response) => {
 
 const CONFLICT_PLAN_STATUSES = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'] as const;
 
+type ScheduleConflictItem =
+  | {
+    type: 'appointment';
+    id: string;
+    startTime: Date;
+  }
+  | {
+    type: 'plan';
+    id: string;
+    title: string;
+    startTime: Date;
+  };
+
+const formatConflictDetail = (conflicts: ScheduleConflictItem[]) =>
+  conflicts
+    .map((c) =>
+      c.type === 'plan'
+        ? `Plan: "${c.title}"`
+        : `Appointment at ${new Date(c.startTime).toLocaleTimeString()}`,
+    )
+    .join(', ');
+
 const checkPlanConflicts = async (
   userProfileId: string,
   startTime: Date,
@@ -353,14 +530,20 @@ const checkPlanConflicts = async (
     ],
   };
 
-  // TherapyPlan.endTime is nullable, so also check for null (no end = still active)
+  // Treat null endTime as a point-in-time event at startTime (legacy rows),
+  // not an endless interval; otherwise unrelated future slots get blocked.
   const planOverlapsClause = {
     AND: [
       { startTime: { lt: slotEnd } },
       {
         OR: [
-          { endTime: null },
           { endTime: { gt: startTime } },
+          {
+            AND: [
+              { endTime: null },
+              { startTime: { gte: startTime } },
+            ],
+          },
         ],
       },
     ],
@@ -386,7 +569,7 @@ const checkPlanConflicts = async (
     }),
   ]);
 
-  const conflicts = [
+  const conflicts: ScheduleConflictItem[] = [
     ...conflictingAppointments.map((a) => ({
       type: 'appointment' as const,
       id: a.id,
@@ -409,6 +592,169 @@ const checkPlanConflicts = async (
   return { hasConflict: conflicts.length > 0, conflicts };
 };
 
+const assertNoOtherActivePersonalConsultPlan = async (
+  userProfileId: string,
+  excludePlanId?: string,
+) => {
+  const existing = await prisma.therapyPlan.findFirst({
+    where: {
+      userProfileId,
+      type: 'PERSONAL_CONSULT',
+      status: { in: [...ACTIVE_PERSONAL_CONSULT_STATUSES] as any },
+      ...(excludePlanId ? { id: { not: excludePlanId } } : {}),
+    },
+    select: { id: true, status: true, title: true },
+  });
+
+  if (existing) {
+    const error = new Error('Only one active PERSONAL_CONSULT plan is allowed');
+    (error as any).statusCode = 409;
+    (error as any).payload = {
+      code: 'PERSONAL_CONSULT_ACTIVE_PLAN_EXISTS',
+      message: 'Only one active PERSONAL_CONSULT plan is allowed (DRAFT, PENDING_REVIEW, PUBLISHED).',
+      existingPlanId: existing.id,
+      existingStatus: existing.status,
+      existingTitle: existing.title,
+    };
+    throw error;
+  }
+};
+
+const buildPersonalConsultWindowValidationError = (message: string) => {
+  const error = new Error(message);
+  (error as any).statusCode = 400;
+  (error as any).payload = {
+    code: 'PERSONAL_CONSULT_WINDOW_REQUIRED',
+    message,
+  };
+  return error;
+};
+
+const assertPersonalConsultPlanWindowReady = (plan: {
+  consultDateStart: Date | null;
+  consultDateEnd: Date | null;
+  consultWorkStartMin: number | null;
+  consultWorkEndMin: number | null;
+}) => {
+  if (
+    !plan.consultDateStart ||
+    !plan.consultDateEnd ||
+    plan.consultWorkStartMin == null ||
+    plan.consultWorkEndMin == null
+  ) {
+    throw buildPersonalConsultWindowValidationError(
+      'PERSONAL_CONSULT requires date range and daily working hours before submission.',
+    );
+  }
+
+  try {
+    deriveWindowFromConsultFields({
+      consultDateStart: plan.consultDateStart,
+      consultDateEnd: plan.consultDateEnd,
+      consultWorkStartMin: plan.consultWorkStartMin,
+      consultWorkEndMin: plan.consultWorkEndMin,
+    });
+  } catch (err: any) {
+    throw buildPersonalConsultWindowValidationError(
+      err?.message ?? 'Invalid PERSONAL_CONSULT schedule window.',
+    );
+  }
+};
+
+const applyConsultScheduleToPlanData = (body: {
+  type?: string;
+  startTime?: string;
+  endTime?: string | null;
+  consultDateStart?: string;
+  consultDateEnd?: string;
+  consultWorkStartMin?: number;
+  consultWorkEndMin?: number;
+  consultTimezone?: string;
+  allowPartialForPersonalDraft?: boolean;
+}) => {
+  if (body.type !== 'PERSONAL_CONSULT') {
+    return {
+      startTime: body.startTime ? new Date(body.startTime) : undefined,
+      endTime: body.endTime === undefined ? undefined : body.endTime ? new Date(body.endTime) : null,
+      consultDateStart: undefined,
+      consultDateEnd: undefined,
+      consultWorkStartMin: undefined,
+      consultWorkEndMin: undefined,
+      consultTimezone: undefined,
+    };
+  }
+
+  const hasAnyConsultField =
+    body.consultDateStart != null ||
+    body.consultDateEnd != null ||
+    body.consultWorkStartMin != null ||
+    body.consultWorkEndMin != null;
+
+  if (!hasAnyConsultField && body.allowPartialForPersonalDraft) {
+    return {
+      startTime: body.startTime ? new Date(body.startTime) : undefined,
+      endTime: body.endTime === undefined ? undefined : body.endTime ? new Date(body.endTime) : null,
+      consultDateStart: undefined,
+      consultDateEnd: undefined,
+      consultWorkStartMin: undefined,
+      consultWorkEndMin: undefined,
+      consultTimezone: undefined,
+    };
+  }
+
+  if (
+    body.consultDateStart == null ||
+    body.consultDateEnd == null ||
+    body.consultWorkStartMin == null ||
+    body.consultWorkEndMin == null
+  ) {
+    throw new Error(
+      'PERSONAL_CONSULT plans require consultDateStart, consultDateEnd, consultWorkStartMin, and consultWorkEndMin',
+    );
+  }
+
+  const derived = deriveWindowFromConsultFields({
+    consultDateStart: body.consultDateStart,
+    consultDateEnd: body.consultDateEnd,
+    consultWorkStartMin: body.consultWorkStartMin,
+    consultWorkEndMin: body.consultWorkEndMin,
+  });
+
+  return {
+    startTime: derived.startTime,
+    endTime: derived.endTime,
+    consultDateStart: new Date(`${derived.consultDateStart}T00:00:00.000Z`),
+    consultDateEnd: new Date(`${derived.consultDateEnd}T00:00:00.000Z`),
+    consultWorkStartMin: derived.consultWorkStartMin,
+    consultWorkEndMin: derived.consultWorkEndMin,
+    consultTimezone: body.consultTimezone ?? CONSULT_TIMEZONE,
+  };
+};
+
+export const checkScheduleConflicts = async (req: Request, res: Response) => {
+  const body = req.body as CheckTherapyPlanConflictsInput;
+  const userProfile = await prisma.userProfile.findUnique({
+    where: { userId: req.user!.id },
+    select: { id: true },
+  });
+
+  if (!userProfile) {
+    return res.status(404).json({ message: 'User profile not found' });
+  }
+
+  const { hasConflict, conflicts } = await checkPlanConflicts(
+    userProfile.id,
+    new Date(body.startTime),
+    body.endTime ? new Date(body.endTime) : null,
+    body.excludePlanId,
+  );
+
+  return res.json({
+    hasConflict,
+    conflicts,
+  });
+};
+
 // 鈹€鈹€鈹€ Submit for review 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export const submitForReview = async (req: Request, res: Response) => {
@@ -426,16 +772,29 @@ export const submitForReview = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Only DRAFT or REJECTED plans can be submitted for review' });
   }
 
-  const { hasConflict, conflicts } = await checkPlanConflicts(
-    plan.userProfileId ?? "",
-    plan.startTime,
-    plan.endTime ?? null,
-    id,
-  );
-  if (hasConflict) {
-    const detail = conflicts.map(c => c.type === 'plan' ? `Plan: "${c.title}"` : `Appointment at ${new Date(c.startTime).toLocaleTimeString()}`).join(', ');
-    logToFile(`[TherapyPlanController] Submit blocked by conflict for plan ${id}: ${detail}`);
-    return res.status(409).json({ message: `Schedule conflict detected: ${detail}` });
+  if (plan.type === 'PERSONAL_CONSULT') {
+    try {
+      assertPersonalConsultPlanWindowReady(plan);
+      await assertNoOtherActivePersonalConsultPlan(plan.userProfileId ?? '', id);
+    } catch (err: any) {
+      return res.status(err.statusCode ?? 500).json(err.payload ?? { message: err.message });
+    }
+  } else {
+    const { hasConflict, conflicts } = await checkPlanConflicts(
+      plan.userProfileId ?? "",
+      plan.startTime,
+      plan.endTime ?? null,
+      id,
+    );
+    if (hasConflict) {
+      const detail = formatConflictDetail(conflicts);
+      logToFile(`[TherapyPlanController] Submit blocked by conflict for plan ${id}: ${detail}`);
+      return res.status(409).json({
+        code: 'SCHEDULE_CONFLICT',
+        message: `Schedule conflict detected: ${detail}`,
+        conflicts,
+      });
+    }
   }
 
   const updated = await prisma.therapyPlan.update({
@@ -466,6 +825,15 @@ export const reviewPlan = async (req: Request, res: Response) => {
   }
 
   if (body.action === 'APPROVE') {
+    if (plan.type === 'PERSONAL_CONSULT') {
+      try {
+        assertPersonalConsultPlanWindowReady(plan);
+        await assertNoOtherActivePersonalConsultPlan(plan.userProfileId ?? '', id);
+      } catch (err: any) {
+        return res.status(err.statusCode ?? 500).json(err.payload ?? { message: err.message });
+      }
+    }
+
     const updated = await prisma.therapyPlan.update({
       where: { id },
       data: {
@@ -908,8 +1276,9 @@ export const exportPlanIcs = async (req: Request, res: Response) => {
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  // Visibility: only PUBLISHED plans are public; others require owner or admin
-  if (plan.status !== 'PUBLISHED') {
+  // Visibility: only publicly released PUBLISHED plans are public; others require owner or admin.
+  const isPublicIcsVisible = plan.status === 'PUBLISHED' && isPlanPubliclyReleased(plan);
+  if (!isPublicIcsVisible) {
     if (!user) return res.status(404).json({ message: 'Plan not found' });
     const userHasTherapistCert = user.approvedCertificates?.includes('THERAPIST' as any);
     if (user.role === 'MEMBER' && !userHasTherapistCert) return res.status(404).json({ message: 'Plan not found' });
@@ -1146,7 +1515,7 @@ export const signUpForPlan = async (req: Request, res: Response) => {
     },
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
-  if (plan.status !== 'PUBLISHED') {
+  if (plan.status !== 'PUBLISHED' || !isPlanPubliclyReleased(plan)) {
     return res.status(400).json({ message: 'Sign-ups are not open for this plan' });
   }
   if (plan.type === 'PERSONAL_CONSULT') {
@@ -1242,7 +1611,7 @@ export const cancelSignup = async (req: Request, res: Response) => {
   if (!participant || participant.status !== ('SIGNED_UP' as any)) {
     return res.status(404).json({ message: 'Sign-up not found' });
   }
-  if (participant.plan.status !== 'PUBLISHED') {
+  if (participant.plan.status !== 'PUBLISHED' || !isPlanPubliclyReleased(participant.plan)) {
     return res.status(400).json({ message: 'Sign-ups can only be cancelled while sign-ups are open' });
   }
 

@@ -9,6 +9,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
+import { getFallbackPosterUrl } from '../../../utils/defaultPosters';
 import { useAuthStore } from '../../../store/authStore';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
@@ -101,9 +102,14 @@ export const TherapyPlansTab = () => {
           {plans.map((plan: TherapyPlan) => (
             <div key={plan.id} className="border border-stone-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
               <div className="flex gap-4">
-                {plan.posterUrl && (
-                  <img src={getPosterUrl(plan)} alt={plan.title} className="w-24 h-16 object-cover rounded" />
-                )}
+                <div className="w-24 h-16 shrink-0 overflow-hidden rounded bg-stone-100">
+                  <img
+                    src={getPosterUrl(plan)}
+                    alt={plan.title}
+                    className="h-full w-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = getFallbackPosterUrl(); }}
+                  />
+                </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div>

@@ -47,7 +47,7 @@ export const Register = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 font-semibold text-stone-900 text-xl mb-2">
-            <img src="/logo.png" alt="ArtTherapy" className="h-6 w-6 object-contain" /> ArtTherapy
+            <img src="/logo_new.jpg" alt="ArtTherapy" className="h-6 w-6 object-contain rounded-sm" /> ArtTherapy
           </div>
           <h1 className="text-2xl font-bold text-stone-900">{t('auth.register.title')}</h1>
           <p className="text-stone-500 mt-1 text-sm">{t('auth.register.subtitle')}</p>

@@ -4,14 +4,15 @@ import { authorize } from '../../middleware/authorize';
 import { requireCertificate } from '../../middleware/requireCertificate';
 import { validate } from '../../middleware/validate';
 import { asyncHandler } from '../../middleware/asyncHandler';
+import { optionalAuthenticate } from '../../middleware/optionalAuthenticate';
 import { ProductController } from '../../controllers/shop/product.controller';
 import { createProductSchema, updateProductSchema } from '../../schemas/product.schemas';
 
 const router = Router();
 
 // Public routes
-router.get('/', asyncHandler(ProductController.getProducts));
-router.get('/:id', asyncHandler(ProductController.getProductById));
+router.get('/', optionalAuthenticate, asyncHandler(ProductController.getProducts));
+router.get('/:id', optionalAuthenticate, asyncHandler(ProductController.getProductById));
 
 // Artist or MEMBER with ARTIFICER cert
 router.use(authenticate);

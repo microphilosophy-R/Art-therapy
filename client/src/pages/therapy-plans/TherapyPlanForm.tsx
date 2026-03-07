@@ -27,6 +27,11 @@ export interface TherapyPlanFormValues {
   introductionEn: string;
   startTime: string;
   endTime: string;
+  consultDateStart: string;
+  consultDateEnd: string;
+  consultWorkStart: string;
+  consultWorkEnd: string;
+  consultTimezone: string;
   location: string;
   maxParticipants: string;
   price: string;
@@ -47,6 +52,11 @@ const defaultValues: TherapyPlanFormValues = {
   introductionEn: '',
   startTime: '',
   endTime: '',
+  consultDateStart: '',
+  consultDateEnd: '',
+  consultWorkStart: '',
+  consultWorkEnd: '',
+  consultTimezone: 'Asia/Shanghai',
   location: '',
   maxParticipants: '',
   price: '',
@@ -62,6 +72,28 @@ const toDatetimeLocal = (iso?: string | null): string => {
   return iso.slice(0, 16);
 };
 
+const toDateOnly = (iso?: string | null): string => {
+  if (!iso) return '';
+  return iso.slice(0, 10);
+};
+
+const toUtc8HHmm = (iso?: string | null): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const shifted = new Date(d.getTime() + 8 * 60 * 60 * 1000);
+  const hh = String(shifted.getUTCHours()).padStart(2, '0');
+  const mm = String(shifted.getUTCMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+};
+
+const minutesToHHmm = (minutes?: number | null): string => {
+  if (minutes == null || Number.isNaN(minutes)) return '';
+  const h = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const m = String(minutes % 60).padStart(2, '0');
+  return `${h}:${m}`;
+};
+
 export const planToFormValues = (plan: TherapyPlan): TherapyPlanFormValues => ({
   type: plan.type,
   title: plan.titleI18n?.zh ?? plan.title,
@@ -72,6 +104,11 @@ export const planToFormValues = (plan: TherapyPlan): TherapyPlanFormValues => ({
   introductionEn: plan.introductionI18n?.en ?? plan.introduction,
   startTime: toDatetimeLocal(plan.startTime),
   endTime: toDatetimeLocal(plan.endTime),
+  consultDateStart: toDateOnly(plan.consultDateStart) || toDateOnly(plan.startTime),
+  consultDateEnd: toDateOnly(plan.consultDateEnd) || toDateOnly(plan.endTime) || toDateOnly(plan.startTime),
+  consultWorkStart: minutesToHHmm(plan.consultWorkStartMin) || toUtc8HHmm(plan.startTime),
+  consultWorkEnd: minutesToHHmm(plan.consultWorkEndMin) || toUtc8HHmm(plan.endTime) || toUtc8HHmm(plan.startTime),
+  consultTimezone: plan.consultTimezone ?? 'Asia/Shanghai',
   location: plan.location,
   maxParticipants: plan.maxParticipants != null ? String(plan.maxParticipants) : '',
   price: plan.price != null ? String(plan.price) : '',
@@ -111,6 +148,8 @@ const defaultTranslationState: Record<LocalizedBaseField, TranslationFieldState>
 
 interface TherapyPlanFormProps {
   initialValues?: Partial<TherapyPlanFormValues>;
+  forcedStep?: Step | null;
+  forceStepSignal?: number;
   /** ID of the already-created/auto-saved plan (undefined in early create mode) */
   planId?: string;
   /**
@@ -146,6 +185,8 @@ interface TherapyPlanFormProps {
 
 export const TherapyPlanForm = ({
   initialValues,
+  forcedStep = null,
+  forceStepSignal = 0,
   planId,
   onBeforeStepChange,
   onSubmitForReview,
@@ -216,6 +257,11 @@ export const TherapyPlanForm = ({
     }
     return '';
   });
+
+  useEffect(() => {
+    if (!forcedStep) return;
+    setCurrentStep(forcedStep);
+  }, [forcedStep, forceStepSignal]);
 
   // ── Value helpers ─────────────────────────────────────────────────────────
 
@@ -350,10 +396,35 @@ export const TherapyPlanForm = ({
 
   const validateStep2 = (): boolean => {
     const errs: Partial<Record<keyof TherapyPlanFormValues, string>> = {};
-    if (!values.startTime) errs.startTime = t('common.errors.required');
-    if (values.startTime && values.endTime && values.endTime <= values.startTime) {
-      errs.endTime = t('therapyPlans.form.endTimeAfterStart');
+
+    if (values.type === 'PERSONAL_CONSULT') {
+      if (!values.consultDateStart) errs.consultDateStart = t('common.errors.required');
+      if (!values.consultDateEnd) errs.consultDateEnd = t('common.errors.required');
+      if (!values.consultWorkStart) errs.consultWorkStart = t('common.errors.required');
+      if (!values.consultWorkEnd) errs.consultWorkEnd = t('common.errors.required');
+
+      if (
+        values.consultDateStart &&
+        values.consultDateEnd &&
+        values.consultDateEnd < values.consultDateStart
+      ) {
+        errs.consultDateEnd = t('therapyPlans.form.consultDateRangeInvalid');
+      }
+
+      if (
+        values.consultWorkStart &&
+        values.consultWorkEnd &&
+        values.consultWorkEnd <= values.consultWorkStart
+      ) {
+        errs.consultWorkEnd = t('therapyPlans.form.consultHoursInvalid');
+      }
+    } else {
+      if (!values.startTime) errs.startTime = t('common.errors.required');
+      if (values.startTime && values.endTime && values.endTime <= values.startTime) {
+        errs.endTime = t('therapyPlans.form.endTimeAfterStart');
+      }
     }
+
     setErrors((prev) => ({ ...prev, ...errs }));
     return Object.keys(errs).length === 0;
   };
@@ -438,6 +509,8 @@ export const TherapyPlanForm = ({
     setIsSubmittingForReview(true);
     try {
       await onSubmitForReview();
+    } catch {
+      // Parent handles user-facing error state; keep UI stable without unhandled promise.
     } finally {
       setIsSubmittingForReview(false);
     }

@@ -73,6 +73,11 @@ type PlanSeed = {
   artSalonSubType?: ArtSalonSubType | null;
   sessionMedium?: SessionMedium | null;
   posterUrl: string;
+  consultDateStart?: string;
+  consultDateEnd?: string;
+  consultWorkStartMin?: number;
+  consultWorkEndMin?: number;
+  consultTimezone?: string;
   publishedAt?: Date | null;
   submittedAt?: Date | null;
   reviewedAt?: Date | null;
@@ -89,6 +94,8 @@ type ProductSeed = {
   stock: number;
   status: ProductStatus;
   posterUrl: string;
+  submittedAt?: Date | null;
+  reviewedAt?: Date | null;
 };
 
 const daysFromNow = (days: number, hour = 10, minute = 0) => {
@@ -107,6 +114,61 @@ const daysAgo = (days: number, hour = 10, minute = 0) => {
 
 const addHours = (date: Date, hours: number) => {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
+};
+
+const toUtc8DateOnly = (date: Date): string => {
+  const shifted = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return shifted.toISOString().slice(0, 10);
+};
+
+const toUtc8Minutes = (date: Date): number => {
+  const shifted = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  return shifted.getUTCHours() * 60 + shifted.getUTCMinutes();
+};
+
+const combineUtc8DateAndMinutes = (dateOnly: string, minutes: number): Date => {
+  const [year, month, day] = dateOnly.split('-').map(Number);
+  const utcMs =
+    Date.UTC(year, month - 1, day, 0, 0, 0, 0) +
+    (minutes - 8 * 60) * 60 * 1000;
+  return new Date(utcMs);
+};
+
+const PUBLIC_RELEASE_STATUSES = new Set<TherapyPlanStatus>([
+  TherapyPlanStatus.PUBLISHED,
+  TherapyPlanStatus.SIGN_UP_CLOSED,
+  TherapyPlanStatus.IN_PROGRESS,
+  TherapyPlanStatus.FINISHED,
+  TherapyPlanStatus.IN_GALLERY,
+]);
+
+const buildPlanReviewTimeline = (plan: PlanSeed) => {
+  if (!PUBLIC_RELEASE_STATUSES.has(plan.status)) {
+    return {
+      publishedAt: null as Date | null,
+      reviewedAt: null as Date | null,
+      submittedAt: null as Date | null,
+    };
+  }
+
+  const publishedAt = plan.publishedAt ?? plan.startTime;
+  const reviewedAt = plan.reviewedAt ?? publishedAt;
+  const submittedAt = plan.submittedAt ?? new Date(reviewedAt.getTime() - 60 * 60 * 1000);
+
+  return { publishedAt, reviewedAt, submittedAt };
+};
+
+const buildProductReviewTimeline = (product: ProductSeed) => {
+  if (product.status !== ProductStatus.PUBLISHED) {
+    return {
+      reviewedAt: null as Date | null,
+      submittedAt: null as Date | null,
+    };
+  }
+
+  const reviewedAt = product.reviewedAt ?? new Date();
+  const submittedAt = product.submittedAt ?? new Date(reviewedAt.getTime() - 60 * 60 * 1000);
+  return { reviewedAt, submittedAt };
 };
 
 const fileExists = async (filePath: string): Promise<boolean> => {
@@ -204,7 +266,7 @@ async function main() {
       firstName: 'System',
       lastName: 'Admin',
       phone: '+86 13900000000',
-      avatarUrl: '/logo.png',
+      avatarUrl: '/logo_new.jpg',
     },
   });
 
@@ -582,6 +644,40 @@ async function main() {
     if (!owner) {
       throw new Error(`Missing owner profile for plan seed ownerKey=${plan.ownerKey}`);
     }
+    const timeline = buildPlanReviewTimeline(plan);
+    const isPersonalConsult = plan.type === TherapyPlanType.PERSONAL_CONSULT;
+
+    const fallbackConsultEndTime = plan.endTime ?? addHours(plan.startTime, 1);
+    const consultDateStart =
+      plan.consultDateStart ??
+      (isPersonalConsult ? toUtc8DateOnly(plan.startTime) : undefined);
+    const consultDateEnd =
+      plan.consultDateEnd ??
+      (isPersonalConsult ? toUtc8DateOnly(fallbackConsultEndTime) : undefined);
+    const consultWorkStartMin =
+      plan.consultWorkStartMin ??
+      (isPersonalConsult ? toUtc8Minutes(plan.startTime) : undefined);
+    let consultWorkEndMin =
+      plan.consultWorkEndMin ??
+      (isPersonalConsult ? toUtc8Minutes(fallbackConsultEndTime) : undefined);
+
+    if (
+      isPersonalConsult &&
+      consultWorkStartMin != null &&
+      consultWorkEndMin != null &&
+      consultWorkEndMin <= consultWorkStartMin
+    ) {
+      consultWorkEndMin = Math.min(1440, consultWorkStartMin + 60);
+    }
+
+    const derivedStartTime =
+      isPersonalConsult && consultDateStart && consultWorkStartMin != null
+        ? combineUtc8DateAndMinutes(consultDateStart, consultWorkStartMin)
+        : plan.startTime;
+    const derivedEndTime =
+      isPersonalConsult && consultDateEnd && consultWorkEndMin != null
+        ? combineUtc8DateAndMinutes(consultDateEnd, consultWorkEndMin)
+        : plan.endTime ?? null;
 
     await prisma.therapyPlan.create({
       data: {
@@ -594,8 +690,13 @@ async function main() {
         sloganI18n: plan.sloganZh || plan.sloganEn ? { zh: plan.sloganZh ?? '', en: plan.sloganEn ?? '' } : null,
         introduction: plan.introductionZh,
         introductionI18n: { zh: plan.introductionZh, en: plan.introductionEn },
-        startTime: plan.startTime,
-        endTime: plan.endTime ?? null,
+        startTime: derivedStartTime,
+        endTime: derivedEndTime,
+        consultDateStart: isPersonalConsult && consultDateStart ? new Date(`${consultDateStart}T00:00:00.000Z`) : null,
+        consultDateEnd: isPersonalConsult && consultDateEnd ? new Date(`${consultDateEnd}T00:00:00.000Z`) : null,
+        consultWorkStartMin: isPersonalConsult ? consultWorkStartMin ?? null : null,
+        consultWorkEndMin: isPersonalConsult ? consultWorkEndMin ?? null : null,
+        consultTimezone: isPersonalConsult ? plan.consultTimezone ?? 'Asia/Shanghai' : null,
         location: plan.location,
         contactInfo: plan.contactInfo,
         maxParticipants: plan.maxParticipants ?? null,
@@ -604,9 +705,9 @@ async function main() {
         sessionMedium: plan.sessionMedium ?? null,
         defaultPosterId: null,
         posterUrl: plan.posterUrl,
-        publishedAt: plan.publishedAt ?? null,
-        submittedAt: plan.submittedAt ?? null,
-        reviewedAt: plan.reviewedAt ?? null,
+        publishedAt: timeline.publishedAt,
+        submittedAt: timeline.submittedAt,
+        reviewedAt: timeline.reviewedAt,
       },
     });
   }
@@ -679,6 +780,7 @@ async function main() {
     if (!owner) {
       throw new Error(`Missing owner profile for product seed ownerKey=${product.ownerKey}`);
     }
+    const reviewTimeline = buildProductReviewTimeline(product);
 
     await prisma.product.create({
       data: {
@@ -694,6 +796,8 @@ async function main() {
         stock: product.stock,
         category: product.category,
         status: product.status,
+        submittedAt: reviewTimeline.submittedAt,
+        reviewedAt: reviewTimeline.reviewedAt,
         images: {
           create: [{ url: product.posterUrl, order: 0 }],
         },

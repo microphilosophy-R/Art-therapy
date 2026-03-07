@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import type { AppointmentStatus, CertificateType } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { uploadAsset, deleteAsset } from '../services/upload.service';
+import {
+  combineUtc8DateAndMinutes,
+  CONSULT_TIMEZONE,
+  normalizeDateOnly,
+} from '../utils/consultSchedule';
 
 const PROVIDER_CERT_TYPES: CertificateType[] = ['THERAPIST', 'COUNSELOR'];
 const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'IN_PROGRESS'];
@@ -192,30 +197,78 @@ export const getTherapistSlots = async (req: Request, res: Response) => {
   if (!profile) return res.status(404).json({ message: 'Therapist not found' });
 
   const slotDuration = Math.min(240, Math.max(30, Number(duration) || profile.sessionLength || 60));
-  const dayStart = new Date(`${date}T00:00:00`);
-  const dayEnd = new Date(`${date}T23:59:59.999`);
-  const dayOfWeek = dayStart.getDay();
 
-  const [availability, appointments] = await Promise.all([
-    prisma.availability.findMany({
-      where: { userProfileId: profile.id, dayOfWeek },
-      orderBy: { startTime: 'asc' },
-    }),
-    prisma.appointment.findMany({
-      where: {
-        userProfileId: profile.id,
-        status: { in: ACTIVE_APPOINTMENT_STATUSES },
-        startTime: { lt: dayEnd },
-        endTime: { gt: dayStart },
-      },
-      select: { startTime: true, endTime: true },
-    }),
-  ]);
+  const publishedConsultPlans = await prisma.therapyPlan.findMany({
+    where: {
+      userProfileId: profile.id,
+      type: 'PERSONAL_CONSULT',
+      status: 'PUBLISHED',
+      reviewedAt: { not: null },
+      publishedAt: { not: null },
+    },
+    orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
+    select: {
+      id: true,
+      consultDateStart: true,
+      consultDateEnd: true,
+      consultWorkStartMin: true,
+      consultWorkEndMin: true,
+      consultTimezone: true,
+    },
+  });
 
-  const windows =
-    availability.length > 0
-      ? availability.map((a) => ({ start: parseMinutes(a.startTime), end: parseMinutes(a.endTime) }))
-      : [{ start: 9 * 60, end: 18 * 60 }];
+  if (publishedConsultPlans.length !== 1) {
+    return res.status(409).json({
+      code: 'CONSULT_PLAN_UNCONFIGURED',
+      message:
+        'Personal consult schedule is not configured. Exactly one published PERSONAL_CONSULT plan is required.',
+    });
+  }
+
+  const consultPlan = publishedConsultPlans[0];
+  if (
+    !consultPlan.consultDateStart ||
+    !consultPlan.consultDateEnd ||
+    consultPlan.consultWorkStartMin == null ||
+    consultPlan.consultWorkEndMin == null
+  ) {
+    return res.status(409).json({
+      code: 'CONSULT_PLAN_UNCONFIGURED',
+      message: 'Personal consult schedule is incomplete.',
+    });
+  }
+
+  const dateOnly = normalizeDateOnly(date);
+  const planStart = normalizeDateOnly(consultPlan.consultDateStart);
+  const planEnd = normalizeDateOnly(consultPlan.consultDateEnd);
+
+  if (dateOnly < planStart || dateOnly > planEnd) {
+    return res.json([]);
+  }
+
+  const workStart = consultPlan.consultWorkStartMin;
+  const workEnd = consultPlan.consultWorkEndMin;
+  if (workEnd <= workStart) {
+    return res.status(409).json({
+      code: 'CONSULT_PLAN_UNCONFIGURED',
+      message: 'Personal consult working hours are invalid.',
+    });
+  }
+
+  const dayStart = combineUtc8DateAndMinutes(dateOnly, 0);
+  const dayEnd = combineUtc8DateAndMinutes(dateOnly, 24 * 60);
+
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      userProfileId: profile.id,
+      status: { in: ACTIVE_APPOINTMENT_STATUSES },
+      startTime: { lt: dayEnd },
+      endTime: { gt: dayStart },
+    },
+    select: { startTime: true, endTime: true },
+  });
+
+  const windows = [{ start: workStart, end: workEnd }];
 
   const now = new Date();
   const slots: Array<{ startTime: string; endTime: string; available: boolean }> = [];
@@ -223,8 +276,8 @@ export const getTherapistSlots = async (req: Request, res: Response) => {
   for (const window of windows) {
     for (let start = window.start; start + slotDuration <= window.end; start += 30) {
       const end = start + slotDuration;
-      const slotStart = new Date(toIsoAtDate(date, start));
-      const slotEnd = new Date(toIsoAtDate(date, end));
+      const slotStart = combineUtc8DateAndMinutes(dateOnly, start);
+      const slotEnd = combineUtc8DateAndMinutes(dateOnly, end);
 
       if (slotStart <= now) continue;
 

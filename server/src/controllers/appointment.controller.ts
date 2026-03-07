@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { processAppointmentRefund } from '../services/refund.service';
 import type { CreateAppointmentInput } from '../schemas/appointment.schemas';
+import { isSlotWithinConsultWindow } from '../utils/consultSchedule';
 
 const paymentsEnabled = process.env.PAYMENTS_ENABLED !== 'false';
 
@@ -72,6 +73,44 @@ export const createAppointment = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Provider payment account is not active' });
   }
 
+  const slotStart = new Date(body.startTime);
+  const slotEnd = new Date(body.endTime);
+
+  const publishedConsultPlans = await prisma.therapyPlan.findMany({
+    where: {
+      userProfileId: body.therapistId,
+      type: 'PERSONAL_CONSULT',
+      status: 'PUBLISHED',
+      reviewedAt: { not: null },
+      publishedAt: { not: null },
+    },
+    orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
+    select: {
+      id: true,
+      consultDateStart: true,
+      consultDateEnd: true,
+      consultWorkStartMin: true,
+      consultWorkEndMin: true,
+      consultTimezone: true,
+    },
+  });
+
+  if (publishedConsultPlans.length !== 1) {
+    return res.status(409).json({
+      code: 'CONSULT_PLAN_UNCONFIGURED',
+      message:
+        'Personal consult schedule is not configured. Exactly one published PERSONAL_CONSULT plan is required.',
+    });
+  }
+
+  const consultPlan = publishedConsultPlans[0];
+  if (!isSlotWithinConsultWindow(slotStart, slotEnd, consultPlan)) {
+    return res.status(409).json({
+      code: 'CONSULT_SLOT_OUT_OF_WINDOW',
+      message: 'Selected time is outside the provider consult schedule window.',
+    });
+  }
+
   const conflict = await prisma.appointment.findFirst({
     where: {
       userProfileId: body.therapistId,
@@ -88,8 +127,8 @@ export const createAppointment = async (req: Request, res: Response) => {
     data: {
       clientId: req.user!.id,
       userProfileId: body.therapistId,
-      startTime: new Date(body.startTime),
-      endTime: new Date(body.endTime),
+      startTime: slotStart,
+      endTime: slotEnd,
       medium: body.medium,
       clientNotes: body.clientNotes,
       status: paymentsEnabled ? 'PENDING' : 'CONFIRMED',

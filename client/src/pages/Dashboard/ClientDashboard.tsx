@@ -17,7 +17,7 @@ type Tab = 'upcoming' | 'past' | 'forms' | 'messages';
 
 export const ClientDashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, accessToken } = useAuthStore();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>('upcoming');
 
@@ -44,7 +44,7 @@ export const ClientDashboard = () => {
     queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     refetchInterval: 30000,
-    enabled: !!user,
+    enabled: isAuthenticated && !!user?.id && !!accessToken,
   });
   const unreadCount = unreadData?.count ?? 0;
 

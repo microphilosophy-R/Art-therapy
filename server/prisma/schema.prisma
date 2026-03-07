@@ -391,6 +391,11 @@ model TherapyPlan {
   introductionI18n Json?
   startTime       DateTime
   endTime         DateTime?
+  consultDateStart DateTime?
+  consultDateEnd   DateTime?
+  consultWorkStartMin Int?
+  consultWorkEndMin Int?
+  consultTimezone   String?  @default("Asia/Shanghai")
   location        String
   maxParticipants Int?
   contactInfo     String

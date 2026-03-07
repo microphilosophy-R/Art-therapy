@@ -12,11 +12,11 @@ export const Gallery = () => {
 
   const { data, isLoading } = useQuery({
     queryKey: ['gallery', page],
-    queryFn: () => listTherapyPlans({ status: 'IN_GALLERY', page, limit: 12 }),
+    queryFn: () => listTherapyPlans({ timeFilter: 'past', page, limit: 12 }),
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="container-page py-10">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-stone-900">{t('gallery.title')}</h1>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
@@ -7,6 +7,7 @@ import {
   createTherapyPlan,
   getTherapyPlan,
   updateTherapyPlan,
+  checkTherapyPlanConflicts,
   uploadTherapyPlanPoster,
   uploadTherapyPlanVideo,
   addTherapyPlanImage,
@@ -20,6 +21,7 @@ import {
   finishTherapyPlan,
   moveTherapyPlanToGallery,
   cancelTherapyPlan,
+  type ScheduleConflictItem,
 } from '../../api/therapyPlans';
 import { saveTherapyPlanAsTemplate } from '../../api/therapyPlanTemplates';
 import { draftsToApiPayload } from '../../components/therapyPlans/PlanSchedule';
@@ -59,6 +61,9 @@ export const EditTherapyPlan = () => {
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [videoUploadPercent, setVideoUploadPercent] = useState(0);
+  const [forcedStep, setForcedStep] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [forceStepSignal, setForceStepSignal] = useState(0);
+  const conflictCheckUnavailableRef = useRef(false);
 
   // Auto-save: track the plan ID created during step-by-step save in create mode
   const [autoSavePlanId, setAutoSavePlanId] = useState<string | null>(null);
@@ -66,7 +71,7 @@ export const EditTherapyPlan = () => {
   const { data: myProfile } = useQuery({
     queryKey: ['therapist', 'me'],
     queryFn: () => getTherapist(user!.id),
-    enabled: !!user,
+    enabled: !!user?.id,
   });
   const consultEnabled = myProfile?.consultEnabled ?? false;
 
@@ -164,25 +169,66 @@ export const EditTherapyPlan = () => {
     };
   };
 
-  const buildMetadataPayload = (values: TherapyPlanFormValues) => ({
-    type: values.type,
-    title: values.title.trim() || values.titleEn.trim(),
-    titleI18n: buildRequiredLocalized(values.title, values.titleEn),
-    slogan: values.slogan || undefined,
-    sloganI18n: values.slogan || values.sloganEn ? { zh: values.slogan || undefined, en: values.sloganEn || undefined } : null,
-    introduction: values.introduction.trim() || values.introductionEn.trim(),
-    introductionI18n: buildRequiredLocalized(values.introduction, values.introductionEn),
-    startTime: values.startTime ? new Date(values.startTime).toISOString() : new Date().toISOString(),
-    endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
-    location: values.location,
-    maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
-    contactInfo: values.contactInfo,
-    artSalonSubType: (values.artSalonSubType || null) as any,
-    sessionMedium: (values.sessionMedium || null) as any,
-    defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
-    posterUrl: values.poster?.type === 'custom' ? values.poster.url : null,
-    price: values.price ? parseFloat(values.price) : null,
-  });
+  const hhmmToMinutes = (value: string): number | null => {
+    if (!value || !value.includes(':')) return null;
+    const [hoursRaw, minutesRaw] = value.split(':');
+    const hours = Number(hoursRaw);
+    const minutes = Number(minutesRaw);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return hours * 60 + minutes;
+  };
+
+  const buildMetadataPayload = (values: TherapyPlanFormValues) => {
+    const payload: Record<string, any> = {
+      type: values.type,
+      title: values.title.trim() || values.titleEn.trim(),
+      titleI18n: buildRequiredLocalized(values.title, values.titleEn),
+      slogan: values.slogan || undefined,
+      sloganI18n: values.slogan || values.sloganEn ? { zh: values.slogan || undefined, en: values.sloganEn || undefined } : null,
+      introduction: values.introduction.trim() || values.introductionEn.trim(),
+      introductionI18n: buildRequiredLocalized(values.introduction, values.introductionEn),
+      location: values.location,
+      maxParticipants: values.maxParticipants ? parseInt(values.maxParticipants, 10) : null,
+      contactInfo: values.contactInfo,
+      artSalonSubType: (values.artSalonSubType || null) as any,
+      sessionMedium: (values.sessionMedium || null) as any,
+      defaultPosterId: values.poster?.type === 'default' ? values.poster.id : null,
+      posterUrl: values.poster?.type === 'custom' ? values.poster.url : null,
+      price: values.price ? parseFloat(values.price) : null,
+    };
+
+    if (values.type === 'PERSONAL_CONSULT') {
+      payload.consultTimezone = values.consultTimezone || 'Asia/Shanghai';
+      if (values.consultDateStart) payload.consultDateStart = values.consultDateStart;
+      if (values.consultDateEnd) payload.consultDateEnd = values.consultDateEnd;
+      const consultWorkStartMin = hhmmToMinutes(values.consultWorkStart);
+      const consultWorkEndMin = hhmmToMinutes(values.consultWorkEnd);
+      if (consultWorkStartMin != null) payload.consultWorkStartMin = consultWorkStartMin;
+      if (consultWorkEndMin != null) payload.consultWorkEndMin = consultWorkEndMin;
+    } else {
+      payload.startTime = values.startTime ? new Date(values.startTime).toISOString() : new Date().toISOString();
+      payload.endTime = values.endTime ? new Date(values.endTime).toISOString() : undefined;
+    }
+
+    return payload;
+  };
+
+  const formatScheduleConflictMessage = (baseMessage: string, conflicts?: ScheduleConflictItem[]) => {
+    if (!conflicts || conflicts.length === 0) return baseMessage;
+    const details = conflicts
+      .map((conflict) =>
+        conflict.type === 'plan'
+          ? t('therapyPlans.form.scheduleConflictItemPlan', {
+            title: conflict.title ?? t('common.therapyPlans', 'Plan'),
+          })
+          : t('therapyPlans.form.scheduleConflictItemAppointment', {
+            time: new Date(conflict.startTime).toLocaleString(),
+          }),
+      )
+      .join(' | ');
+    return `${baseMessage} ${details}`;
+  };
 
   const handleBeforeStepChange = async (fromStep: number, payload: StepChangePayload) => {
     const { values, posterFile, videoFile, galleryFiles, pdfFiles } = payload;
@@ -216,12 +262,63 @@ export const EditTherapyPlan = () => {
     } else if (fromStep === 2) {
       // ── Step 2 → 3: save schedule ────────────────────────────────────────
       const pid = isCreateMode ? autoSavePlanId! : id!;
-      await updateTherapyPlan(pid, {
-        startTime: values.startTime ? new Date(values.startTime).toISOString() : undefined,
-        endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
-      });
-      if (values.events.length > 0) {
-        await upsertTherapyPlanEvents(pid, { events: draftsToApiPayload(values.events) });
+      if (values.type === 'PERSONAL_CONSULT') {
+        const consultWorkStartMin = hhmmToMinutes(values.consultWorkStart);
+        const consultWorkEndMin = hhmmToMinutes(values.consultWorkEnd);
+        if (
+          !values.consultDateStart ||
+          !values.consultDateEnd ||
+          consultWorkStartMin == null ||
+          consultWorkEndMin == null
+        ) {
+          throw new Error(t('therapyPlans.form.consultWindowTitle'));
+        }
+
+        await updateTherapyPlan(pid, {
+          consultDateStart: values.consultDateStart,
+          consultDateEnd: values.consultDateEnd,
+          consultWorkStartMin,
+          consultWorkEndMin,
+          consultTimezone: values.consultTimezone || 'Asia/Shanghai',
+        });
+      } else {
+        if (!conflictCheckUnavailableRef.current) {
+          try {
+            const conflictResult = await checkTherapyPlanConflicts({
+              startTime: new Date(values.startTime).toISOString(),
+              endTime: values.endTime ? new Date(values.endTime).toISOString() : null,
+              excludePlanId: pid,
+            });
+            if (conflictResult.hasConflict) {
+              const message = formatScheduleConflictMessage(
+                t('therapyPlans.form.scheduleConflictStep2'),
+                conflictResult.conflicts,
+              );
+              const conflictError: any = new Error(message);
+              conflictError.response = {
+                data: {
+                  code: 'SCHEDULE_CONFLICT',
+                  message,
+                  conflicts: conflictResult.conflicts,
+                },
+              };
+              throw conflictError;
+            }
+          } catch (err: any) {
+            if (err?.response?.status === 404) {
+              conflictCheckUnavailableRef.current = true;
+            } else {
+              throw err;
+            }
+          }
+        }
+        await updateTherapyPlan(pid, {
+          startTime: values.startTime ? new Date(values.startTime).toISOString() : undefined,
+          endTime: values.endTime ? new Date(values.endTime).toISOString() : undefined,
+        });
+        if (values.events.length > 0) {
+          await upsertTherapyPlanEvents(pid, { events: draftsToApiPayload(values.events) });
+        }
       }
       if (!isCreateMode) invalidate();
     } else if (fromStep === 3) {
@@ -263,8 +360,18 @@ export const EditTherapyPlan = () => {
       await submitTherapyPlanForReview(pid);
       navigate('/dashboard/member');
     } catch (err: any) {
+      if (err?.response?.data?.code === 'SCHEDULE_CONFLICT') {
+        setSaveError(
+          formatScheduleConflictMessage(
+            t('therapyPlans.form.scheduleConflictSubmit'),
+            err?.response?.data?.conflicts,
+          ),
+        );
+        setForcedStep(2);
+        setForceStepSignal((prev) => prev + 1);
+        return;
+      }
       setSaveError(err?.response?.data?.message ?? t('therapyPlans.form.submitError'));
-      throw err; // re-throw so TherapyPlanForm keeps isSubmittingForReview=true on failure
     }
   };
 
@@ -401,6 +508,8 @@ export const EditTherapyPlan = () => {
         <TherapyPlanForm
           key={formKey}
           initialValues={isCreateMode ? initialCreateValues : (plan ? planToFormValues(plan) : undefined)}
+          forcedStep={forcedStep}
+          forceStepSignal={forceStepSignal}
           planId={effectivePlanId}
           onBeforeStepChange={handleBeforeStepChange}
           onSubmitForReview={canSubmitForReview ? handleSubmitForReview : undefined}

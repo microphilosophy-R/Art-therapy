@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
-import { ProductCategory } from '@prisma/client';
+import { ProductCategory, ProductStatus } from '@prisma/client';
 import {
     createProductSchema,
     updateProductSchema,
@@ -17,20 +17,41 @@ const toLocalizedRequired = (
     return { zh, en };
 };
 
+const isProductPubliclyReleased = (product: {
+    status: ProductStatus;
+    reviewedAt: Date | null;
+    submittedAt: Date | null;
+}) => product.status === 'PUBLISHED' && product.reviewedAt !== null && product.submittedAt !== null;
+
 export const getProducts = async (req: Request, res: Response) => {
-    const { category, sellerId, artistId, search, page = '1', limit = '10' } = req.query;
+    const { category, sellerId, artistId, search, status, page = '1', limit = '10' } = req.query;
     const pageNumber = parseInt(page as string, 10);
     const pageSize = parseInt(limit as string, 10);
 
     try {
         const where: any = {};
+        const requestedSellerProfileId = (sellerId || artistId) as string | undefined;
+        const requestedStatus = typeof status === 'string' ? status : undefined;
+
+        let requesterProfileId: string | null = null;
+        if (req.user?.id) {
+            const profile = await prisma.userProfile.findUnique({
+                where: { userId: req.user.id },
+                select: { id: true },
+            });
+            requesterProfileId = profile?.id ?? null;
+        }
+
+        const canViewNonPublic =
+            req.user?.role === 'ADMIN' ||
+            (!!requestedSellerProfileId && !!requesterProfileId && requestedSellerProfileId === requesterProfileId);
 
         if (category && Object.values(ProductCategory).includes(category as ProductCategory)) {
             where.category = category as ProductCategory;
         }
 
-        if (sellerId || artistId) {
-            where.userProfileId = (sellerId || artistId) as string;
+        if (requestedSellerProfileId) {
+            where.userProfileId = requestedSellerProfileId;
         }
 
         if (search) {
@@ -38,6 +59,31 @@ export const getProducts = async (req: Request, res: Response) => {
                 { title: { contains: search as string, mode: 'insensitive' } },
                 { description: { contains: search as string, mode: 'insensitive' } },
             ];
+        }
+
+        if (requestedStatus) {
+            if (canViewNonPublic) {
+                where.status = requestedStatus;
+            } else if (requestedStatus !== 'PUBLISHED') {
+                return res.json({
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        page: pageNumber,
+                        limit: pageSize,
+                        totalPages: 0,
+                    },
+                });
+            } else {
+                where.status = 'PUBLISHED';
+            }
+        } else if (!canViewNonPublic) {
+            where.status = 'PUBLISHED';
+        }
+
+        if (!canViewNonPublic) {
+            where.reviewedAt = { not: null };
+            where.submittedAt = { not: null };
         }
 
         const [products, total] = await Promise.all([
@@ -104,6 +150,14 @@ export const getProductById = async (req: Request, res: Response) => {
         });
 
         if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+
+        const canViewNonPublic =
+            req.user?.role === 'ADMIN' ||
+            (req.user?.id != null && product.userProfile?.userId === req.user.id);
+
+        if (!canViewNonPublic && !isProductPubliclyReleased(product)) {
             return res.status(404).json({ message: 'Product not found' });
         }
 
@@ -299,6 +353,9 @@ export const reviewProduct = async (req: Request, res: Response) => {
 
     const product = await prisma.product.findUnique({ where: { id } });
     if (!product) return res.status(404).json({ message: 'Product not found' });
+    if (product.status !== 'PENDING_REVIEW') {
+        return res.status(400).json({ message: 'Only pending products can be reviewed' });
+    }
 
     await prisma.product.update({
         where: { id },

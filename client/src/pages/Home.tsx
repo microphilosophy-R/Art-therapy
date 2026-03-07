@@ -13,6 +13,7 @@ import { PageLoader } from '../components/ui/Spinner';
 export const Home = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const sectionTitleClass = 'text-2xl md:text-3xl font-semibold text-stone-900';
 
   const { data: featuredPlans, isLoading: isFeaturedLoading } = useQuery({
     queryKey: ['therapy-plans', 'featured'],
@@ -60,16 +61,16 @@ export const Home = () => {
 
     return (
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: -14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.45 }}
         className={`${paddingClass} ${bgColor}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-10">
             <div>
-              <h2 className="text-xl font-semibold text-stone-900">{title}</h2>
+              <h2 className={sectionTitleClass}>{title}</h2>
               <p className="text-stone-500 mt-1">{subtitle}</p>
             </div>
             <Link
@@ -105,10 +106,10 @@ export const Home = () => {
     <div className="bg-stone-50">
       {/* Hero */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: -16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.5 }}
         className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 text-white"
       >
         <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -224,15 +225,15 @@ export const Home = () => {
 
       {/* Testimonials */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: -14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.45 }}
         className="py-20 bg-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-xl font-semibold text-stone-900">{t('home.testimonials.title')}</h2>
+            <h2 className={sectionTitleClass}>{t('home.testimonials.title')}</h2>
             <p className="text-stone-500 mt-1">{t('home.testimonials.subtitle')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -253,14 +254,14 @@ export const Home = () => {
 
       {/* CTA banner */}
       <motion.section
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: -14 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.45 }}
         className="py-20 bg-teal-700"
       >
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-xl font-semibold text-white mb-4">{t('home.ctaBanner.title')}</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-white mb-4">{t('home.ctaBanner.title')}</h2>
           <p className="text-teal-100 mb-8">
             {t('home.ctaBanner.subtitle')}
           </p>

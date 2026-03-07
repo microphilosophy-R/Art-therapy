@@ -18,7 +18,6 @@ import { PaymentMethodSelector, type PaymentMethod } from './PaymentMethodSelect
 import { AlipayPaymentForm } from './AlipayPaymentForm';
 import { WechatPaymentForm } from './WechatPaymentForm';
 import { PriceDisplay } from '../ui/PriceDisplay';
-import { formatDate, formatTime } from '../../utils/formatters';
 
 export type PaymentWorkflowStep = 'TERMS' | 'TIME' | 'INFO' | 'PAYMENT' | 'RESULT';
 
@@ -56,6 +55,29 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
     );
     const [isProcessing, setIsProcessing] = useState(false);
     const [orderGenerated, setOrderGenerated] = useState(false);
+
+    const isZh = i18n.language.startsWith('zh');
+    const locale = isZh ? 'zh-CN' : 'en-US';
+
+    const formatWorkflowDate = (value: string) => {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return value;
+        return parsed.toLocaleDateString(locale, {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+    };
+
+    const formatWorkflowTime = (value: string) => {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return value;
+        return parsed.toLocaleTimeString(locale, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: !isZh,
+        });
+    };
 
     const isPersonal = type === 'PERSONAL_CONSULT';
 
@@ -183,11 +205,11 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                 onTimeStep ? onTimeStep() : (
                                     <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
                                         <div className="flex items-center gap-3 mb-4">
-                                            <Clock className="h-5 w-5 text-teal-600" />
+                                                    <Clock className="h-5 w-5 text-teal-600" />
                                             <div>
                                                 <p className="text-xs text-stone-500 uppercase font-bold tracking-wider">{t('booking.step3.time')}</p>
                                                 <p className="text-lg font-medium text-stone-900">
-                                                    {formatDate(data.startTime)}, {formatTime(data.startTime)}
+                                                    {formatWorkflowDate(data.startTime)}{isZh ? ' ' : ', '}{formatWorkflowTime(data.startTime)}
                                                 </p>
                                             </div>
                                         </div>
@@ -199,11 +221,11 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                         <p className="text-sm text-teal-800 mb-2 font-medium">{t('payment.scheduled_for', 'The event is scheduled for:')}</p>
                                         <div className="flex items-center gap-3">
                                             <Calendar className="h-5 w-5 text-teal-600" />
-                                            <span className="text-stone-900 font-semibold">{formatDate(data.startTime)}</span>
+                                            <span className="text-stone-900 font-semibold">{formatWorkflowDate(data.startTime)}</span>
                                         </div>
                                         <div className="flex items-center gap-3 mt-2">
                                             <Clock className="h-5 w-5 text-teal-600" />
-                                            <span className="text-stone-900 font-semibold">{formatTime(data.startTime)} {data.endTime ? ` - ${formatTime(data.endTime)}` : ''}</span>
+                                            <span className="text-stone-900 font-semibold">{formatWorkflowTime(data.startTime)} {data.endTime ? ` - ${formatWorkflowTime(data.endTime)}` : ''}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg text-xs text-amber-700 border border-amber-100">
@@ -251,11 +273,11 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                             <div className="space-y-3">
                                 <div className="flex justify-between py-2 border-b border-stone-100 text-sm">
                                     <span className="text-stone-500">{t('booking.step3.date')}</span>
-                                    <span className="font-medium">{formatDate(data.startTime)}</span>
+                                    <span className="font-medium">{formatWorkflowDate(data.startTime)}</span>
                                 </div>
                                 <div className="flex justify-between py-2 border-b border-stone-100 text-sm">
                                     <span className="text-stone-500">{t('booking.step3.time')}</span>
-                                    <span className="font-medium">{formatTime(data.startTime)}</span>
+                                    <span className="font-medium">{formatWorkflowTime(data.startTime)}</span>
                                 </div>
                                 <div className="flex justify-between py-3">
                                     <span className="font-bold text-stone-900">{t('booking.step3.total')}</span>

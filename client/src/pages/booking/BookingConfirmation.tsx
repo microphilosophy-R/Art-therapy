@@ -109,7 +109,7 @@ export const BookingConfirmation = () => {
                   <Clock className="h-4 w-4" /> {t('booking.confirmation.time')}
                 </span>
                 <span className="font-medium text-stone-900">
-                  {formatTime(startTime)} 鈥?{formatTime(endTime)}
+                  {formatTime(startTime)} - {formatTime(endTime)}
                 </span>
               </div>
               <div className="flex items-center justify-between">

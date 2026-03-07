@@ -9,6 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
 import { useAuthStore } from '../../../store/authStore';
 import { getProductCoverUrl } from '../../../utils/productMedia';
+import api from '../../../api/axios';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
   DRAFT: 'outline',
@@ -28,8 +29,8 @@ export const ProductsTab = () => {
   const { data: profile } = useQuery({
     queryKey: ['my-profile'],
     queryFn: async () => {
-      const res = await fetch('/api/profile/me');
-      return res.json();
+      const res = await api.get('/profile/me');
+      return res.data;
     },
   });
 

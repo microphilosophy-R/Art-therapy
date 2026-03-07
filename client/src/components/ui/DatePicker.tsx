@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDatePicker, { registerLocale } from 'react-datepicker';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../utils/cn';
 import { format, parseISO } from 'date-fns';
@@ -29,6 +30,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const { i18n } = useTranslation();
   const selectedDate = value ? parseISO(value) : null;
+  const popperContainer = ({ children }: { children?: React.ReactNode }) => {
+    if (typeof document === 'undefined') return <>{children}</>;
+    return createPortal(<div className="date-picker-portal">{children}</div>, document.body);
+  };
 
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -49,6 +54,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         dateFormat={showTime ? 'yyyy/MM/dd HH:mm' : 'yyyy/MM/dd'}
         locale={i18n.language.startsWith('zh') ? 'zh' : undefined}
         placeholderText={placeholder}
+        popperContainer={popperContainer}
+        popperClassName="date-picker-popper"
+        popperPlacement="bottom-start"
         className={cn(
           'h-10 w-full rounded-lg border bg-white px-3 text-sm',
           error ? 'border-rose-400' : 'border-stone-300',

@@ -18,6 +18,11 @@ export interface Step2Props {
     values: {
         startTime: string;
         endTime: string;
+        consultDateStart: string;
+        consultDateEnd: string;
+        consultWorkStart: string;
+        consultWorkEnd: string;
+        consultTimezone: string;
         type: TherapyPlanType;
         events: PlanEventDraft[];
         [key: string]: any;
@@ -49,7 +54,7 @@ export const Step2Schedule = ({
     const { data: appointmentData } = useQuery({
         queryKey: ['appointments', user?.id, { status: ['CONFIRMED', 'IN_PROGRESS'] }],
         queryFn: () => getAppointments({ status: ['CONFIRMED', 'IN_PROGRESS'] }),
-        enabled: !!user?.id,
+        enabled: !!user?.id && values.type !== 'PERSONAL_CONSULT',
     });
 
     // Fetch own plans; filter to statuses the server conflict check uses:
@@ -57,8 +62,8 @@ export const Step2Schedule = ({
     const CONFLICT_PLAN_STATUSES = new Set(['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS']);
     const { data: plansData } = useQuery({
         queryKey: ['therapy-plans', user?.id, 'schedule-context'],
-        queryFn: () => listTherapyPlans({}),
-        enabled: !!user?.id,
+        queryFn: () => listTherapyPlans({ role: 'creator', limit: 50 }),
+        enabled: !!user?.id && values.type !== 'PERSONAL_CONSULT',
     });
 
     let calendarEvents: Array<any> = [];
@@ -133,6 +138,68 @@ export const Step2Schedule = ({
             className: 'fc-event-draft', // For potential dashed styling
             textColor: '#fff',
         });
+    }
+
+    if (values.type === 'PERSONAL_CONSULT') {
+        return (
+            <div className="space-y-8">
+                <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-5">
+                    <h3 className="text-sm font-semibold text-stone-900">
+                        {t('therapyPlans.form.consultWindowTitle')}
+                    </h3>
+                    <p className="text-xs text-stone-500">
+                        {t('therapyPlans.form.consultWindowHint')}
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <DatePicker
+                            label={t('therapyPlans.form.consultDateStart')}
+                            value={values.consultDateStart}
+                            onChange={(val) => set('consultDateStart', val)}
+                            error={errors.consultDateStart}
+                        />
+                        <DatePicker
+                            label={t('therapyPlans.form.consultDateEnd')}
+                            value={values.consultDateEnd}
+                            onChange={(val) => set('consultDateEnd', val)}
+                            error={errors.consultDateEnd}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-stone-700">{t('therapyPlans.form.consultWorkStart')}</label>
+                            <input
+                                type="time"
+                                value={values.consultWorkStart}
+                                onChange={(e) => set('consultWorkStart', e.target.value)}
+                                className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            />
+                            {errors.consultWorkStart && <p className="text-xs text-rose-500">{errors.consultWorkStart}</p>}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-stone-700">{t('therapyPlans.form.consultWorkEnd')}</label>
+                            <input
+                                type="time"
+                                value={values.consultWorkEnd}
+                                onChange={(e) => set('consultWorkEnd', e.target.value)}
+                                className="h-10 rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                            />
+                            {errors.consultWorkEnd && <p className="text-xs text-rose-500">{errors.consultWorkEnd}</p>}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-stone-700">{t('therapyPlans.form.consultTimezone')}</label>
+                            <input
+                                type="text"
+                                value="UTC+8 (Asia/Shanghai)"
+                                readOnly
+                                className="h-10 rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-600"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (

@@ -80,7 +80,18 @@ export const Step1Metadata = ({
                 value={values.type}
                 onChange={(e) => {
                     const newType = e.target.value as TherapyPlanType;
-                    setValues((prev: any) => ({ ...prev, type: newType, events: [] }));
+                    setValues((prev: any) => ({
+                        ...prev,
+                        type: newType,
+                        events: [],
+                        startTime: newType === 'PERSONAL_CONSULT' ? '' : prev.startTime,
+                        endTime: newType === 'PERSONAL_CONSULT' ? '' : prev.endTime,
+                        consultDateStart: newType === 'PERSONAL_CONSULT' ? prev.consultDateStart : '',
+                        consultDateEnd: newType === 'PERSONAL_CONSULT' ? prev.consultDateEnd : '',
+                        consultWorkStart: newType === 'PERSONAL_CONSULT' ? prev.consultWorkStart : '',
+                        consultWorkEnd: newType === 'PERSONAL_CONSULT' ? prev.consultWorkEnd : '',
+                        consultTimezone: newType === 'PERSONAL_CONSULT' ? (prev.consultTimezone || 'Asia/Shanghai') : 'Asia/Shanghai',
+                    }));
                     setErrors((prev: any) => ({ ...prev, type: undefined }));
                 }}
                 error={errors.type}

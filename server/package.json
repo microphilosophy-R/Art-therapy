@@ -12,6 +12,9 @@
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:backfill:member-certs": "tsx prisma/scripts/backfill-member-certs.ts",
+    "db:backfill:therapy-plan-review-meta": "tsx prisma/scripts/backfill-therapy-plan-review-meta.ts",
+    "db:backfill:product-review-meta": "tsx prisma/scripts/backfill-product-review-meta.ts",
+    "db:backfill:personal-consult-window": "tsx prisma/scripts/backfill-personal-consult-window.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

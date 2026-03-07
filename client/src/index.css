@@ -36,4 +36,26 @@
   .container-page {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+
+  .route-enter-from-top {
+    animation: route-enter-from-top 240ms ease-out;
+  }
+}
+
+@keyframes route-enter-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Keep DatePicker popup above FullCalendar and wizard containers. */
+.date-picker-portal .react-datepicker-popper,
+.date-picker-popper {
+  z-index: 1000 !important;
 }

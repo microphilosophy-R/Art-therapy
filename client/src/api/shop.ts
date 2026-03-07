@@ -38,6 +38,7 @@ export const getProducts = async (params?: {
     category?: string;
     artistId?: string;
     sellerId?: string;
+    status?: string;
     search?: string;
     page?: number;
     limit?: number;

@@ -5,6 +5,7 @@ import {
   listPlans,
   getPlan,
   updatePlan,
+  checkScheduleConflicts,
   submitForReview,
   reviewPlan,
   archivePlan,
@@ -40,6 +41,7 @@ import {
   updateTherapyPlanSchema,
   reviewTherapyPlanSchema,
   listTherapyPlansSchema,
+  checkTherapyPlanConflictsSchema,
   upsertPlanEventsSchema,
 } from '../schemas/therapyPlan.schemas';
 import { planSignupSchema } from '../schemas/planSignup.schemas';
@@ -107,6 +109,14 @@ therapyPlanRouter.post(
   requireCertificate('THERAPIST'),
   validate(createTherapyPlanSchema),
   createPlan,
+);
+therapyPlanRouter.post(
+  '/check-conflicts',
+  authenticate,
+  authorize('MEMBER', 'ADMIN'),
+  requireCertificate('THERAPIST'),
+  validate(checkTherapyPlanConflictsSchema),
+  checkScheduleConflicts,
 );
 therapyPlanRouter.delete('/:id', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlan);
 therapyPlanRouter.post('/:id/submit', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), submitForReview);

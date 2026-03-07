@@ -9,6 +9,7 @@ import { Loader2, ArrowLeft, ShoppingCart, Minus, Plus } from 'lucide-react';
 import { pickLocalizedText } from '../../utils/i18nContent';
 import { followUser, getFollowStatus, unfollowUser } from '../../api/follows';
 import { getProductCoverUrl } from '../../utils/productMedia';
+import { formatCNY } from '../../utils/formatters';
 
 export const ProductDetailsPage = () => {
     const { t, i18n } = useTranslation();
@@ -34,6 +35,47 @@ export const ProductDetailsPage = () => {
         },
     });
 
+    const sellerUser = product?.userProfile?.user ?? product?.artist?.user;
+    const sellerName = sellerUser
+        ? `${sellerUser.firstName} ${sellerUser.lastName}`.trim()
+        : 'Unknown Seller';
+    const sellerInitial = sellerUser?.firstName?.charAt(0) || '?';
+    const sellerAvatar = sellerUser?.avatarUrl ?? null;
+    const sellerUserId = sellerUser?.id;
+    const canFollowSeller = !!(isAuthenticated && user?.role === 'MEMBER' && sellerUserId && sellerUserId !== user.id);
+    const productTitle = pickLocalizedText(product?.titleI18n, i18n.language, product?.title);
+    const productDescription = pickLocalizedText(product?.descriptionI18n, i18n.language, product?.description);
+
+    const productMediaImages = useMemo(() => {
+        if (!product) return [];
+        const coverUrl = getProductCoverUrl(product);
+        const gallery = product.images ?? [];
+        if (!coverUrl) return gallery;
+        return [{ id: 'cover', url: coverUrl }, ...gallery.filter((img) => img.url !== coverUrl)];
+    }, [product]);
+    const activeMedia = productMediaImages[activeImage] ?? productMediaImages[0];
+
+    const { data: followStatus } = useQuery({
+        queryKey: ['follow-status', sellerUserId],
+        queryFn: () => getFollowStatus(sellerUserId!),
+        enabled: canFollowSeller,
+    });
+
+    const followMutation = useMutation({
+        mutationFn: async () => {
+            if (!sellerUserId) throw new Error('Seller not found');
+            return followUser(sellerUserId);
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', sellerUserId] }),
+    });
+    const unfollowMutation = useMutation({
+        mutationFn: async () => {
+            if (!sellerUserId) throw new Error('Seller not found');
+            return unfollowUser(sellerUserId);
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', sellerUserId] }),
+    });
+
     if (isLoading) {
         return (
             <div className="flex justify-center flex-col items-center py-32 space-y-4">
@@ -53,38 +95,6 @@ export const ProductDetailsPage = () => {
             </div>
         );
     }
-    const sellerUser = product.userProfile?.user ?? product.artist?.user;
-    const sellerName = sellerUser
-        ? `${sellerUser.firstName} ${sellerUser.lastName}`.trim()
-        : 'Unknown Seller';
-    const sellerInitial = sellerUser?.firstName?.charAt(0) || '?';
-    const sellerAvatar = sellerUser?.avatarUrl ?? null;
-    const sellerUserId = sellerUser?.id;
-    const canFollowSeller = !!(isAuthenticated && user?.role === 'MEMBER' && sellerUserId && sellerUserId !== user.id);
-    const productTitle = pickLocalizedText(product.titleI18n, i18n.language, product.title);
-    const productDescription = pickLocalizedText(product.descriptionI18n, i18n.language, product.description);
-    const productMediaImages = useMemo(() => {
-        const coverUrl = getProductCoverUrl(product);
-        const gallery = product.images ?? [];
-        if (!coverUrl) return gallery;
-        return [{ id: 'cover', url: coverUrl }, ...gallery.filter((img) => img.url !== coverUrl)];
-    }, [product]);
-    const activeMedia = productMediaImages[activeImage] ?? productMediaImages[0];
-
-    const { data: followStatus } = useQuery({
-        queryKey: ['follow-status', sellerUserId],
-        queryFn: () => getFollowStatus(sellerUserId!),
-        enabled: canFollowSeller,
-    });
-
-    const followMutation = useMutation({
-        mutationFn: () => followUser(sellerUserId!),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', sellerUserId] }),
-    });
-    const unfollowMutation = useMutation({
-        mutationFn: () => unfollowUser(sellerUserId!),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-status', sellerUserId] }),
-    });
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -175,7 +185,7 @@ export const ProductDetailsPage = () => {
                     </div>
 
                     <div className="text-3xl font-bold text-gray-900 mb-6">
-                        楼{Number(product.price).toFixed(2)}
+                        {formatCNY(Number(product.price))}
                     </div>
 
                     <div className="prose prose-stone max-w-none text-gray-600 mb-8 whitespace-pre-line">

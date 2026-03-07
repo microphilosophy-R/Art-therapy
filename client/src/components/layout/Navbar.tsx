@@ -13,7 +13,7 @@ import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { ShoppingCart } from 'lucide-react';
 
 export const Navbar = () => {
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, isAuthenticated, accessToken, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,18 +35,23 @@ export const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const canFetchUnread = isAuthenticated && !!user?.id && !!accessToken;
+  const canFetchCart = canFetchUnread && user?.role === 'MEMBER';
+
   const { data: unreadData } = useQuery({
     queryKey: ['unread-count'],
     queryFn: getUnreadCount,
     refetchInterval: 30000,
-    enabled: isAuthenticated,
+    enabled: canFetchUnread,
+    retry: false,
   });
   const unreadCount = unreadData?.count ?? 0;
 
   const { data: cartData } = useQuery({
     queryKey: ['cart'],
     queryFn: getCart,
-    enabled: isAuthenticated,
+    enabled: canFetchCart,
+    retry: false,
   });
   const cartItemCount = cartData?.reduce((acc, item) => acc + item.quantity, 0) ?? 0;
 
@@ -56,7 +61,7 @@ export const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 font-semibold text-stone-900">
-            <img src="/logo.png" alt="ArtTherapy" className="h-6 w-6 object-contain" />
+            <img src="/logo_new.jpg" alt="ArtTherapy" className="h-8 w-8 object-contain rounded-sm" />
             <span className="text-lg">ArtTherapy</span>
           </Link>
 

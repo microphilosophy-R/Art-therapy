@@ -10,7 +10,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 font-semibold text-stone-900 mb-3">
-              <img src="/logo.png" alt="ArtTherapy" className="h-5 w-5 object-contain" />
+              <img src="/logo_new.jpg" alt="ArtTherapy" className="h-5 w-5 object-contain rounded-sm" />
               ArtTherapy
             </div>
             <p className="text-sm text-stone-500 max-w-xs">

@@ -47,6 +47,14 @@ Capabilities are enforced by backend middleware (`authorize(...)` + `requireCert
 - Bilingual content support (`zh`/`en`) with translation checkpoint editing
 - Member address book management for delivery profiles (up to 6 saved addresses)
 
+## Recent Updates (2026-03-07)
+
+- Personal consult scheduling was refactored to use a date range + daily working window model (`Asia/Shanghai` / UTC+8) with derived plan window timestamps for consistency.
+- Therapy plan conflict detection was moved to Step 2 progression checks, while submit-time conflict validation remains as a backend safety net.
+- Public therapy plan visibility is now strictly gated by review metadata (`reviewedAt` + `publishedAt`) in addition to public lifecycle status.
+- Added one-time DB consistency backfill for personal consult schedule windows and a consolidated backfill runner command: `npm run db:backfill:all`.
+- Legacy/temporary cleanup completed for obsolete one-time scripts and generated debug/build artifact files.
+
 ## Recent Updates (2026-03-06)
 
 - Product media parity landed in the wizard: Step 1 now requires a poster (default public posters or custom upload), and Step 2 supports optional gallery images and optional video; product media fields now persist poster/video explicitly.
@@ -150,6 +158,10 @@ Server (`server/package.json`):
 - `npm run db:migrate` - Prisma migrate
 - `npm run db:generate` - Prisma client generate
 - `npm run db:seed` - seed data
+- `npm run db:backfill:therapy-plan-review-meta` - backfill missing therapy-plan review/publish timestamps
+- `npm run db:backfill:product-review-meta` - backfill missing product review timestamps
+- `npm run db:backfill:personal-consult-window` - normalize personal-consult schedule window fields
+- `npm run db:backfill:all` - run all active backfill consistency scripts
 - `npm run db:studio` - Prisma Studio
 
 Client (`client/package.json`):

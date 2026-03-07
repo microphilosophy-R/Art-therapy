@@ -39,7 +39,34 @@ echo "   -> Generating Prisma Client..."
 npx prisma generate
 
 echo "   -> Running Database Migrations..."
-npx prisma migrate deploy
+MIGRATE_LOG="$(mktemp)"
+MIGRATE_RECOVERED=0
+if ! npx prisma migrate deploy 2>&1 | tee "$MIGRATE_LOG"; then
+    if grep -q 'Error: P3018' "$MIGRATE_LOG" && grep -q 'type "Role" already exists' "$MIGRATE_LOG"; then
+        echo ""
+        echo "Migration baseline conflict detected (P3018: type \"Role\" already exists)."
+        echo "This usually means the database already has legacy/app tables but Prisma migration history is missing."
+        echo "Run these commands manually in $APP_DIR/server, then run this script again:"
+        echo "  npx prisma migrate resolve --applied 20260303143933_unified_profile_system"
+        echo "  npx prisma migrate deploy"
+        echo ""
+    elif grep -q 'Error: P3018' "$MIGRATE_LOG" \
+      && grep -q 'Migration name: 20260306020648_npm_run_db_generate' "$MIGRATE_LOG" \
+      && grep -q 'relation "MemberAddress" does not exist' "$MIGRATE_LOG"; then
+        echo ""
+        echo "Known legacy migration ordering issue detected (20260306020648_npm_run_db_generate)."
+        echo "Applying safe recovery automatically: mark this migration as applied, then continue deploy..."
+        npx prisma migrate resolve --applied 20260306020648_npm_run_db_generate
+        npx prisma migrate deploy
+        MIGRATE_RECOVERED=1
+        echo ""
+    fi
+    rm -f "$MIGRATE_LOG"
+    if [ "$MIGRATE_RECOVERED" -eq 0 ]; then
+        exit 1
+    fi
+fi
+rm -f "$MIGRATE_LOG"
 
 echo "   -> Building TypeScript API..."
 npm run build

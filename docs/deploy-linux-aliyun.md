@@ -676,6 +676,41 @@ npx prisma generate
 pm2 restart art-therapy-api
 ```
 
+If deploy fails with `P3018` and `ERROR: type "Role" already exists` on migration `20260303143933_unified_profile_system`:
+
+- Cause: the database already contains legacy schema objects, but Prisma migration history was not baselined.
+- Safe recovery (production):
+
+```bash
+cd ~/art-therapy/server
+
+# 1) Confirm migration state
+npx prisma migrate status
+
+# 2) Mark the baseline migration as already applied
+npx prisma migrate resolve --applied 20260303143933_unified_profile_system
+
+# 3) Apply the remaining migrations
+npx prisma migrate deploy
+npx prisma generate
+pm2 restart art-therapy-api
+```
+
+- Important: use `--applied` only when the target DB already has the baseline objects (User/UserProfile/TherapyPlan/Product tables and enums). If not, stop and take a DB backup before manual SQL repair.
+
+If deploy/reset fails with `P3018`, migration `20260306020648_npm_run_db_generate`, and `ERROR: relation "MemberAddress" does not exist`:
+
+- Cause: a legacy no-op migration tries to alter `MemberAddress` before the later migration that creates it.
+- Safe recovery:
+
+```bash
+cd ~/art-therapy/server
+npx prisma migrate resolve --applied 20260306020648_npm_run_db_generate
+npx prisma migrate deploy
+npx prisma generate
+pm2 restart art-therapy-api
+```
+
 If Windows local dev shows Prisma engine rename `EPERM`, stop all Node processes and rerun `prisma generate`.
 
 If browser console shows:

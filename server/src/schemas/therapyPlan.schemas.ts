@@ -40,7 +40,7 @@ export const createTherapyPlanSchema = z
     contactInfo: z.string().min(1).max(300),
     artSalonSubType: z.enum(ART_SALON_SUBTYPES).optional().nullable(),
     sessionMedium: z.enum(['IN_PERSON', 'VIDEO']).optional().nullable(),
-    defaultPosterId: z.number().int().min(1).max(6).optional().nullable(),
+    defaultPosterId: z.number().int().min(1).max(10).optional().nullable(),
     posterUrl: z.string().url().optional().nullable(),
     price: z.number().min(0).optional().nullable(),
   })
@@ -84,7 +84,7 @@ export const updateTherapyPlanSchema = z
     contactInfo: z.string().min(1).max(300).optional(),
     artSalonSubType: z.enum(ART_SALON_SUBTYPES).optional().nullable(),
     sessionMedium: z.enum(['IN_PERSON', 'VIDEO']).optional().nullable(),
-    defaultPosterId: z.number().int().min(1).max(6).optional().nullable(),
+    defaultPosterId: z.number().int().min(1).max(10).optional().nullable(),
     posterUrl: z.string().url().optional().nullable(),
     price: z.number().min(0).optional().nullable(),
   });

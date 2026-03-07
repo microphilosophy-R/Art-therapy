@@ -4,6 +4,7 @@ import { Calendar, Clock, MapPin, Users, Phone, Info, Image as ImageIcon, Video,
 import type { TherapyPlanFormValues } from '../../../pages/therapy-plans/TherapyPlanForm';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { getDefaultPosterUrl } from '../../../utils/defaultPosters';
 
 interface Step4Props {
     values: TherapyPlanFormValues;
@@ -48,7 +49,7 @@ export const Step4Preview = ({
     const getPosterPreview = () => {
         if (posterFile) return URL.createObjectURL(posterFile);
         if (values.poster?.type === 'custom') return values.poster.url;
-        if (values.poster?.type === 'default') return `/posters/default-${values.poster.id}.jpg`;
+        if (values.poster?.type === 'default') return getDefaultPosterUrl(values.poster.id);
         return null;
     };
 

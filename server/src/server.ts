@@ -2,6 +2,7 @@ import 'dotenv/config';
 import app from './app';
 import { prisma } from './lib/prisma';
 import { redis } from './lib/redis';
+import { verifyProductMediaSchema } from './lib/startupChecks';
 import { startScheduledJobs } from './services/scheduler.service';
 import { createServer } from 'http';
 import { initSocketServer } from './lib/socket';
@@ -20,6 +21,8 @@ async function main() {
   // Verify DB connection
   await prisma.$connect();
   console.log('[DB] Connected to PostgreSQL');
+  await verifyProductMediaSchema();
+  console.log('[StartupCheck] Product media schema verified');
 
   // Connect Redis (non-fatal in development)
   try {

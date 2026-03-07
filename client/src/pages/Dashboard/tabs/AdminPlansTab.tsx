@@ -11,6 +11,7 @@ import { Spinner } from '../../../components/ui/Spinner';
 import { Textarea } from '../../../components/ui/Textarea';
 import { Select } from '../../../components/ui/Select';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
+import { getFallbackPosterUrl } from '../../../utils/defaultPosters';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
   DRAFT: 'outline',
@@ -97,13 +98,13 @@ export const AdminPlansTab = () => {
               <div className="flex items-center gap-4 p-4">
                 {/* Poster thumbnail */}
                 <div className="h-14 w-20 flex-shrink-0 rounded-md overflow-hidden bg-stone-100">
-                  <img
-                    src={getPosterUrl(plan)}
-                    alt={plan.title}
-                    className="h-full w-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/posters/default-1.jpg'; }}
-                  />
-                </div>
+                    <img
+                      src={getPosterUrl(plan)}
+                      alt={plan.title}
+                      className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = getFallbackPosterUrl(); }}
+                    />
+                  </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">

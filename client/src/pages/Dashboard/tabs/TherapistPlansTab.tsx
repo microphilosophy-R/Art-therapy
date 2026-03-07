@@ -14,6 +14,7 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Spinner } from '../../../components/ui/Spinner';
 import { getPosterUrl } from '../../../utils/therapyPlanUtils';
+import { getFallbackPosterUrl } from '../../../utils/defaultPosters';
 
 const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline'> = {
   DRAFT: 'outline',
@@ -87,7 +88,7 @@ export const TherapistPlansTab = () => {
                   src={getPosterUrl(plan)}
                   alt={plan.title}
                   className="h-full w-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/posters/default-1.jpg'; }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = getFallbackPosterUrl(); }}
                 />
               </div>
 

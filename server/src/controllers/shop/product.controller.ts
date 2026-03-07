@@ -22,26 +22,77 @@ export const getProducts = async (req: Request, res: Response) => {
     const pageNumber = parseInt(page as string, 10);
     const pageSize = parseInt(limit as string, 10);
 
-    const where: any = {};
+    try {
+        const where: any = {};
 
-    if (category && Object.values(ProductCategory).includes(category as ProductCategory)) {
-        where.category = category as ProductCategory;
+        if (category && Object.values(ProductCategory).includes(category as ProductCategory)) {
+            where.category = category as ProductCategory;
+        }
+
+        if (sellerId || artistId) {
+            where.userProfileId = (sellerId || artistId) as string;
+        }
+
+        if (search) {
+            where.OR = [
+                { title: { contains: search as string, mode: 'insensitive' } },
+                { description: { contains: search as string, mode: 'insensitive' } },
+            ];
+        }
+
+        const [products, total] = await Promise.all([
+            prisma.product.findMany({
+                where,
+                include: {
+                    images: { orderBy: { order: 'asc' } },
+                    userProfile: {
+                        include: {
+                            user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } }
+                        }
+                    }
+                },
+                skip: (pageNumber - 1) * pageSize,
+                take: pageSize,
+                orderBy: { createdAt: 'desc' },
+            }),
+            prisma.product.count({ where }),
+        ]);
+
+        res.json({
+            data: products,
+            pagination: {
+                total,
+                page: pageNumber,
+                limit: pageSize,
+                totalPages: Math.ceil(total / pageSize),
+            },
+        });
+    } catch (error) {
+        const err = error as { name?: string; code?: string; message?: string };
+        console.error('[ProductController.getProducts] Query failed', {
+            query: {
+                category: category ?? null,
+                sellerId: sellerId ?? null,
+                artistId: artistId ?? null,
+                hasSearch: typeof search === 'string' ? search.length > 0 : false,
+                page: pageNumber,
+                limit: pageSize,
+            },
+            error: {
+                name: err.name ?? 'UnknownError',
+                code: err.code ?? null,
+                message: err.message ?? String(error),
+            },
+        });
+        throw error;
     }
+};
 
-    if (sellerId || artistId) {
-        where.userProfileId = (sellerId || artistId) as string;
-    }
-
-    if (search) {
-        where.OR = [
-            { title: { contains: search as string, mode: 'insensitive' } },
-            { description: { contains: search as string, mode: 'insensitive' } },
-        ];
-    }
-
-    const [products, total] = await Promise.all([
-        prisma.product.findMany({
-            where,
+export const getProductById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const product = await prisma.product.findUnique({
+            where: { id },
             include: {
                 images: { orderBy: { order: 'asc' } },
                 userProfile: {
@@ -49,45 +100,26 @@ export const getProducts = async (req: Request, res: Response) => {
                         user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } }
                     }
                 }
-            },
-            skip: (pageNumber - 1) * pageSize,
-            take: pageSize,
-            orderBy: { createdAt: 'desc' },
-        }),
-        prisma.product.count({ where }),
-    ]);
-
-    res.json({
-        data: products,
-        pagination: {
-            total,
-            page: pageNumber,
-            limit: pageSize,
-            totalPages: Math.ceil(total / pageSize),
-        },
-    });
-};
-
-export const getProductById = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    const product = await prisma.product.findUnique({
-        where: { id },
-        include: {
-            images: { orderBy: { order: 'asc' } },
-            userProfile: {
-                include: {
-                    user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } }
-                }
             }
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
         }
-    });
 
-    if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        res.json(product);
+    } catch (error) {
+        const err = error as { name?: string; code?: string; message?: string };
+        console.error('[ProductController.getProductById] Query failed', {
+            productId: id,
+            error: {
+                name: err.name ?? 'UnknownError',
+                code: err.code ?? null,
+                message: err.message ?? String(error),
+            },
+        });
+        throw error;
     }
-
-    res.json(product);
 };
 
 export const createProduct = async (req: Request, res: Response) => {

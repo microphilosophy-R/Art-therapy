@@ -11,7 +11,7 @@ const productBaseSchema = z.object({
   titleI18n: localizedTextRequired.optional(),
   description: z.string().min(10, 'Description must be at least 10 characters').optional(),
   descriptionI18n: localizedTextRequired.optional(),
-  defaultPosterId: z.number().int().min(1).max(6).optional().nullable(),
+  defaultPosterId: z.number().int().min(1).max(10).optional().nullable(),
   posterUrl: z.string().url().optional().nullable(),
   videoUrl: z.string().url().optional().nullable(),
   price: z.number().positive('Price must be positive'),

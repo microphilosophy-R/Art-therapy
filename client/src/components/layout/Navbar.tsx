@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut, LayoutDashboard, Heart, Bell } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
@@ -56,7 +56,7 @@ export const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 font-semibold text-stone-900">
-            <Heart className="h-5 w-5 text-teal-600 fill-teal-600" />
+            <img src="/logo.png" alt="ArtTherapy" className="h-6 w-6 object-contain" />
             <span className="text-lg">ArtTherapy</span>
           </Link>
 

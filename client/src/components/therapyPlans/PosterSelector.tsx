@@ -2,8 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Upload } from 'lucide-react';
 import { validateFile } from '../../utils/fileValidation';
-
-const DEFAULT_POSTER_COUNT = 6;
+import { DEFAULT_POSTER_COUNT, getDefaultPosterUrl } from '../../utils/defaultPosters';
 
 export type PosterValue =
   | { type: 'default'; id: number }
@@ -65,7 +64,7 @@ export const PosterSelector = ({
               }`}
           >
             <img
-              src={`/posters/default-${n}.jpg`}
+              src={getDefaultPosterUrl(n) ?? ''}
               alt={t('therapyPlans.form.defaultPosterAlt', { n })}
               className="w-full h-full object-cover"
               onError={(e) => {

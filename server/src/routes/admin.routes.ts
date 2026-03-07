@@ -7,6 +7,7 @@ import { getPendingPlans, reviewPlan } from '../controllers/therapyPlan.controll
 import { getReviewTimeline, getScheduleTimeline } from '../controllers/adminTimeline.controller';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
+import { asyncHandler } from '../middleware/asyncHandler';
 
 export const adminRouter = Router();
 
@@ -17,8 +18,8 @@ adminRouter.patch('/users/:id', updateUser);
 adminRouter.get('/stats', getAdminStats);
 adminRouter.get('/certificates', listPendingCertificates);
 adminRouter.patch('/certificates/:id', reviewCertificate);
-adminRouter.get('/products/pending', ProductController.getPendingProducts);
-adminRouter.post('/products/:id/review', ProductController.reviewProduct);
+adminRouter.get('/products/pending', asyncHandler(ProductController.getPendingProducts));
+adminRouter.post('/products/:id/review', asyncHandler(ProductController.reviewProduct));
 adminRouter.get('/profiles/pending', getPendingProfiles);
 adminRouter.post('/profiles/:id/review', reviewProfile);
 adminRouter.get('/therapy-plans/pending', getPendingPlans);

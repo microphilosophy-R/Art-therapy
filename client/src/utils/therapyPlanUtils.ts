@@ -1,4 +1,5 @@
 import type { TherapyPlan } from '../types';
+import { getDefaultPosterUrl, getFallbackPosterUrl } from './defaultPosters';
 
 /**
  * Returns the URL for a therapy plan's poster image.
@@ -8,6 +9,5 @@ export const getPosterUrl = (
   plan: Pick<TherapyPlan, 'defaultPosterId' | 'posterUrl'>,
 ): string => {
   if (plan.posterUrl) return plan.posterUrl;
-  if (plan.defaultPosterId) return `/posters/default-${plan.defaultPosterId}.jpg`;
-  return '/posters/default-1.jpg';
+  return getDefaultPosterUrl(plan.defaultPosterId) ?? getFallbackPosterUrl();
 };

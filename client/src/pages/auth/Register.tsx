@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
-import { Heart } from 'lucide-react';
 import { register as registerApi } from '../../api/auth';
 import { useAuthStore } from '../../store/authStore';
 import { Input } from '../../components/ui/Input';
@@ -48,7 +47,7 @@ export const Register = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 font-semibold text-stone-900 text-xl mb-2">
-            <Heart className="h-5 w-5 text-teal-600 fill-teal-600" /> ArtTherapy
+            <img src="/logo.png" alt="ArtTherapy" className="h-6 w-6 object-contain" /> ArtTherapy
           </div>
           <h1 className="text-2xl font-bold text-stone-900">{t('auth.register.title')}</h1>
           <p className="text-stone-500 mt-1 text-sm">{t('auth.register.subtitle')}</p>

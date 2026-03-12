@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { wechatpay } from '../lib/wechat';
 import { sendAppointmentConfirmation } from './email.service';
+import { notifySellerOnOrderPaid } from './order-notification.service';
 
 const PLATFORM_FEE_PERCENT = Number(process.env.STRIPE_PLATFORM_FEE_PERCENT ?? 15);
 
@@ -255,6 +256,7 @@ export const handleWechatNotification = async (
         data: { status: 'PAID' },
       }),
     ]);
+    await notifySellerOnOrderPaid(productPayment.orderId).catch(() => {});
     return;
   }
 

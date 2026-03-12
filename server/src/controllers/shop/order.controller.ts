@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { z } from 'zod';
+import { validateCartForCheckout } from '../../services/cart-validation.service';
+import { notifySellerOnOrderPlaced, notifyBuyerOnOrderShipped, notifyBuyerOnOrderDelivered } from '../../services/order-notification.service';
 
 const legacyAddressSchema = z
     .object({
@@ -120,29 +122,17 @@ export const createOrder = async (req: Request, res: Response) => {
         throw error;
     }
 
-    // 1. Fetch cart items
+    // 1. Validate cart
+    const validation = await validateCartForCheckout(req.user!.id);
+    if (!validation.valid) {
+        return res.status(400).json({ message: 'Cart validation failed', errors: validation.errors });
+    }
+
+    // 2. Fetch cart items
     const cartItems = await prisma.cartItem.findMany({
         where: { userId: req.user!.id },
         include: { product: true },
     });
-
-    if (cartItems.length === 0) {
-        return res.status(400).json({ message: 'Cart is empty' });
-    }
-
-    // 2. Validate stock and calculate total amount
-    let totalAmount = 0;
-    for (const item of cartItems) {
-        if (item.product.stock < item.quantity) {
-            return res.status(400).json({
-                message: `Product ${item.product.title} has insufficient stock (remaining: ${item.product.stock})`
-            });
-        }
-        // Assumes price is a Decimal in Prisma, convert to number or use Prisma's Decimal operations
-        // Store amount in cents for payments
-        const priceCents = Math.round(Number(item.product.price) * 100);
-        totalAmount += priceCents * item.quantity;
-    }
 
     // 3. Create order in a transaction to ensure atomicity
     const order = await prisma.$transaction(async (tx) => {
@@ -151,7 +141,7 @@ export const createOrder = async (req: Request, res: Response) => {
         const newOrder = await txAny.order.create({
             data: {
                 userId: req.user!.id,
-                totalAmount,
+                totalAmount: validation.totalAmount,
                 status: 'PENDING',
                 memberAddressId: addressData.memberAddressId,
                 province: addressData.province,
@@ -188,6 +178,8 @@ export const createOrder = async (req: Request, res: Response) => {
 
         return newOrder;
     });
+
+    await notifySellerOnOrderPlaced(order.id).catch(() => {});
 
     res.status(201).json(mapOrderResponse(order));
 };
@@ -321,10 +313,47 @@ export const fulfillOrder = async (req: Request, res: Response) => {
         data: {
             status: 'SHIPPED',
             carrierName,
-            trackingNumber
+            trackingNumber,
+            shippedAt: new Date()
         },
         include: { items: { include: { product: true } } }
     });
+
+    await notifyBuyerOnOrderShipped(id).catch(() => {});
+
+    res.json(mapOrderResponse(updatedOrder));
+};
+
+export const confirmDelivery = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    const order = await prisma.order.findUnique({
+        where: { id },
+        include: { items: { include: { product: true } } }
+    });
+
+    if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.userId !== req.user!.id) {
+        return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    if (order.status !== 'SHIPPED') {
+        return res.status(400).json({ message: 'Order must be SHIPPED to confirm delivery' });
+    }
+
+    const updatedOrder = await prisma.order.update({
+        where: { id },
+        data: {
+            status: 'DELIVERED',
+            deliveredAt: new Date()
+        },
+        include: { items: { include: { product: true } } }
+    });
+
+    await notifyBuyerOnOrderDelivered(id).catch(() => {});
 
     res.json(mapOrderResponse(updatedOrder));
 };
@@ -336,5 +365,6 @@ export const OrderController = {
     getMyOrders,
     getOrderById,
     getArtistOrders,
-    fulfillOrder
+    fulfillOrder,
+    confirmDelivery
 };

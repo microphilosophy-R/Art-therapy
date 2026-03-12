@@ -115,6 +115,14 @@ enum MessageTrigger {
   PROFILE_SUBMITTED
   PROFILE_APPROVED
   PROFILE_REJECTED
+  ORDER_PLACED
+  ORDER_PAID
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  REFUND_REQUESTED
+  REFUND_APPROVED
+  REFUND_REJECTED
 }
 
 enum ProfileStatus {
@@ -537,6 +545,8 @@ model Message {
   plan   TherapyPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   conversationId String?
   conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  orderId String?
+  order   Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
@@ -625,9 +635,14 @@ model Order {
   // Logistics
   carrierName    String?
   trackingNumber String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  cancelledAt    DateTime?
+  cancellationReason String?
 
   items   OrderItem[]
   payment ProductPayment?
+  messages Message[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -688,6 +703,10 @@ model ProductPayment {
   status       PaymentStatus @default(PENDING)
   refundedAt   DateTime?
   refundAmount Int?
+  refundRequestedAt DateTime?
+  refundReason String?
+  refundRejectedAt DateTime?
+  refundRejectionReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

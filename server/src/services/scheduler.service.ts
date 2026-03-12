@@ -2,6 +2,8 @@ import cron from 'node-cron';
 import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import { sendAppointmentReminder } from './email.service';
+import { cancelUnpaidOrders } from '../jobs/order-cleanup.job';
+import { autoConfirmDelivery } from '../jobs/auto-delivery.job';
 
 export const startScheduledJobs = () => {
   // Every hour: send 24-hour reminders
@@ -80,6 +82,24 @@ export const startScheduledJobs = () => {
       }
     } catch (err) {
       console.error('[Scheduler] stale cleanup job error:', err);
+    }
+  });
+
+  // Every hour: cancel unpaid orders after 24 hours
+  cron.schedule('0 * * * *', async () => {
+    try {
+      await cancelUnpaidOrders();
+    } catch (err) {
+      console.error('[Scheduler] order cleanup job error:', err);
+    }
+  });
+
+  // Daily at 2 AM: auto-confirm delivery after 7 days
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      await autoConfirmDelivery();
+    } catch (err) {
+      console.error('[Scheduler] auto-delivery job error:', err);
     }
   });
 

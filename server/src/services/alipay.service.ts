@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { alipay } from '../lib/alipay';
 import { sendAppointmentConfirmation } from './email.service';
+import { notifySellerOnOrderPaid } from './order-notification.service';
 
 const PLATFORM_FEE_PERCENT = Number(process.env.STRIPE_PLATFORM_FEE_PERCENT ?? 15);
 
@@ -269,6 +270,7 @@ export const handleAlipayNotification = async (params: Record<string, string>) =
         data: { status: 'PAID' },
       }),
     ]);
+    await notifySellerOnOrderPaid(productPayment.orderId).catch(() => );
     return 'success';
   }
 

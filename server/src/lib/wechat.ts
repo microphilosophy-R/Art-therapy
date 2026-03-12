@@ -1,6 +1,12 @@
 import { Wechatpay } from 'wechatpay-axios-plugin';
 
-export const WECHAT_ENABLED = process.env.WECHAT_ENABLED === 'true';
+export const WECHAT_ENABLED =
+  process.env.WECHAT_ENABLED === 'true' &&
+  !!process.env.WECHAT_MCH_ID &&
+  !!process.env.WECHAT_CERT_SERIAL &&
+  !!process.env.WECHAT_PRIVATE_KEY &&
+  !!process.env.WECHAT_PLATFORM_SERIAL &&
+  !!process.env.WECHAT_PLATFORM_CERT;
 
 export const wechatpay = WECHAT_ENABLED
   ? new Wechatpay({

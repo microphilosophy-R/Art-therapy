@@ -13,6 +13,7 @@ router.use(authenticate);
 router.post('/', validate(OrderController.createOrderSchema), OrderController.createOrder);
 router.get('/my-orders', OrderController.getMyOrders);
 router.get('/:id', OrderController.getOrderById);
+router.post('/:id/confirm-delivery', OrderController.confirmDelivery);
 
 // Seller order routes (to view and fulfill orders for their products)
 router.get('/seller/orders', authorize('MEMBER', 'ADMIN'), requireCertificate('ARTIFICER'), OrderController.getArtistOrders);

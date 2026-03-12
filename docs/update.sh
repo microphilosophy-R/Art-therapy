@@ -26,14 +26,14 @@ cd "$APP_DIR" || exit
 echo "📦 Pulling latest code from main branch..."
 # Resets any local server modifications and pulls fresh code
 git reset --hard HEAD
-git pull origin main
+timeout 60 git pull origin main || { echo "❌ Git pull timed out or failed"; exit 1; }
 
 # 3. Update Backend API & Database
 echo "⚙️  Updating Backend components..."
 cd "$APP_DIR/server" || exit
 
 echo "   -> Installing Node dependencies (Production)..."
-npm ci --omit=dev
+npm ci --omit=dev --prefer-offline --no-audit
 
 echo "   -> Generating Prisma Client..."
 npx prisma generate
@@ -80,7 +80,7 @@ echo "🎨 Updating Frontend React Client..."
 cd "$APP_DIR/client" || exit
 
 echo "   -> Installing Node dependencies..."
-npm ci
+npm ci --prefer-offline --no-audit
 
 echo "   -> Building Static React Site..."
 npm run build

@@ -28,6 +28,7 @@ async function getValidatedAppointment(appointmentId: string, userId: string) {
 }
 
 export const createWechatOrder = async (appointmentId: string, userId: string) => {
+  if (!wechatpay) throw new Error('WeChat Pay is not enabled');
   const appointment = await getValidatedAppointment(appointmentId, userId);
   if (!appointment.userProfile) throw new Error('Provider profile not found');
   const therapist = appointment.userProfile;
@@ -67,6 +68,7 @@ export const createWechatOrder = async (appointmentId: string, userId: string) =
 };
 
 export const createPlanWechatOrder = async (participantId: string, userId: string) => {
+  if (!wechatpay) throw new Error('WeChat Pay is not enabled');
   const participant = await prisma.therapyPlanParticipant.findUnique({
     where: { id: participantId },
     include: {
@@ -104,6 +106,7 @@ export const createPlanWechatOrder = async (participantId: string, userId: strin
 };
 
 export const createProductWechatOrder = async (orderId: string, userId: string) => {
+  if (!wechatpay) throw new Error('WeChat Pay is not enabled');
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { payment: true },

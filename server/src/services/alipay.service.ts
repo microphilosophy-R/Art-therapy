@@ -28,6 +28,7 @@ async function getValidatedAppointment(appointmentId: string, userId: string) {
 }
 
 export const createAlipayOrder = async (appointmentId: string, userId: string) => {
+  if (!alipay) throw new Error('Alipay is not enabled');
   const appointment = await getValidatedAppointment(appointmentId, userId);
   if (!appointment.userProfile) throw new Error('Provider profile not found');
   const therapist = appointment.userProfile;
@@ -70,6 +71,7 @@ export const createAlipayOrder = async (appointmentId: string, userId: string) =
 };
 
 export const createPlanAlipayOrder = async (participantId: string, userId: string) => {
+  if (!alipay) throw new Error('Alipay is not enabled');
   const participant = await prisma.therapyPlanParticipant.findUnique({
     where: { id: participantId },
     include: {
@@ -110,6 +112,7 @@ export const createPlanAlipayOrder = async (participantId: string, userId: strin
 };
 
 export const createProductAlipayOrder = async (orderId: string, userId: string) => {
+  if (!alipay) throw new Error('Alipay is not enabled');
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { payment: true },

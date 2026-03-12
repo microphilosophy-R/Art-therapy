@@ -8,6 +8,7 @@ import {
   submitTherapyPlanForReview,
   archiveTherapyPlan,
   deleteTherapyPlan,
+  cancelTherapyPlan,
 } from '../../../api/therapyPlans';
 import type { TherapyPlan } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
@@ -46,6 +47,11 @@ export const TherapistPlansTab = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteTherapyPlan,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plans', 'my'] }),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: cancelTherapyPlan,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plans', 'my'] }),
   });
 
@@ -152,13 +158,44 @@ export const TherapistPlansTab = () => {
                 )}
 
                 {plan.status === 'PUBLISHED' && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      loading={archiveMutation.isPending}
+                      onClick={() => archiveMutation.mutate(plan.id)}
+                    >
+                      {t('therapyPlans.detail.archive')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-rose-600 border-rose-200 hover:bg-rose-50"
+                      loading={cancelMutation.isPending}
+                      onClick={() => {
+                        if (window.confirm(t('dashboard.plans.confirmCancel', 'Cancel this plan? All participants will be notified and refunded.'))) {
+                          cancelMutation.mutate(plan.id);
+                        }
+                      }}
+                    >
+                      {t('dashboard.plans.cancel', 'Cancel')}
+                    </Button>
+                  </>
+                )}
+
+                {['SIGN_UP_CLOSED', 'IN_PROGRESS'].includes(plan.status) && (
                   <Button
                     size="sm"
                     variant="outline"
-                    loading={archiveMutation.isPending}
-                    onClick={() => archiveMutation.mutate(plan.id)}
+                    className="text-rose-600 border-rose-200 hover:bg-rose-50"
+                    loading={cancelMutation.isPending}
+                    onClick={() => {
+                      if (window.confirm(t('dashboard.plans.confirmCancel', 'Cancel this plan? All participants will be notified and refunded.'))) {
+                        cancelMutation.mutate(plan.id);
+                      }
+                    }}
                   >
-                    {t('therapyPlans.detail.archive')}
+                    {t('dashboard.plans.cancel', 'Cancel')}
                   </Button>
                 )}
               </div>

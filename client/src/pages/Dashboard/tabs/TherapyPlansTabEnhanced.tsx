@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Calendar } from 'lucide-react';
-import { listTherapyPlans, submitTherapyPlanForReview, archiveTherapyPlan, deleteTherapyPlan } from '../../../api/therapyPlans';
+import { listTherapyPlans, submitTherapyPlanForReview, archiveTherapyPlan, deleteTherapyPlan, cancelTherapyPlan } from '../../../api/therapyPlans';
 import type { TherapyPlan, TherapyPlanStatus } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
@@ -48,6 +48,11 @@ export const TherapyPlansTab = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteTherapyPlan,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plans'] }),
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: cancelTherapyPlan,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plans'] }),
   });
 
@@ -138,6 +143,13 @@ export const TherapyPlansTab = () => {
                       <Link to={`/therapy-plans/${plan.id}/edit`}>
                         <Button size="sm">{t('dashboard.plans.edit')}</Button>
                       </Link>
+                    )}
+                    {['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'].includes(plan.status) && roleFilter === 'creator' && (
+                      <Button size="sm" variant="outline" className="text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => {
+                        if (window.confirm(t('dashboard.plans.confirmCancel', 'Cancel this plan? All participants will be notified and refunded.'))) {
+                          cancelMutation.mutate(plan.id);
+                        }
+                      }}>{t('dashboard.plans.cancel', 'Cancel')}</Button>
                     )}
                   </div>
                   {plan.rejectionReason && (

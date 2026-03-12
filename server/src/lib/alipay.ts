@@ -1,8 +1,8 @@
 import { AlipaySdk } from 'alipay-sdk';
 
-export const ALIPAY_WECHAT_ENABLED = process.env.ALIPAY_WECHAT_ENABLED === 'true';
+export const ALIPAY_ENABLED = process.env.ALIPAY_ENABLED === 'true';
 
-export const alipay = ALIPAY_WECHAT_ENABLED
+export const alipay = ALIPAY_ENABLED
   ? new AlipaySdk({
       appId: process.env.ALIPAY_APP_ID!,
       privateKey: process.env.ALIPAY_PRIVATE_KEY!,

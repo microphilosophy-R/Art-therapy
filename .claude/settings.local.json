@@ -35,7 +35,8 @@
       "Bash(npx prisma db seed:*)",
       "Bash(find:*)",
       "Bash(timeout 15 npx tsx:*)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(ssh admin@luyin.xyz:*)"
     ]
   }
 }

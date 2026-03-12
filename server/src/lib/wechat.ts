@@ -1,7 +1,8 @@
 import { Wechatpay } from 'wechatpay-axios-plugin';
-export { ALIPAY_WECHAT_ENABLED } from './alipay';
 
-export const wechatpay = process.env.ALIPAY_WECHAT_ENABLED === 'true'
+export const WECHAT_ENABLED = process.env.WECHAT_ENABLED === 'true';
+
+export const wechatpay = WECHAT_ENABLED
   ? new Wechatpay({
       mchid: process.env.WECHAT_MCH_ID!,
       serial: process.env.WECHAT_CERT_SERIAL!,

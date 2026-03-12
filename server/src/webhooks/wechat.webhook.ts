@@ -1,14 +1,14 @@
 import { Router, Request, Response } from 'express';
 import { Aes } from 'wechatpay-axios-plugin';
 import * as wechatService from '../services/wechat.service';
-import { ALIPAY_WECHAT_ENABLED } from '../lib/alipay';
+import { WECHAT_ENABLED } from '../lib/wechat';
 
 export const wechatWebhookRouter = Router();
 
 // WeChat Pay v3 sends an AES-GCM encrypted JSON body.
 // express.raw() is applied in app.ts before this router.
 wechatWebhookRouter.post('/', async (req: Request, res: Response) => {
-  if (!ALIPAY_WECHAT_ENABLED) {
+  if (!WECHAT_ENABLED) {
     return res.status(200).json({ code: 'SUCCESS', message: 'Disabled' });
   }
 

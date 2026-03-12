@@ -25,6 +25,7 @@ export const createProductAlipayOrderController = async (req: Request, res: Resp
     const result = await alipayService.createProductAlipayOrder(req.body.orderId, req.user!.id);
     res.json(result);
   } catch (err: any) {
+    console.error('[Alipay] Create product order error:', err);
     res.status(400).json({ message: err.message });
   }
 };

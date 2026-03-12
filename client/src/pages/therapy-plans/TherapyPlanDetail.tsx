@@ -180,7 +180,7 @@ export const TherapyPlanDetail = () => {
   const isPastSignupDeadline = (new Date(plan.startTime).getTime() - now.getTime()) < 12 * 60 * 60 * 1000;
 
   const canSignUp = (user?.role === 'MEMBER' || !user) && isNonPersonal && plan.status === 'PUBLISHED' && !isEnrolled && !isPendingPayment && !isPastSignupDeadline;
-  const canCancelSignup = isClient && isNonPersonal && plan.status === 'PUBLISHED' && (isEnrolled || isPendingPayment);
+  const canCancelSignup = isClient && isNonPersonal && ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'].includes(plan.status) && (isEnrolled || isPendingPayment);
 
   if (shouldRedirectToTherapist) {
     return <div className="flex justify-center py-16"><Spinner /></div>;

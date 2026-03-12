@@ -1612,8 +1612,9 @@ export const cancelSignup = async (req: Request, res: Response) => {
   if (!participant || participant.status !== ('SIGNED_UP' as any)) {
     return res.status(404).json({ message: 'Sign-up not found' });
   }
-  if (participant.plan.status !== 'PUBLISHED' || !isPlanPubliclyReleased(participant.plan)) {
-    return res.status(400).json({ message: 'Sign-ups can only be cancelled while sign-ups are open' });
+  const cancellableStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
+  if (!cancellableStatuses.includes(participant.plan.status)) {
+    return res.status(400).json({ message: 'Cannot cancel signup for this plan' });
   }
 
   await prisma.therapyPlanParticipant.update({

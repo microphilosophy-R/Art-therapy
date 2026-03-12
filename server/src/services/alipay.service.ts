@@ -270,7 +270,7 @@ export const handleAlipayNotification = async (params: Record<string, string>) =
         data: { status: 'PAID' },
       }),
     ]);
-    await notifySellerOnOrderPaid(productPayment.orderId).catch(() => );
+    await notifySellerOnOrderPaid(productPayment.orderId).catch(() => {});
     return 'success';
   }
 

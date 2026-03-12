@@ -154,6 +154,26 @@ export const handleWechatNotification = async (
 ) => {
   const { out_trade_no, transaction_id, trade_state } = decryptedBody;
 
+  // Handle payment failures
+  if (trade_state === 'CLOSED' || trade_state === 'PAYERROR') {
+    const planPayment = await prisma.planPayment.findFirst({
+      where: { externalOrderId: out_trade_no }
+    });
+
+    if (planPayment) {
+      await prisma.$transaction([
+        prisma.planPayment.update({
+          where: { id: planPayment.id },
+          data: { status: 'FAILED' }
+        }),
+        prisma.therapyPlanParticipant.delete({
+          where: { id: planPayment.participantId }
+        })
+      ]);
+    }
+    return;
+  }
+
   if (trade_state !== 'SUCCESS') return; // not yet paid
 
   const payment = await prisma.payment.findFirst({
@@ -236,4 +256,31 @@ export const handleWechatNotification = async (
   }
 
   throw new Error('Payment record not found');
+};
+
+export const refundWechatOrder = async (
+  outTradeNo: string,
+  totalAmount: number,
+  refundAmount: number,
+  reason: string
+): Promise<{ success: boolean; refundId?: string; error?: string }> => {
+  if (!wechatpay) throw new Error('WeChat Pay not enabled');
+
+  const outRefundNo = `REFUND_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+  const result = await wechatpay.v3.post('/v3/refund/domestic/refunds', {
+    out_trade_no: outTradeNo,
+    out_refund_no: outRefundNo,
+    amount: {
+      refund: refundAmount,
+      total: totalAmount,
+      currency: 'CNY'
+    },
+    reason
+  });
+
+  if (result.status === 'SUCCESS' || result.status === 'PROCESSING') {
+    return { success: true, refundId: result.refund_id };
+  }
+  return { success: false, error: result.status };
 };

@@ -311,14 +311,14 @@ export const TherapyPlanDetail = () => {
                 location: plan.location || undefined,
                 therapistName: therapistUser ? `${therapistUser.firstName} ${therapistUser.lastName}` : '',
                 therapistAvatar: therapistUser?.avatarUrl || undefined,
-                participantId: signupResult?.participantId || myParticipation?.id || undefined,
+                participantId: signupResult?.participantId || myParticipation?.id,
               }}
               onComplete={async (method: PaymentMethod) => {
                 if (!signupResult?.participantId && !myParticipation?.id) {
                   const res = await signupMutation.mutateAsync();
                   return { participantId: res.participant.id };
                 }
-                return { participantId: signupResult?.participantId || myParticipation?.id };
+                return { participantId: signupResult?.participantId || myParticipation?.id! };
               }}
               onCancel={() => {
                 setIsCheckingOut(false);

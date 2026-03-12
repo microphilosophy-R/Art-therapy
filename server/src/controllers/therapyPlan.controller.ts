@@ -12,6 +12,7 @@ import {
   notifyParticipantsPlanCancelled,
   notifyTherapistOnSignup,
   notifyTherapistOnSignupCancelled,
+  notifyAdminsOnRefund,
 } from '../services/message.service';
 import { refundPlanPayment } from '../services/refundPlanPayment.service';
 import type {
@@ -1620,7 +1621,12 @@ export const cancelSignup = async (req: Request, res: Response) => {
     data: { status: 'CANCELLED' as any },
   });
 
-  await refundPlanPayment(participant.id, false);
+  const refundResult = await refundPlanPayment(participant.id, false);
+
+  if (refundResult.refunded && refundResult.refundAmount) {
+    const clientName = `${(req as any).userFullName ?? user.id}`;
+    await notifyAdminsOnRefund(participant.plan.title, clientName, refundResult.refundAmount);
+  }
 
   const clientName = `${(req as any).userFullName ?? user.id}`;
   const cancelOwnerUserId = participant.plan.userProfile?.userId;

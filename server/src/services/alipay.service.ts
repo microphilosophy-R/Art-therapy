@@ -165,6 +165,26 @@ export const handleAlipayNotification = async (params: Record<string, string>) =
 
   const { out_trade_no, trade_no, trade_status } = params;
 
+  // Handle payment failures/cancellations
+  if (trade_status === 'TRADE_CLOSED') {
+    const planPayment = await prisma.planPayment.findFirst({
+      where: { externalOrderId: out_trade_no }
+    });
+
+    if (planPayment) {
+      await prisma.$transaction([
+        prisma.planPayment.update({
+          where: { id: planPayment.id },
+          data: { status: 'FAILED' }
+        }),
+        prisma.therapyPlanParticipant.delete({
+          where: { id: planPayment.participantId }
+        })
+      ]);
+    }
+    return 'success';
+  }
+
   // Only process TRADE_SUCCESS or TRADE_FINISHED
   if (trade_status !== 'TRADE_SUCCESS' && trade_status !== 'TRADE_FINISHED') {
     return 'success'; // acknowledge but take no action
@@ -252,4 +272,26 @@ export const handleAlipayNotification = async (params: Record<string, string>) =
   throw new Error('Payment record not found');
 
   return 'success';
+};
+
+export const refundAlipayOrder = async (
+  outTradeNo: string,
+  refundAmount: number,
+  reason: string
+): Promise<{ success: boolean; refundId?: string; error?: string }> => {
+  if (!alipay) throw new Error('Alipay not enabled');
+
+  const outRequestNo = `REFUND_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+  const result = await alipay.exec('alipay.trade.refund', {
+    out_trade_no: outTradeNo,
+    refund_amount: (refundAmount / 100).toFixed(2),
+    out_request_no: outRequestNo,
+    refund_reason: reason
+  });
+
+  if (result.code === '10000') {
+    return { success: true, refundId: result.trade_no };
+  }
+  return { success: false, error: result.sub_msg || result.msg };
 };

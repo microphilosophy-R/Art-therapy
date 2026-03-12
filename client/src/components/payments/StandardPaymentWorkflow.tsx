@@ -172,7 +172,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                 <p className="font-medium mb-2 text-stone-800">{t('common.planType.' + type)} {t('payment.tos_title', 'Terms of Service')}</p>
                                 <ul className="list-disc pl-5 space-y-2">
                                     <li>{t('payment.tos_item1', 'By proceeding, you agree to our privacy policy and the specific terms for this service.')}</li>
-                                    <li>{t('payment.tos_item2', 'Cancellations made less than 24 hours before the session may not be eligible for a refund.')}</li>
+                                    <li>{t('payment.cancellation_policy', 'Cancellation policy: Free cancellation 24+ hours before start. 50% refund if cancelled within 24 hours. No refund after session starts.')}</li>
                                     <li>{t('payment.tos_item3', 'For group events, the therapist reserves the right to reschedule if minimum participation is not met.')}</li>
                                     <li>{t('payment.tos_item4', 'Your personal information is handled according to HIPAA and relevant privacy standards.')}</li>
                                 </ul>

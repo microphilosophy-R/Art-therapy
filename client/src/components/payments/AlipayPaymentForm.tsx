@@ -20,7 +20,7 @@ export const AlipayPaymentForm = ({ appointmentId, participantId, orderId, onSuc
       if (orderId) return createAlipayProductOrder(orderId);
       if (participantId) return createPlanAlipayOrder(participantId);
       if (appointmentId) return createAlipayOrder(appointmentId);
-      throw new Error('Missing ID');
+      throw new Error('Missing required ID');
     },
     onSuccess: ({ payUrl }) => {
       window.location.href = payUrl;
@@ -30,9 +30,11 @@ export const AlipayPaymentForm = ({ appointmentId, participantId, orderId, onSuc
     },
   });
 
-  // Auto-trigger order creation on mount
+  // Auto-trigger order creation on mount only if we have a valid ID
   useEffect(() => {
-    mutation.mutate();
+    if (appointmentId || participantId || orderId) {
+      mutation.mutate();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

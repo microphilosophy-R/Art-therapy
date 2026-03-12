@@ -23,16 +23,19 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, onSuc
       if (orderId) return createWechatProductOrder(orderId);
       if (participantId) return createPlanWechatOrder(participantId);
       if (appointmentId) return createWechatOrder(appointmentId);
-      throw new Error('Missing ID');
+      throw new Error('Missing required ID');
     },
     onError: (err: any) => {
+      console.error('failed to load the payment', err);
       onError?.(err.message ?? t('common.errors.tryAgain'));
     },
   });
 
-  // Auto-trigger order creation on mount
+  // Auto-trigger order creation on mount only if we have a valid ID
   useEffect(() => {
-    mutation.mutate();
+    if (appointmentId || participantId || orderId) {
+      mutation.mutate();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

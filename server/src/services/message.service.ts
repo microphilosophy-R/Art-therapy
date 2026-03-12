@@ -48,6 +48,29 @@ export const notifyAllClientsOnPlanPublished = async (
 };
 
 /**
+ * Send a notification to admins about a refund request.
+ */
+export const notifyAdminsOnRefund = async (
+  planTitle: string,
+  clientName: string,
+  refundAmount: number,
+): Promise<void> => {
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN' },
+    select: { id: true },
+  });
+  if (admins.length === 0) return;
+
+  await prisma.message.createMany({
+    data: admins.map((admin) => ({
+      recipientId: admin.id,
+      body: `💰 Refund request: ${clientName} cancelled "${planTitle}". Refund amount: ¥${(refundAmount / 100).toFixed(2)}`,
+      trigger: 'REFUND_REQUESTED' as const,
+    })),
+  });
+};
+
+/**
  * Send a notification message to the therapist when their plan is rejected.
  */
 export const notifyTherapistOnRejection = async (

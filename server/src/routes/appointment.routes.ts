@@ -10,15 +10,16 @@ import { validate } from '../middleware/validate';
 import { createAppointmentSchema, updateStatusSchema, sessionNoteSchema } from '../schemas/appointment.schemas';
 
 export const appointmentRouter = Router();
+const providerCertificates = ['THERAPIST', 'COUNSELOR'] as const;
 
 appointmentRouter.use(authenticate);
 
 appointmentRouter.post('/', authorize('MEMBER'), validate(createAppointmentSchema), createAppointment);
 appointmentRouter.get('/', listAppointments);
 appointmentRouter.get('/:id', getAppointment);
-appointmentRouter.patch('/:id/status', authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), validate(updateStatusSchema), updateAppointmentStatus);
+appointmentRouter.patch('/:id/status', authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), validate(updateStatusSchema), updateAppointmentStatus);
 appointmentRouter.delete('/:id', authorize('MEMBER'), cancelAppointment);
 
-appointmentRouter.post('/:id/notes', authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), validate(sessionNoteSchema), createNote);
-appointmentRouter.get('/:id/notes', authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), getNote);
-appointmentRouter.put('/:id/notes', authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), validate(sessionNoteSchema), createNote);
+appointmentRouter.post('/:id/notes', authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), validate(sessionNoteSchema), createNote);
+appointmentRouter.get('/:id/notes', authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), getNote);
+appointmentRouter.put('/:id/notes', authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), validate(sessionNoteSchema), createNote);

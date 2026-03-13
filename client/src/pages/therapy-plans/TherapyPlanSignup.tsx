@@ -80,12 +80,28 @@ export const TherapyPlanSignup = () => {
     if (isLoading) return <PageLoader />;
     if (!plan) return null;
 
-    const steps = [
-        { n: 1, label: t('therapyPlans.signup.steps.attention', 'Attention') },
-        { n: 2, label: t('therapyPlans.signup.steps.discount', 'Discount') },
-        { n: 3, label: t('therapyPlans.signup.steps.review', 'Review') },
-        { n: 4, label: t('therapyPlans.signup.steps.pay', 'Payment') },
-    ];
+    const showDiscountStep = plan.type !== 'PERSONAL_CONSULT';
+    const stepFlow: Step[] = showDiscountStep ? [1, 2, 3, 4] : [1, 3, 4];
+    const stepLabels: Record<Step, string> = {
+        1: t('therapyPlans.signup.steps.attention', 'Attention'),
+        2: t('therapyPlans.signup.steps.discount', 'Discount'),
+        3: t('therapyPlans.signup.steps.review', 'Review'),
+        4: t('therapyPlans.signup.steps.pay', 'Payment'),
+    };
+    const steps = stepFlow.map((stepValue, idx) => ({
+        stepValue,
+        order: idx + 1,
+        label: stepLabels[stepValue],
+    }));
+    const currentStepIndex = stepFlow.indexOf(step);
+    const goNext = () => {
+        if (currentStepIndex < 0 || currentStepIndex >= stepFlow.length - 1) return;
+        setStep(stepFlow[currentStepIndex + 1]);
+    };
+    const goBack = () => {
+        if (currentStepIndex <= 0) return;
+        setStep(stepFlow[currentStepIndex - 1]);
+    };
 
     const handlePaymentSuccess = () => {
         navigate('/dashboard/member');
@@ -99,11 +115,11 @@ export const TherapyPlanSignup = () => {
         <div className="bg-stone-50 min-h-screen">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <button
-                    onClick={() => (step === 1 ? navigate(-1) : setStep((s) => (s - 1) as Step))}
+                    onClick={() => (step === stepFlow[0] ? navigate(-1) : goBack())}
                     className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6"
                 >
                     <ChevronLeft className="h-4 w-4" />
-                    {step === 1 ? t('therapyPlans.detail.back') : t('common.back')}
+                    {step === stepFlow[0] ? t('therapyPlans.detail.back') : t('common.back')}
                 </button>
 
                 <h1 className="text-2xl font-bold text-stone-900 mb-1">{t('therapyPlans.detail.signUp')}</h1>
@@ -112,23 +128,23 @@ export const TherapyPlanSignup = () => {
                 {/* Step indicator */}
                 <div className="flex items-center gap-0 mb-8">
                     {steps.map((s, i) => (
-                        <React.Fragment key={s.n}>
+                        <React.Fragment key={s.stepValue}>
                             <div className="flex flex-col items-center">
                                 <div
-                                    className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step === s.n
+                                    className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step === s.stepValue
                                         ? 'bg-teal-600 text-white'
-                                        : step > s.n
+                                        : i < currentStepIndex
                                             ? 'bg-teal-100 text-teal-700'
                                             : 'bg-stone-200 text-stone-400'
                                         }`}
                                 >
-                                    {s.n}
+                                    {s.order}
                                 </div>
                                 <span className="text-xs text-stone-500 mt-1 hidden sm:block">{s.label}</span>
                             </div>
                             {i < steps.length - 1 && (
                                 <div
-                                    className={`flex-1 h-0.5 mx-1 transition-colors ${step > s.n ? 'bg-teal-300' : 'bg-stone-200'
+                                    className={`flex-1 h-0.5 mx-1 transition-colors ${i < currentStepIndex ? 'bg-teal-300' : 'bg-stone-200'
                                         }`}
                                 />
                             )}
@@ -164,7 +180,7 @@ export const TherapyPlanSignup = () => {
                                 />
                             </div>
                             <div className="flex justify-end">
-                                <Button disabled={!signature.trim()} onClick={() => setStep(2)}>
+                                <Button disabled={!signature.trim()} onClick={goNext}>
                                     {t('common.continue')}
                                 </Button>
                             </div>
@@ -173,7 +189,7 @@ export const TherapyPlanSignup = () => {
                 )}
 
                 {/* Step 2: Invitation & Discount */}
-                {step === 2 && (
+                {showDiscountStep && step === 2 && (
                     <Card>
                         <CardContent className="p-6 space-y-6">
                             <h2 className="font-semibold text-stone-900 flex items-center gap-2">
@@ -195,10 +211,10 @@ export const TherapyPlanSignup = () => {
                                 />
                             </div>
                             <div className="flex justify-end gap-3">
-                                <Button variant="outline" onClick={() => setStep(1)}>
+                                <Button variant="outline" onClick={goBack}>
                                     {t('common.back')}
                                 </Button>
-                                <Button onClick={() => setStep(3)}>
+                                <Button onClick={goNext}>
                                     {t('common.continue')}
                                 </Button>
                             </div>
@@ -259,10 +275,10 @@ export const TherapyPlanSignup = () => {
                             </div>
 
                             <div className="mt-8 flex justify-end gap-3">
-                                <Button variant="outline" onClick={() => setStep(2)}>
+                                <Button variant="outline" onClick={goBack}>
                                     {t('common.back')}
                                 </Button>
-                                <Button onClick={() => setStep(4)}>
+                                <Button onClick={goNext}>
                                     {t('therapyPlans.signup.step3.proceed', 'Proceed to Payment')}
                                 </Button>
                             </div>

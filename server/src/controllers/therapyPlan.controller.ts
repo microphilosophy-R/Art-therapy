@@ -117,6 +117,26 @@ const isPlanPubliclyReleased = (plan: {
   plan.reviewedAt !== null &&
   plan.publishedAt !== null;
 
+const CONSULT_PLAN_TYPES = new Set(['PERSONAL_CONSULT', 'GROUP_CONSULT']);
+
+const hasCertificate = (
+  user: Request['user'] | undefined,
+  certType: 'THERAPIST' | 'COUNSELOR',
+) => !!user?.approvedCertificates?.includes(certType as any);
+
+const hasProviderCertificate = (user: Request['user'] | undefined) =>
+  hasCertificate(user, 'THERAPIST') || hasCertificate(user, 'COUNSELOR');
+
+const canManagePlanType = (user: Request['user'] | undefined, planType: string) =>
+  CONSULT_PLAN_TYPES.has(planType)
+    ? hasCertificate(user, 'COUNSELOR')
+    : hasCertificate(user, 'THERAPIST');
+
+const buildPlanTypePermissionMessage = (planType: string) =>
+  CONSULT_PLAN_TYPES.has(planType)
+    ? 'Requires approved COUNSELOR certificate for PERSONAL_CONSULT and GROUP_CONSULT plans.'
+    : 'Requires approved THERAPIST certificate for ART_SALON and WELLNESS_RETREAT plans.';
+
 const logToFile = (msg: string) => {
   try {
     fs.appendFileSync(path.join(process.cwd(), 'debug.log'), `${new Date().toISOString()} - ${msg}\n`);
@@ -138,6 +158,10 @@ export const createPlan = async (req: Request, res: Response) => {
   });
   if (!userProfile) {
     return res.status(404).json({ message: 'User profile not found' });
+  }
+
+  if (req.user?.role === 'MEMBER' && !canManagePlanType(req.user, body.type)) {
+    return res.status(403).json({ message: buildPlanTypePermissionMessage(body.type) });
   }
 
   // Consult types require consultEnabled
@@ -216,7 +240,7 @@ export const listPlans = async (req: Request, res: Response) => {
   const limit = Number(query.limit) || 12;
   const skip = (page - 1) * limit;
   const user = req.user;
-  const userHasTherapistCert = user?.approvedCertificates?.includes('THERAPIST' as any);
+  const userHasProviderCert = hasProviderCertificate(user);
   const isAdmin = user?.role === 'ADMIN';
   const isMember = user?.role === 'MEMBER';
   const andConditions: Prisma.TherapyPlanWhereInput[] = [];
@@ -225,7 +249,7 @@ export const listPlans = async (req: Request, res: Response) => {
   if (query.role === 'creator') {
     if (isAdmin) {
       if (query.status) andConditions.push({ status: query.status as any });
-    } else if (isMember && userHasTherapistCert) {
+    } else if (isMember && userHasProviderCert) {
       const profile = await prisma.userProfile.findUnique({
         where: { userId: user!.id },
         select: { id: true },
@@ -255,7 +279,7 @@ export const listPlans = async (req: Request, res: Response) => {
   } else if (isAdmin) {
     if (query.status) andConditions.push({ status: query.status as any });
   } else {
-    // Public browsing scope for unauthenticated users, regular members, and therapist members.
+    // Public browsing scope for unauthenticated users, regular members, and provider members.
     if (query.status && !PUBLIC_RELEASE_STATUS_SET.has(query.status)) {
       return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
     }
@@ -342,7 +366,7 @@ export const listPlans = async (req: Request, res: Response) => {
 export const getPlan = async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = req.user;
-  const userHasTherapistCert = user?.approvedCertificates?.includes('THERAPIST' as any);
+  const userHasProviderCert = hasProviderCertificate(user);
 
   const plan = await prisma.therapyPlan.findUnique({
     where: { id },
@@ -353,8 +377,8 @@ export const getPlan = async (req: Request, res: Response) => {
   // Visibility rules
   if (!isPlanPubliclyReleased(plan)) {
     if (!user) return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'MEMBER' && !userHasTherapistCert) return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'MEMBER' && userHasTherapistCert) {
+    if (user.role === 'MEMBER' && !userHasProviderCert) return res.status(404).json({ message: 'Plan not found' });
+    if (user.role === 'MEMBER' && userHasProviderCert) {
       if (plan.userProfile?.userId !== user.id) {
         return res.status(403).json({ message: 'Forbidden' });
       }
@@ -371,7 +395,7 @@ export const updatePlan = async (req: Request, res: Response) => {
   const { id } = req.params;
   const body = req.body as UpdateTherapyPlanInput;
   const user = req.user!;
-  const userHasTherapistCert = user.approvedCertificates?.includes('THERAPIST' as any);
+  const userHasProviderCert = hasProviderCertificate(user);
 
   const plan = await prisma.therapyPlan.findUnique({
     where: { id },
@@ -379,7 +403,10 @@ export const updatePlan = async (req: Request, res: Response) => {
   });
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
 
-  if (user.role === 'MEMBER' && userHasTherapistCert) {
+  if (user.role === 'MEMBER') {
+    if (!userHasProviderCert) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
     if (plan.userProfile?.userId !== user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
@@ -390,6 +417,14 @@ export const updatePlan = async (req: Request, res: Response) => {
   }
 
   const nextType = (body.type ?? plan.type) as string;
+  if (user.role === 'MEMBER' && !canManagePlanType(user, nextType)) {
+    return res.status(403).json({ message: buildPlanTypePermissionMessage(nextType) });
+  }
+  if (user.role === 'MEMBER' && CONSULT_PLAN_TYPES.has(nextType) && !plan.userProfile?.consultEnabled) {
+    return res.status(403).json({
+      message: 'You must enable consultations in your profile before using this plan type.',
+    });
+  }
 
   try {
     if (
@@ -797,6 +832,9 @@ export const submitForReview = async (req: Request, res: Response) => {
   if (!plan) return res.status(404).json({ message: 'Plan not found' });
   if (plan.userProfile?.userId !== req.user!.id) {
     return res.status(403).json({ message: 'Forbidden' });
+  }
+  if (req.user?.role === 'MEMBER' && !canManagePlanType(req.user, plan.type)) {
+    return res.status(403).json({ message: buildPlanTypePermissionMessage(plan.type) });
   }
   if (plan.status !== 'DRAFT' && plan.status !== 'REJECTED') {
     return res.status(400).json({ message: 'Only DRAFT or REJECTED plans can be submitted for review' });
@@ -1310,9 +1348,9 @@ export const exportPlanIcs = async (req: Request, res: Response) => {
   const isPublicIcsVisible = plan.status === 'PUBLISHED' && isPlanPubliclyReleased(plan);
   if (!isPublicIcsVisible) {
     if (!user) return res.status(404).json({ message: 'Plan not found' });
-    const userHasTherapistCert = user.approvedCertificates?.includes('THERAPIST' as any);
-    if (user.role === 'MEMBER' && !userHasTherapistCert) return res.status(404).json({ message: 'Plan not found' });
-    if (user.role === 'MEMBER' && userHasTherapistCert && plan.userProfile?.userId !== user.id) {
+    const userHasProviderCert = hasProviderCertificate(user);
+    if (user.role === 'MEMBER' && !userHasProviderCert) return res.status(404).json({ message: 'Plan not found' });
+    if (user.role === 'MEMBER' && userHasProviderCert && plan.userProfile?.userId !== user.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
   }

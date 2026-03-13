@@ -33,6 +33,9 @@ export interface Step1Props {
     setPosterFile: (file: File | null) => void;
     isLoading?: boolean;
     consultEnabled?: boolean;
+    canCreateConsultPlans?: boolean;
+    canCreateNonConsultPlans?: boolean;
+    enforceAllowedType?: boolean;
 }
 
 export const Step1Metadata = ({
@@ -45,15 +48,18 @@ export const Step1Metadata = ({
     setPosterFile,
     isLoading,
     consultEnabled = false,
+    canCreateConsultPlans = false,
+    canCreateNonConsultPlans = false,
+    enforceAllowedType = false,
 }: Step1Props) => {
     const { t, i18n } = useTranslation();
     const userLang = i18n.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
 
     const planTypeOptions = [
-        { value: 'PERSONAL_CONSULT', label: t('common.planType.PERSONAL_CONSULT'), disabled: !consultEnabled },
-        { value: 'GROUP_CONSULT', label: t('common.planType.GROUP_CONSULT'), disabled: !consultEnabled },
-        { value: 'ART_SALON', label: t('common.planType.ART_SALON') },
-        { value: 'WELLNESS_RETREAT', label: t('common.planType.WELLNESS_RETREAT') },
+        { value: 'PERSONAL_CONSULT', label: t('common.planType.PERSONAL_CONSULT'), disabled: !consultEnabled || !canCreateConsultPlans },
+        { value: 'GROUP_CONSULT', label: t('common.planType.GROUP_CONSULT'), disabled: !consultEnabled || !canCreateConsultPlans },
+        { value: 'ART_SALON', label: t('common.planType.ART_SALON'), disabled: !canCreateNonConsultPlans },
+        { value: 'WELLNESS_RETREAT', label: t('common.planType.WELLNESS_RETREAT'), disabled: !canCreateNonConsultPlans },
     ];
 
     const artSalonOptions = [
@@ -70,6 +76,32 @@ export const Step1Metadata = ({
         { value: 'VIDEO', label: t('common.medium.VIDEO') },
     ];
 
+    const applyTypeChange = (newType: TherapyPlanType) => {
+        setValues((prev: any) => ({
+            ...prev,
+            type: newType,
+            events: [],
+            startTime: newType === 'PERSONAL_CONSULT' ? '' : prev.startTime,
+            endTime: newType === 'PERSONAL_CONSULT' ? '' : prev.endTime,
+            consultDateStart: newType === 'PERSONAL_CONSULT' ? prev.consultDateStart : '',
+            consultDateEnd: newType === 'PERSONAL_CONSULT' ? prev.consultDateEnd : '',
+            consultWorkStart: newType === 'PERSONAL_CONSULT' ? prev.consultWorkStart : '',
+            consultWorkEnd: newType === 'PERSONAL_CONSULT' ? prev.consultWorkEnd : '',
+            consultTimezone: newType === 'PERSONAL_CONSULT' ? (prev.consultTimezone || 'Asia/Shanghai') : 'Asia/Shanghai',
+        }));
+        setErrors((prev: any) => ({ ...prev, type: undefined }));
+    };
+
+    React.useEffect(() => {
+        if (!enforceAllowedType) return;
+        const current = planTypeOptions.find((option) => option.value === values.type);
+        if (!current?.disabled) return;
+        const fallback = planTypeOptions.find((option) => !option.disabled);
+        if (fallback && fallback.value !== values.type) {
+            applyTypeChange(fallback.value as TherapyPlanType);
+        }
+    }, [enforceAllowedType, values.type, consultEnabled, canCreateConsultPlans, canCreateNonConsultPlans]);
+
     return (
         <div className="space-y-6">
             {/* Plan type */}
@@ -79,26 +111,23 @@ export const Step1Metadata = ({
                 options={planTypeOptions}
                 value={values.type}
                 onChange={(e) => {
-                    const newType = e.target.value as TherapyPlanType;
-                    setValues((prev: any) => ({
-                        ...prev,
-                        type: newType,
-                        events: [],
-                        startTime: newType === 'PERSONAL_CONSULT' ? '' : prev.startTime,
-                        endTime: newType === 'PERSONAL_CONSULT' ? '' : prev.endTime,
-                        consultDateStart: newType === 'PERSONAL_CONSULT' ? prev.consultDateStart : '',
-                        consultDateEnd: newType === 'PERSONAL_CONSULT' ? prev.consultDateEnd : '',
-                        consultWorkStart: newType === 'PERSONAL_CONSULT' ? prev.consultWorkStart : '',
-                        consultWorkEnd: newType === 'PERSONAL_CONSULT' ? prev.consultWorkEnd : '',
-                        consultTimezone: newType === 'PERSONAL_CONSULT' ? (prev.consultTimezone || 'Asia/Shanghai') : 'Asia/Shanghai',
-                    }));
-                    setErrors((prev: any) => ({ ...prev, type: undefined }));
+                    applyTypeChange(e.target.value as TherapyPlanType);
                 }}
                 error={errors.type}
             />
             {!consultEnabled && (
                 <p className="text-xs text-amber-600">
                     {t('profile.wizard.consultDisabledHint')}
+                </p>
+            )}
+            {!canCreateConsultPlans && (
+                <p className="text-xs text-amber-600">
+                    {t('therapyPlans.form.counselorRequiredForConsult', 'Approved COUNSELOR certificate is required for Personal Consult and Group Consult plans.')}
+                </p>
+            )}
+            {!canCreateNonConsultPlans && (
+                <p className="text-xs text-amber-600">
+                    {t('therapyPlans.form.therapistRequiredForSalonRetreat', 'Approved THERAPIST certificate is required for Art Salon and Wellness Retreat plans.')}
                 </p>
             )}
         </div>

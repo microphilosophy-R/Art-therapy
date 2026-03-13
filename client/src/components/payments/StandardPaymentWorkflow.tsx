@@ -98,6 +98,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
     };
 
     const isPersonal = type === 'PERSONAL_CONSULT';
+    const showInviteCouponStep = !isPersonal;
     const paymentTarget = orderGenerated
         ? resolvedTarget
         : {
@@ -119,52 +120,69 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
 
     // Decide steps based on type
     const steps: PaymentWorkflowStep[] = ['TERMS', 'TIME', 'INFO', 'PAYMENT'];
-    // b/c/d skip INFO step according to requirement "the b/c/d will automatically skip"
+    // Personal consult skips INFO because invite/coupon is only for non-personal plan types.
     const currentStepIndex = steps.indexOf(step);
 
+    const requestPaymentTarget = async (method: PaymentMethod) => {
+        if (method === 'card' || orderGenerated || isProcessing) return;
+        setIsProcessing(true);
+        setCheckoutError(null);
+        try {
+            if (!onComplete) {
+                if (data.appointmentId || data.participantId || data.orderId) {
+                    setOrderGenerated(true);
+                }
+                return;
+            }
+            const completionResult = await onComplete(method);
+            const nextTarget: PaymentTarget = {
+                appointmentId: completionResult?.appointmentId ?? data.appointmentId,
+                participantId: completionResult?.participantId ?? data.participantId,
+                orderId: completionResult?.orderId ?? data.orderId,
+                planId: completionResult?.planId ?? data.planId,
+            };
+            if (!nextTarget.appointmentId && !nextTarget.participantId && !nextTarget.orderId && typeof completionResult?.id === 'string') {
+                if (type === 'PERSONAL_CONSULT') {
+                    nextTarget.appointmentId = completionResult.id;
+                } else {
+                    nextTarget.participantId = completionResult.id;
+                }
+            }
+            if (!nextTarget.appointmentId && !nextTarget.participantId && !nextTarget.orderId) {
+                throw new Error('Missing payment target after checkout completion');
+            }
+            setResolvedTarget(nextTarget);
+            setOrderGenerated(true);
+        } catch (err: any) {
+            console.error('Order generation failed', err);
+            setCheckoutError(err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleSelectMethod = (method: PaymentMethod) => {
+        setPaymentMethod(method);
+        setCheckoutError(null);
+        if (step === 'PAYMENT' && !orderGenerated) {
+            void requestPaymentTarget(method);
+        }
+    };
+
     const handleNext = async () => {
+
         if (step === 'TERMS') {
             setStep('TIME');
         } else if (step === 'TIME') {
-            if (isPersonal) {
+            if (showInviteCouponStep) {
                 setStep('INFO');
             } else {
                 setStep('PAYMENT');
+                void requestPaymentTarget(paymentMethod);
             }
         } else if (step === 'INFO') {
             setStep('PAYMENT');
-        } else if (step === 'PAYMENT') {
-            if (paymentMethod === 'card') return;
-            if (onComplete) {
-                setIsProcessing(true);
-                setCheckoutError(null);
-                try {
-                    const completionResult = await onComplete(paymentMethod);
-                    const nextTarget: PaymentTarget = {
-                        appointmentId: completionResult?.appointmentId ?? data.appointmentId,
-                        participantId: completionResult?.participantId ?? data.participantId,
-                        orderId: completionResult?.orderId ?? data.orderId,
-                        planId: completionResult?.planId ?? data.planId,
-                    };
-                    if (!nextTarget.appointmentId && !nextTarget.participantId && !nextTarget.orderId && typeof completionResult?.id === 'string') {
-                        if (type === 'PERSONAL_CONSULT') {
-                            nextTarget.appointmentId = completionResult.id;
-                        } else {
-                            nextTarget.participantId = completionResult.id;
-                        }
-                    }
-                    if (!nextTarget.appointmentId && !nextTarget.participantId && !nextTarget.orderId) {
-                        throw new Error('Missing payment target after checkout completion');
-                    }
-                    setResolvedTarget(nextTarget);
-                    setOrderGenerated(true);
-                } catch (err: any) {
-                    console.error('Order generation failed', err);
-                    setCheckoutError(err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
-                } finally {
-                    setIsProcessing(false);
-                }
-            }
+            void requestPaymentTarget(paymentMethod);
         }
     };
 
@@ -172,13 +190,13 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
         if (step === 'TIME') setStep('TERMS');
         else if (step === 'INFO') setStep('TIME');
         else if (step === 'PAYMENT') {
-            if (isPersonal) setStep('INFO');
+            if (showInviteCouponStep) setStep('INFO');
             else setStep('TIME');
         }
     };
 
     const renderProgress = () => {
-        const activeSteps = steps.filter(s => isPersonal || s !== 'INFO');
+        const activeSteps = steps.filter(s => showInviteCouponStep || s !== 'INFO');
         const currentIndex = activeSteps.indexOf(step);
 
         return (
@@ -222,15 +240,15 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-teal-700 mb-2">
                                 <ShieldCheck className="h-5 w-5" />
-                                <h2 className="text-lg font-semibold">{t('payment.acknowledgement', 'Service Terms Acknowledgement')}</h2>
+                                <h2 className="text-lg font-semibold">{t('payment.acknowledgement')}</h2>
                             </div>
                             <div className="bg-stone-50 rounded-lg p-4 text-sm text-stone-600 max-h-60 overflow-y-auto border border-stone-200">
-                                <p className="font-medium mb-2 text-stone-800">{t('common.planType.' + type)} {t('payment.tos_title', 'Terms of Service')}</p>
+                                <p className="font-medium mb-2 text-stone-800">{t('common.planType.' + type)} {t('payment.tos_title')}</p>
                                 <ul className="list-disc pl-5 space-y-2">
-                                    <li>{t('payment.tos_item1', 'By proceeding, you agree to our privacy policy and the specific terms for this service.')}</li>
-                                    <li>{t('payment.cancellation_policy', 'Cancellation policy: Free cancellation 24+ hours before start. 50% refund if cancelled within 24 hours. No refund after session starts.')}</li>
-                                    <li>{t('payment.tos_item3', 'For group events, the therapist reserves the right to reschedule if minimum participation is not met.')}</li>
-                                    <li>{t('payment.tos_item4', 'Your personal information is handled according to HIPAA and relevant privacy standards.')}</li>
+                                    <li>{t('payment.tos_item1')}</li>
+                                    <li>{t('payment.cancellation_policy')}</li>
+                                    <li>{t('payment.tos_item3')}</li>
+                                    <li>{t('payment.tos_item4')}</li>
                                 </ul>
                             </div>
                             <div className="flex items-start gap-3 mt-6">
@@ -242,7 +260,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                     className="mt-1 h-4 w-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500"
                                 />
                                 <label htmlFor="tos" className="text-sm text-stone-700 cursor-pointer">
-                                    {t('payment.i_agree', 'I have read and agree to the Terms of Service and Privacy Policy.')}
+                                    {t('payment.i_agree')}
                                 </label>
                             </div>
                         </div>
@@ -253,7 +271,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                             <div className="flex items-center gap-2 text-teal-700 mb-2">
                                 <Calendar className="h-5 w-5" />
                                 <h2 className="text-lg font-semibold">
-                                    {isPersonal ? t('booking.step1.title') : t('payment.confirm_time', 'Confirm Schedule')}
+                                    {isPersonal ? t('booking.step1.title') : t('payment.confirm_time')}
                                 </h2>
                             </div>
 
@@ -274,7 +292,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                             ) : (
                                 <div className="space-y-4">
                                     <div className="p-4 bg-teal-50 rounded-xl border border-teal-100">
-                                        <p className="text-sm text-teal-800 mb-2 font-medium">{t('payment.scheduled_for', 'The event is scheduled for:')}</p>
+                                        <p className="text-sm text-teal-800 mb-2 font-medium">{t('payment.scheduled_for')}</p>
                                         <div className="flex items-center gap-3">
                                             <Calendar className="h-5 w-5 text-teal-600" />
                                             <span className="text-stone-900 font-semibold">{formatWorkflowDate(data.startTime)}</span>
@@ -286,34 +304,34 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                     </div>
                                     <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg text-xs text-amber-700 border border-amber-100">
                                         <Info className="h-4 w-4 shrink-0" />
-                                        <span>{t('payment.group_confirm_notice', 'Please ensure you can attend at this specific time. Group plans have fixed schedules.')}</span>
+                                        <span>{t('payment.group_confirm_notice')}</span>
                                     </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {step === 'INFO' && isPersonal && (
+                    {step === 'INFO' && showInviteCouponStep && (
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 text-teal-700 mb-2">
                                 <UserPlus className="h-5 w-5" />
-                                <h2 className="text-lg font-semibold">{t('payment.extra_info', 'Additional Information')}</h2>
+                                <h2 className="text-lg font-semibold">{t('therapyPlans.signup.step2.title', 'Discount & Invitation')}</h2>
                             </div>
 
                             <div className="p-6 border-2 border-dashed border-stone-200 rounded-2xl bg-stone-50 text-center">
                                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                                     <UserPlus className="h-6 w-6 text-stone-400" />
                                 </div>
-                                <h4 className="font-medium text-stone-900 mb-1">{t('payment.invite_friend', 'Invite a Friend')}</h4>
-                                <p className="text-sm text-stone-500 mb-4">{t('payment.invite_desc', 'Coming soon: You will be able to invite a friend to this session and receive a collaborative discount.')}</p>
+                                <h4 className="font-medium text-stone-900 mb-1">{t('payment.invite_friend')}</h4>
+                                <p className="text-sm text-stone-500 mb-4">{t('payment.invite_desc')}</p>
                                 <div className="bg-teal-50 text-teal-700 text-xs font-bold py-1 px-3 rounded-full inline-block uppercase tracking-wider">
-                                    {t('common.comingSoon', 'Coming Soon')}
+                                    {t('common.comingSoon')}
                                 </div>
                             </div>
 
                             <div className="p-4 bg-stone-100 rounded-lg">
                                 <p className="text-xs text-stone-500 italic">
-                                    {t('payment.skip_for_now', 'This page will automatically skip for group sessions, art salons, and wellness retreats.')}
+                                    {t('payment.skip_for_now')}
                                 </p>
                             </div>
                         </div>
@@ -323,7 +341,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 text-teal-700 mb-2">
                                 <CreditCard className="h-5 w-5" />
-                                <h2 className="text-lg font-semibold">{t('payment.final_check', 'Final Review & Payment')}</h2>
+                                <h2 className="text-lg font-semibold">{t('payment.final_check')}</h2>
                             </div>
 
                             <div className="space-y-3">
@@ -353,20 +371,31 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                         alipayEnabled={paymentCapabilities.alipay}
                                         wechatEnabled={paymentCapabilities.wechat}
                                         selectedMethod={paymentMethod}
-                                        onSelect={setPaymentMethod}
+                                        onSelect={handleSelectMethod}
                                         isZh={i18n.language.startsWith('zh')}
                                     />
                                     {paymentMethod === 'card' && <StripeUnavailable />}
-                                    <div className="mt-6">
-                                        <Button
-                                            className="w-full h-12 text-lg"
-                                            onClick={handleNext}
-                                            loading={isProcessing}
-                                            disabled={!paymentMethod || paymentMethod === 'card'}
-                                        >
-                                            {t('payment.confirmAndPay', 'Confirm Payment')}
-                                        </Button>
-                                    </div>
+                                    {isProcessing && paymentMethod !== 'card' && (
+                                        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-stone-500">
+                                            <svg className="h-4 w-4 animate-spin text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                            </svg>
+                                            {t('common.loading')}
+                                        </div>
+                                    )}
+                                    {checkoutError && paymentMethod !== 'card' && (
+                                        <div className="mt-4 flex justify-center">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => void requestPaymentTarget(paymentMethod)}
+                                                disabled={isProcessing}
+                                            >
+                                                {t('common.retry')}
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="mt-8 border-t border-stone-100 pt-6">

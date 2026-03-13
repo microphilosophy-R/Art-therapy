@@ -62,7 +62,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
     onError: (err: any) => {
       const status = err?.response?.status;
       if (status === 401) {
-        const authErrorMessage = t('auth.loginRequired', 'Your session expired. Please sign in again.');
+        const authErrorMessage = t('auth.loginRequired');
         onError?.(authErrorMessage);
         navigate('/login', { replace: true, state: { from: `${location.pathname}${location.search}` } });
         return;
@@ -70,7 +70,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
       if (!status || status >= 500) {
         console.error('failed to load the payment', err);
       }
-      const timeoutMessage = t('payment.wechatTimeout', 'WeChat payment service timed out. Please retry in a moment.');
+      const timeoutMessage = t('payment.wechatTimeout');
       const message = err?.code === 'ECONNABORTED'
         ? timeoutMessage
         : (err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
@@ -158,8 +158,8 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
   }
 
   if (mutation.isError) {
-    const timeoutMessage = t('payment.wechatTimeout', 'WeChat payment service timed out. Please retry in a moment.');
-    const authErrorMessage = t('auth.loginRequired', 'Your session expired. Please sign in again.');
+    const timeoutMessage = t('payment.wechatTimeout');
+    const authErrorMessage = t('auth.loginRequired');
     const status = (mutation.error as any)?.response?.status;
     const errorMessage = status === 401
       ? authErrorMessage
@@ -176,7 +176,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
   if (mutation.isSuccess && !codeUrl) {
     return (
       <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-4 text-sm text-rose-700">
-        {t('payment.wechatQrMissing', 'Unable to generate WeChat QR code. Please try again.')}
+        {t('payment.wechatQrMissing')}
       </div>
     );
   }
@@ -184,7 +184,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
   if (mutation.status === 'idle' || !codeUrl) {
     return (
       <div className="mt-4 flex flex-col items-center gap-3 py-6 text-center">
-        <p className="text-sm text-stone-500">{t('payment.wechatQrMissing', 'Unable to generate WeChat QR code. Please try again.')}</p>
+        <p className="text-sm text-stone-500">{t('payment.wechatQrMissing')}</p>
         <button
           type="button"
           onClick={() => {
@@ -197,7 +197,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
           }}
           className="inline-flex items-center rounded-md bg-celadon-600 px-4 py-2 text-sm font-medium text-white hover:bg-celadon-700"
         >
-          {t('common.retry', 'Retry')}
+          {t('common.retry')}
         </button>
       </div>
     );
@@ -210,10 +210,10 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
       </div>
       <div className="text-center">
         <p className="text-sm font-medium text-stone-700">
-          {t('payment.wechatScanPrompt', 'Scan with WeChat to pay')}
+          {t('payment.wechatScanPrompt')}
         </p>
         <p className="text-xs text-stone-400 mt-1">
-          {t('payment.wechatScanHint', 'Open WeChat → Scan → Complete payment')}
+          {t('payment.wechatScanHint')}
         </p>
       </div>
       <div className="flex items-center gap-2 text-xs text-stone-400">
@@ -221,7 +221,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
         </svg>
-        {t('payment.waitingForPayment', 'Waiting for payment…')}
+        {t('payment.waitingForPayment')}
       </div>
     </div>
   );

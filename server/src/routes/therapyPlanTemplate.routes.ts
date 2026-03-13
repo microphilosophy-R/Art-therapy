@@ -14,12 +14,13 @@ import {
 } from '../schemas/therapyPlanTemplate.schemas';
 
 export const therapyPlanTemplateRouter = Router();
+const providerCertificates = ['THERAPIST', 'COUNSELOR'] as const;
 
 therapyPlanTemplateRouter.get(
   '/',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(listTemplatesSchema, 'query'),
   listTemplates,
 );
@@ -28,7 +29,7 @@ therapyPlanTemplateRouter.post(
   '/',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(createTemplateSchema),
   createTemplate,
 );
@@ -37,6 +38,6 @@ therapyPlanTemplateRouter.delete(
   '/:id',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   deleteTemplate,
 );

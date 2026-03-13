@@ -10,10 +10,11 @@ import { validate } from '../middleware/validate';
 import { createPaymentIntentSchema } from '../schemas/payment.schemas';
 
 export const paymentRouter = Router();
+const providerCertificates = ['THERAPIST', 'COUNSELOR'] as const;
 
 paymentRouter.post('/create-intent', authenticate, authorize('MEMBER'), validate(createPaymentIntentSchema), createPaymentIntent);
-paymentRouter.get('/connect/status', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), getConnectStatus);
-paymentRouter.post('/connect/onboard', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), startConnectOnboarding);
+paymentRouter.get('/connect/status', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), getConnectStatus);
+paymentRouter.post('/connect/onboard', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), startConnectOnboarding);
 paymentRouter.get('/connect/return', connectReturn);
 paymentRouter.get('/connect/refresh', connectRefresh);
 paymentRouter.get('/appointment/:id', authenticate, getPaymentByAppointment);

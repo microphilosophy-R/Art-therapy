@@ -41,6 +41,8 @@
       "invalidEmail": "请输入有效的邮箱地址",
       "tryAgain": "出现错误，请重试。"
     },
+    "retry": "重试",
+    "comingSoon": "即将上线",
     "select": "请选择...",
     "submitted": "已提交",
     "confirmDelete": "确定要删除吗？",
@@ -194,6 +196,7 @@
     }
   },
   "auth": {
+    "loginRequired": "登录已过期，请重新登录。",
     "login": {
       "title": "欢迎回来",
       "subtitle": "登录您的账户",
@@ -368,6 +371,8 @@
     "cardUnavailableTitle": "暂不支持银行卡付款",
     "cardUnavailableDesc": "抱歉，暂不提供此付款服务。请使用支付宝或微信支付。",
     "redirectingToAlipay": "正在跳转至支付宝…",
+    "wechatTimeout": "微信支付服务超时，请稍后重试。",
+    "wechatQrMissing": "无法生成微信支付二维码，请重试。",
     "wechatScanPrompt": "使用微信扫码付款",
     "wechatScanHint": "打开微信 → 扫一扫 → 完成支付",
     "waitingForPayment": "等待支付中…",
@@ -376,6 +381,7 @@
     "tos_title": "服务条款",
     "tos_item1": "继续操作即表示您同意我们的隐私政策及针对该服务的特定条款。",
     "tos_item2": "在疗程开始前不足24小时进行的取消可能无法获得退款。",
+    "cancellation_policy": "取消政策：开始前24小时以上可免费取消；24小时内取消退款50%；开始后不予退款。",
     "tos_item3": "对于团体活动，如果未达到最低参与人数，治疗师保留重新安排时间的权利。",
     "tos_item4": "您的个人信息将根据 HIPAA 和相关隐私标准进行处理。",
     "i_agree": "我已阅读并同意服务条款和隐私政策。",
@@ -1498,6 +1504,9 @@
       "postalCode": "\u90ae\u653f\u7f16\u7801\uff08\u9009\u586b\uff09",
       "setAsDefault": "\u8bbe\u4e3a\u9ed8\u8ba4\u5730\u5740",
       "maxAddressReached": "\u6700\u591a\u53ea\u80fd\u4fdd\u5b58 6 \u4e2a\u5730\u5740",
+      "confirmAddress": "确认收货地址",
+      "selectAddressFirst": "请先选择收货地址。",
+      "failedCreateOrder": "创建订单失败",
       "addressTags": {
         "HOME": "\u5bb6",
         "COMPANY": "\u516c\u53f8",

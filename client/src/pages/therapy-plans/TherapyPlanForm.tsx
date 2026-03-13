@@ -147,6 +147,7 @@ const defaultTranslationState: Record<LocalizedBaseField, TranslationFieldState>
 };
 
 interface TherapyPlanFormProps {
+  defaultPlanType?: TherapyPlanType;
   initialValues?: Partial<TherapyPlanFormValues>;
   forcedStep?: Step | null;
   forceStepSignal?: number;
@@ -181,9 +182,13 @@ interface TherapyPlanFormProps {
   onDeletePdf?: (id: string) => void;
   isAddingPdf?: boolean;
   consultEnabled?: boolean;
+  canCreateConsultPlans?: boolean;
+  canCreateNonConsultPlans?: boolean;
+  enforceAllowedType?: boolean;
 }
 
 export const TherapyPlanForm = ({
+  defaultPlanType,
   initialValues,
   forcedStep = null,
   forceStepSignal = 0,
@@ -207,6 +212,9 @@ export const TherapyPlanForm = ({
   isAddingPdf,
   videoUploadPercent = 0,
   consultEnabled = false,
+  canCreateConsultPlans = false,
+  canCreateNonConsultPlans = false,
+  enforceAllowedType = false,
 }: TherapyPlanFormProps) => {
   const { t, i18n } = useTranslation();
   const userLang: LocalizedLang = i18n.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
@@ -214,7 +222,11 @@ export const TherapyPlanForm = ({
   const translationTargetLang: TranslateLang = userLang === 'zh' ? 'en' : 'zh';
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
-  const [values, setValues] = useState<TherapyPlanFormValues>({ ...defaultValues, ...initialValues });
+  const [values, setValues] = useState<TherapyPlanFormValues>({
+    ...defaultValues,
+    ...(defaultPlanType ? { type: defaultPlanType } : {}),
+    ...initialValues,
+  });
   const [errors, setErrors] = useState<Partial<Record<keyof TherapyPlanFormValues, string>>>({});
   const [translationState, setTranslationState] = useState<Record<LocalizedBaseField, TranslationFieldState>>(
     defaultTranslationState,
@@ -773,6 +785,9 @@ export const TherapyPlanForm = ({
                 setPosterFile={setPosterFile}
                 isLoading={isNextBusy}
                 consultEnabled={consultEnabled}
+                canCreateConsultPlans={canCreateConsultPlans}
+                canCreateNonConsultPlans={canCreateNonConsultPlans}
+                enforceAllowedType={enforceAllowedType}
               />
             )}
             {currentStep === 2 && (

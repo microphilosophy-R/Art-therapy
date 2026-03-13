@@ -24,8 +24,8 @@ export const ProfilePreviewTab = () => {
 
   const userProfile = profile?.userProfile;
   const isArtist = user?.approvedCertificates?.includes('ARTIFICER');
-  const isTherapist = user?.approvedCertificates?.includes('THERAPIST');
-  const liveLink = isArtist ? '/shop' : isTherapist ? `/therapists/${userProfile?.id}` : '/';
+  const isProvider = user?.approvedCertificates?.some((cert) => cert === 'THERAPIST' || cert === 'COUNSELOR');
+  const liveLink = isArtist ? '/shop' : isProvider ? `/therapists/${userProfile?.id}` : '/';
 
   return (
     <div>

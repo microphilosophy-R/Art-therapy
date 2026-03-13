@@ -142,10 +142,10 @@ export const createAppointment = async (req: Request, res: Response) => {
 export const listAppointments = async (req: Request, res: Response) => {
   const { status, page = 1, limit = 20 } = req.query as any;
   const user = req.user!;
-  const isTherapist = user.approvedCertificates?.includes('THERAPIST' as any);
+  const isProvider = user.approvedCertificates?.some((cert) => cert === 'THERAPIST' || cert === 'COUNSELOR');
 
   const where: any = {
-    ...(user.role === 'ADMIN' ? {} : (isTherapist ? { userProfile: { userId: user.id } } : { clientId: user.id })),
+    ...(user.role === 'ADMIN' ? {} : (isProvider ? { userProfile: { userId: user.id } } : { clientId: user.id })),
     ...(status ? { status: { in: Array.isArray(status) ? status : [status] } } : {}),
   };
 

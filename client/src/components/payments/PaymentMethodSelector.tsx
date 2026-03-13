@@ -3,17 +3,17 @@ import { useTranslation } from 'react-i18next';
 
 // Alipay logo
 const AlipayIcon = () => (
-  <img src="/alipay-logo.svg" alt="Alipay" className="h-6 w-6 rounded object-contain" loading="lazy" />
+  <img src="/alipay-logo.svg" alt="Alipay" className="h-14 w-14 rounded object-contain" loading="lazy" />
 );
 
 // WeChat Pay logo
 const WechatIcon = () => (
-  <img src="/wechatpay-logo.svg" alt="WeChat Pay" className="h-6 w-6 rounded object-contain" loading="lazy" />
+  <img src="/wechatpay-logo.svg" alt="WeChat Pay" className="h-14 w-14 rounded object-contain" loading="lazy" />
 );
 
 // Card / Stripe icon
 const CardIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg">
     <rect x="2" y="5" width="20" height="14" rx="2" />
     <path d="M2 10h20" />
   </svg>
@@ -53,21 +53,21 @@ export const PaymentMethodSelector = ({
     {
       id: 'alipay',
       icon: <AlipayIcon />,
-      label: t('payment.alipay', 'Alipay'),
+      label: t('payment.alipay'),
       enabled: supportsAlipay,
       comingSoon: !supportsAlipay,
     },
     {
       id: 'wechat',
       icon: <WechatIcon />,
-      label: t('payment.wechat', 'WeChat Pay'),
+      label: t('payment.wechat'),
       enabled: supportsWechat,
       comingSoon: !supportsWechat,
     },
     {
       id: 'card',
       icon: <CardIcon />,
-      label: t('payment.card', 'Credit / Debit Card'),
+      label: t('payment.card'),
       enabled: true, // always clickable; shows "unavailable" message
       unavailable: true,
     },
@@ -76,9 +76,9 @@ export const PaymentMethodSelector = ({
   return (
     <div className="mb-5">
       <p className="text-sm font-medium text-stone-700 mb-3">
-        {t('payment.selectMethod', 'Select payment method')}
+        {t('payment.selectMethod')}
       </p>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {methods.map((m) => {
           const isSelected = selectedMethod === m.id;
           const isDefault = isZh && m.id === 'alipay' && selectedMethod === null;
@@ -90,7 +90,7 @@ export const PaymentMethodSelector = ({
               disabled={m.comingSoon}
               onClick={() => m.enabled && onSelect(m.id)}
               className={[
-                'relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 text-xs font-medium transition-colors',
+                'relative flex min-h-[132px] flex-col items-center justify-center gap-3 rounded-xl border-2 p-4 text-sm font-medium transition-colors',
                 isSelected || isDefault
                   ? 'border-teal-600 bg-teal-50 text-teal-700'
                   : m.comingSoon
@@ -101,10 +101,10 @@ export const PaymentMethodSelector = ({
               ].join(' ')}
             >
               {m.icon}
-              <span>{m.label}</span>
+              <span className="text-center leading-tight">{m.label}</span>
               {m.comingSoon && (
                 <span className="absolute top-1 right-1 bg-stone-200 text-stone-500 text-[9px] px-1 rounded">
-                  {t('payment.comingSoon', 'Soon')}
+                  {t('payment.comingSoon')}
                 </span>
               )}
               {m.unavailable && (

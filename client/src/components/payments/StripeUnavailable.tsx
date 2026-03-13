@@ -13,10 +13,10 @@ export const StripeUnavailable = () => {
       </div>
       <div>
         <p className="text-sm font-medium text-stone-700">
-          {t('payment.cardUnavailableTitle', 'Card payment not available')}
+          {t('payment.cardUnavailableTitle')}
         </p>
         <p className="text-sm text-stone-500 mt-0.5">
-          {t('payment.cardUnavailableDesc', 'Sorry, we don\'t provide this service now. Please use Alipay or WeChat Pay.')}
+          {t('payment.cardUnavailableDesc')}
         </p>
       </div>
     </div>

@@ -56,6 +56,10 @@ export const EditTherapyPlan = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const hasTherapistCert = !!user?.approvedCertificates?.includes('THERAPIST');
+  const hasCounselorCert = !!user?.approvedCertificates?.includes('COUNSELOR');
+  const hasProviderCert = hasTherapistCert || hasCounselorCert;
+  const defaultCreatePlanType: TherapyPlanType = hasCounselorCert ? 'PERSONAL_CONSULT' : 'ART_SALON';
 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
@@ -79,7 +83,7 @@ export const EditTherapyPlan = () => {
   const [formKey, setFormKey] = useState(0);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [initialCreateValues, setInitialCreateValues] = useState<Partial<TherapyPlanFormValues> | undefined>(undefined);
-  const [currentType, setCurrentType] = useState<TherapyPlanType>('PERSONAL_CONSULT');
+  const [currentType, setCurrentType] = useState<TherapyPlanType>(defaultCreatePlanType);
 
   // Save-as-template state
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
@@ -390,8 +394,6 @@ export const EditTherapyPlan = () => {
 
   const isOwner = isCreateMode ? true : plan?.therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
-  const isTherapist = !!user?.approvedCertificates?.includes('THERAPIST');
-
   const canEdit = isCreateMode ||
     isAdmin ||
     (isOwner && plan && ['DRAFT', 'REJECTED', 'IN_GALLERY'].includes(plan.status));
@@ -399,7 +401,7 @@ export const EditTherapyPlan = () => {
   // Submit for review: create mode (after first auto-save creates the plan) or edit DRAFT/REJECTED
   const canSubmitForReview =
     (isCreateMode) ||
-    (!isCreateMode && isTherapist && isOwner && plan && ['DRAFT', 'REJECTED'].includes(plan.status));
+    (!isCreateMode && hasProviderCert && isOwner && plan && ['DRAFT', 'REJECTED'].includes(plan.status));
 
   const isNonPersonal = isCreateMode ? currentType !== 'PERSONAL_CONSULT' : plan?.type !== 'PERSONAL_CONSULT';
   const activeStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
@@ -508,6 +510,7 @@ export const EditTherapyPlan = () => {
         <TherapyPlanForm
           key={formKey}
           initialValues={isCreateMode ? initialCreateValues : (plan ? planToFormValues(plan) : undefined)}
+          defaultPlanType={defaultCreatePlanType}
           forcedStep={forcedStep}
           forceStepSignal={forceStepSignal}
           planId={effectivePlanId}
@@ -529,6 +532,9 @@ export const EditTherapyPlan = () => {
           isAddingPdf={addPdfMutation.isPending}
           videoUploadPercent={videoUploadPercent}
           consultEnabled={consultEnabled}
+          canCreateConsultPlans={hasCounselorCert}
+          canCreateNonConsultPlans={hasTherapistCert}
+          enforceAllowedType={isCreateMode}
         />
       ) : plan ? (
         <>

@@ -89,6 +89,7 @@ const pdfUpload = multer({
 });
 
 export const therapyPlanRouter = Router();
+const providerCertificates = ['THERAPIST', 'COUNSELOR'] as const;
 
 // 鈹€鈹€鈹€ Public / optional-auth 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.get(
@@ -106,7 +107,7 @@ therapyPlanRouter.post(
   '/',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(createTherapyPlanSchema),
   createPlan,
 );
@@ -114,19 +115,19 @@ therapyPlanRouter.post(
   '/check-conflicts',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(checkTherapyPlanConflictsSchema),
   checkScheduleConflicts,
 );
-therapyPlanRouter.delete('/:id', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlan);
-therapyPlanRouter.post('/:id/submit', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), submitForReview);
+therapyPlanRouter.delete('/:id', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), deletePlan);
+therapyPlanRouter.post('/:id/submit', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), submitForReview);
 
 // 鈹€鈹€鈹€ Therapist or Admin 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.patch(
   '/:id',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(updateTherapyPlanSchema),
   updatePlan,
 );
@@ -134,14 +135,14 @@ therapyPlanRouter.post(
   '/:id/archive',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   archivePlan,
 );
 therapyPlanRouter.post(
   '/:id/poster',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   imageUpload.single('poster'),
   multerErrorHandler,
   uploadPlanPoster,
@@ -151,7 +152,7 @@ therapyPlanRouter.post(
   '/:id/video',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   videoUpload.single('video'),
   multerErrorHandler,
   uploadPlanVideo,
@@ -162,33 +163,33 @@ therapyPlanRouter.post(
   '/:id/images',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   imageUpload.single('image'),
   multerErrorHandler,
   addPlanImage,
 );
-therapyPlanRouter.delete('/:id/images/:imageId', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlanImage);
-therapyPlanRouter.patch('/:id/images/order', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), reorderPlanImages);
+therapyPlanRouter.delete('/:id/images/:imageId', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), deletePlanImage);
+therapyPlanRouter.patch('/:id/images/order', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), reorderPlanImages);
 
 // 鈹€鈹€鈹€ PDF attachment (Therapist or Admin) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/pdfs',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   pdfUpload.single('pdf'),
   multerErrorHandler,
   addPlanPdf,
 );
-therapyPlanRouter.delete('/:id/pdfs/:pdfId', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), deletePlanPdf);
-therapyPlanRouter.patch('/:id/pdfs/order', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), reorderPlanPdfs);
+therapyPlanRouter.delete('/:id/pdfs/:pdfId', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), deletePlanPdf);
+therapyPlanRouter.patch('/:id/pdfs/order', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), reorderPlanPdfs);
 
 // 鈹€鈹€鈹€ Therapist or Admin (events) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.put(
   '/:id/events',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(upsertPlanEventsSchema),
   upsertPlanEvents,
 );
@@ -198,7 +199,7 @@ therapyPlanRouter.post(
   '/:id/save-as-template',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   validate(saveAsTemplateSchema),
   saveAsTemplate,
 );
@@ -213,17 +214,17 @@ therapyPlanRouter.post(
 );
 
 // 鈹€鈹€鈹€ Lifecycle (Therapist owner) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-therapyPlanRouter.post('/:id/close-signup', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), closeSignup);
-therapyPlanRouter.post('/:id/start', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), startPlan);
-therapyPlanRouter.post('/:id/finish', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), finishPlan);
-therapyPlanRouter.post('/:id/to-gallery', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate('THERAPIST'), movePlanToGallery);
+therapyPlanRouter.post('/:id/close-signup', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), closeSignup);
+therapyPlanRouter.post('/:id/start', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), startPlan);
+therapyPlanRouter.post('/:id/finish', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), finishPlan);
+therapyPlanRouter.post('/:id/to-gallery', authenticate, authorize('MEMBER', 'ADMIN'), requireCertificate(providerCertificates), movePlanToGallery);
 
 // 鈹€鈹€鈹€ Cancel plan (Therapist owner or Admin) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 therapyPlanRouter.post(
   '/:id/cancel-plan',
   authenticate,
   authorize('MEMBER', 'ADMIN'),
-  requireCertificate('THERAPIST'),
+  requireCertificate(providerCertificates),
   cancelPlan,
 );
 

@@ -31,7 +31,7 @@ export const TherapyPlansTab = () => {
   const [statusFilter, setStatusFilter] = useState<TherapyPlanStatus | 'all'>('all');
   const [roleFilter, setRoleFilter] = useState<'creator' | 'participant'>('creator');
 
-  const hasTherapistCert = user?.approvedCertificates?.includes('THERAPIST');
+  const hasProviderCert = user?.approvedCertificates?.some((cert) => cert === 'THERAPIST' || cert === 'COUNSELOR');
 
   const { data, isLoading } = useQuery({
     queryKey: ['therapy-plans', roleFilter, statusFilter],
@@ -71,7 +71,7 @@ export const TherapyPlansTab = () => {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-stone-800">{t('dashboard.plans.title')}</h2>
-        {hasTherapistCert ? (
+        {hasProviderCert ? (
           <div className="flex items-center gap-2">
             <span className="text-sm text-green-600 font-medium">{t('dashboard.plans.certified')}</span>
             <Link to="/therapy-plans/create">

@@ -31,14 +31,18 @@ Certificate status lifecycle:
 - `REJECTED`
 - `REVOKED`
 
-Capabilities are enforced by backend middleware (`authorize(...)` + `requireCertificate(...)`).
+Capabilities are enforced by backend middleware (`authorize(...)` + `requireCertificate(...)`) plus plan-type-specific checks in therapy-plan controllers.
 
 ## Key Features
 
 - Public therapist directory and profile pages
 - Appointment booking and payment
 - Unified therapy plan and product editors with shared stepper guidance
-- Therapy plan creation workflow (therapist certificate required)
+- Therapy plan creation workflow with certificate split:
+  - `COUNSELOR` can create/edit `PERSONAL_CONSULT` and `GROUP_CONSULT`
+  - `THERAPIST` can create/edit `ART_SALON` and `WELLNESS_RETREAT`
+- Personal consult plans are display/schedule configuration only; booking is handled via appointment APIs
+- Invite-friend/coupon step is enabled for `GROUP_CONSULT`, `ART_SALON`, and `WELLNESS_RETREAT` checkout flows (not `PERSONAL_CONSULT`)
 - Product creation workflow with required poster + optional gallery/video media (artificer certificate required)
 - Cart, checkout, address selection, orders, and payment webhook processing
 - Member follow system (`MEMBER` <-> `MEMBER` only)
@@ -46,6 +50,16 @@ Capabilities are enforced by backend middleware (`authorize(...)` + `requireCert
 - Chat guardrail: one consecutive message max until the other side replies
 - Bilingual content support (`zh`/`en`) with translation checkpoint editing
 - Member address book management for delivery profiles (up to 6 saved addresses)
+
+## Recent Updates (2026-03-13)
+
+- Completed provider certificate split for therapy-plan authoring:
+  - Counselor-only for consult plans (`PERSONAL_CONSULT`, `GROUP_CONSULT`)
+  - Therapist-only for non-consult plans (`ART_SALON`, `WELLNESS_RETREAT`)
+- Updated therapy-plan, template, appointment-provider, and provider payment-connect route guards to accept provider certificates (`THERAPIST` or `COUNSELOR`) where needed.
+- Updated creator visibility/edit guards so counselor-owned plans are fully accessible in dashboard/detail/edit flows.
+- Kept personal consult as schedule/display configuration only; real booking remains appointment-based.
+- Switched invite/coupon step visibility to non-personal plan checkout flows only.
 
 ## Recent Updates (2026-03-07)
 

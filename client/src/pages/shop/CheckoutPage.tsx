@@ -6,21 +6,27 @@ import { getCart, createOrder, type CartItem } from '../../api/shop';
 import { getMemberAddresses } from '../../api/profile';
 import { Button } from '../../components/ui/Button';
 import { Loader2, CreditCard, ShoppingBag, MapPin } from 'lucide-react';
+import { PaymentMethodSelector, type PaymentMethod } from '../../components/payments/PaymentMethodSelector';
 import { AlipayPaymentForm } from '../../components/payments/AlipayPaymentForm';
 import { WechatPaymentForm } from '../../components/payments/WechatPaymentForm';
+import { StripeUnavailable } from '../../components/payments/StripeUnavailable';
 import { AddressBookPanel } from '../../components/profile/AddressBookPanel';
+import { getDefaultPaymentMethod, paymentCapabilities } from '../../lib/payments';
+import { formatCNY } from '../../utils/formatters';
 import { getProductCoverUrl } from '../../utils/productMedia';
 
 type CheckoutStep = 1 | 2 | 3;
 
 export const CheckoutPage = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     const [step, setStep] = useState<CheckoutStep>(1);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'ALIPAY' | 'WECHAT_PAY'>('WECHAT_PAY');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+        getDefaultPaymentMethod(i18n.language.startsWith('zh')),
+    );
     const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
     const [checkoutSnapshot, setCheckoutSnapshot] = useState<CartItem[] | null>(null);
 
@@ -57,7 +63,7 @@ export const CheckoutPage = () => {
             setStep(3);
         },
         onError: (error: any) => {
-            alert(error.response?.data?.message || 'Failed to create order');
+            alert(error.response?.data?.message || t('shop.checkout.failedCreateOrder'));
         },
     });
 
@@ -125,7 +131,7 @@ export const CheckoutPage = () => {
                                     disabled={!selectedAddressId}
                                     onClick={() => setStep(2)}
                                 >
-                                    {t('common.continue', 'Continue')}
+                                    {t('common.continue')}
                                 </Button>
                             </div>
                         </div>
@@ -136,13 +142,13 @@ export const CheckoutPage = () => {
                             <div className="absolute top-0 left-0 w-2 h-full bg-celadon-500"></div>
                             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
                                 <MapPin className="w-5 h-5 mr-2 text-celadon-600" />
-                                {t('shop.checkout.confirmAddress', 'Confirm Shipping Address')}
+                                {t('shop.checkout.confirmAddress')}
                             </h2>
 
                             {selectedAddress ? (
                                 <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
                                     <p className="font-semibold text-stone-900">
-                                        {selectedAddress.recipientName} · {selectedAddress.mobile}
+                                        {selectedAddress.recipientName} | {selectedAddress.mobile}
                                     </p>
                                     <p className="text-sm text-stone-700 mt-1">
                                         {selectedAddress.province} {selectedAddress.city} {selectedAddress.district}
@@ -150,17 +156,17 @@ export const CheckoutPage = () => {
                                     <p className="text-sm text-stone-700">{selectedAddress.addressDetail}</p>
                                     {selectedAddress.postalCode && (
                                         <p className="text-xs text-stone-500 mt-1">
-                                            {t('shop.checkout.postalCode', 'Postal Code')}: {selectedAddress.postalCode}
+                                            {t('shop.checkout.postalCode')}: {selectedAddress.postalCode}
                                         </p>
                                     )}
                                 </div>
                             ) : (
-                                <p className="text-sm text-rose-600">{t('shop.checkout.selectAddressFirst', 'Please select an address first.')}</p>
+                                <p className="text-sm text-rose-600">{t('shop.checkout.selectAddressFirst')}</p>
                             )}
 
                             <div className="mt-6 flex gap-3 justify-end">
                                 <Button variant="outline" onClick={() => setStep(1)}>
-                                    {t('common.back', 'Back')}
+                                    {t('common.back')}
                                 </Button>
                                 <Button
                                     size="lg"
@@ -183,34 +189,25 @@ export const CheckoutPage = () => {
                                 {t('shop.checkout.paymentMethod')}
                             </h2>
 
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <button
-                                    disabled
-                                    className="border-2 rounded-lg p-4 flex flex-col items-center justify-center opacity-40 cursor-not-allowed border-gray-200 bg-gray-50"
-                                >
-                                    <img src="/alipay-logo.svg" alt="Alipay" className="w-8 h-8 mb-2 rounded-md object-contain" loading="lazy" />
-                                    <span className="font-semibold text-gray-500">{t('shop.checkout.alipay')}</span>
-                                    <span className="text-xs text-gray-400 mt-1">Not available</span>
-                                </button>
-                                <button
-                                    className={`border-2 rounded-lg p-4 flex flex-col items-center justify-center transition-colors ${paymentMethod === 'WECHAT_PAY'
-                                        ? 'border-green-500 bg-green-50 text-green-700'
-                                        : 'border-gray-200 hover:border-green-200'
-                                        }`}
-                                    onClick={() => setPaymentMethod('WECHAT_PAY')}
-                                >
-                                    <img src="/wechatpay-logo.svg" alt="WeChat Pay" className="w-8 h-8 mb-2 rounded-md object-contain" loading="lazy" />
-                                    <span className="font-semibold">{t('shop.checkout.wechatPay')}</span>
-                                </button>
+                            <div className="mb-8 rounded-2xl border border-stone-200 bg-white/80 p-5">
+                                <PaymentMethodSelector
+                                    alipayEnabled={paymentCapabilities.alipay}
+                                    wechatEnabled={paymentCapabilities.wechat}
+                                    selectedMethod={paymentMethod}
+                                    onSelect={setPaymentMethod}
+                                    isZh={i18n.language.startsWith('zh')}
+                                />
+                                {paymentMethod === 'card' && <StripeUnavailable />}
                             </div>
 
                             <div className="flex justify-center">
-                                {paymentMethod === 'ALIPAY' ? (
+                                {paymentMethod === 'alipay' && (
                                     <AlipayPaymentForm
                                         orderId={createdOrderId}
                                         onSuccess={() => navigate('/orders')}
                                     />
-                                ) : (
+                                )}
+                                {paymentMethod === 'wechat' && (
                                     <WechatPaymentForm
                                         orderId={createdOrderId}
                                         onSuccess={() => navigate('/orders')}
@@ -249,7 +246,7 @@ export const CheckoutPage = () => {
                                         <div className="text-gray-500">{t('shop.checkout.qty', { count: item.quantity })}</div>
                                     </div>
                                     <div className="text-sm font-semibold text-gray-900">
-                                        ¥{(Number(item.product.price) * item.quantity).toFixed(2)}
+                                        {formatCNY(Number(item.product.price) * item.quantity)}
                                     </div>
                                 </div>
                             ))}
@@ -258,7 +255,7 @@ export const CheckoutPage = () => {
                         <div className="border-t border-ink-100 pt-4 space-y-3 mb-6">
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>{t('shop.cart.subtotal', { count: displayCartItems.length })}</span>
-                                <span>¥{subtotal.toFixed(2)}</span>
+                                <span>{formatCNY(subtotal)}</span>
                             </div>
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>{t('shop.cart.shipping')}</span>
@@ -270,7 +267,7 @@ export const CheckoutPage = () => {
                             <div className="flex justify-between items-end">
                                 <span className="font-bold text-gray-900">{t('shop.cart.total')}</span>
                                 <div className="text-right">
-                                    <span className="text-3xl font-bold text-celadon-600 block">¥{subtotal.toFixed(2)}</span>
+                                    <span className="text-3xl font-bold text-celadon-600 block">{formatCNY(subtotal)}</span>
                                     <span className="text-xs text-gray-500">{t('shop.cart.includesVat')}</span>
                                 </div>
                             </div>

@@ -20,7 +20,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
     const { t } = useTranslation();
     const { user } = useAuthStore();
     const isArtist = !!user?.approvedCertificates?.includes('ARTIFICER');
-    const isTherapist = !!user?.approvedCertificates?.includes('THERAPIST');
+    const isProvider = !!user?.approvedCertificates?.some((cert) => cert === 'THERAPIST' || cert === 'COUNSELOR');
 
     const { data: artistProfile, isLoading: artistLoading } = useQuery({
         queryKey: ['artist-profile', 'me'],
@@ -31,7 +31,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
     const { data: therapistProfile, isLoading: therapistLoading } = useQuery({
         queryKey: ['therapist-profile', 'me'],
         queryFn: () => getTherapist(user?.id!),
-        enabled: isTherapist && !!user?.id,
+        enabled: isProvider && !!user?.id,
     });
 
     const artistProfileId = (artistProfile as any)?.id;
@@ -46,7 +46,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
     const { data: plansResponse, isLoading: plansLoading } = useQuery({
         queryKey: ['therapy-plans', 'my-showcase'],
         queryFn: () => listTherapyPlans({ therapistId: therapistProfileId, status: 'PUBLISHED', limit: 5 }),
-        enabled: isTherapist && !!therapistProfileId,
+        enabled: isProvider && !!therapistProfileId,
     });
 
     const plans = plansResponse?.data ?? [];
@@ -92,7 +92,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                         </Link>
                     ))}
 
-                    {isTherapist && plans.map(plan => (
+                    {isProvider && plans.map(plan => (
                         <Link key={plan.id} to={`/therapy-plans/${plan.id}`} className="min-w-[200px] w-52 shrink-0 group">
                             <div className="aspect-poster bg-stone-100 rounded-xl overflow-hidden mb-2 relative">
                                 <img src={getPosterUrl(plan)} alt={plan.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -103,7 +103,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                         </Link>
                     ))}
 
-                    {((isArtist && (!products || products.length === 0)) || (isTherapist && plans.length === 0)) && (
+                    {((isArtist && (!products || products.length === 0)) || (isProvider && plans.length === 0)) && (
                         <div className="w-full flex flex-col items-center justify-center py-10 bg-stone-50 border-2 border-dashed border-stone-200 rounded-xl text-stone-400">
                             {isArtist ? <ShoppingBag className="w-8 h-8 mb-2 opacity-50" /> : <Calendar className="w-8 h-8 mb-2 opacity-50" />}
                             <p className="text-sm">{isArtist ? t('shop.artist.showcase.noProducts') : t('shop.artist.showcase.noPlans')}</p>
@@ -210,7 +210,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
 
                 {(productsLoading || plansLoading) ? (
                     <PageLoader />
-                ) : (isArtist && (!products || products.length === 0)) || (isTherapist && plans.length === 0) ? (
+                ) : (isArtist && (!products || products.length === 0)) || (isProvider && plans.length === 0) ? (
                     <div className="border-2 border-dashed border-stone-200 rounded-xl py-14 text-center text-stone-400">
                         {isArtist ? <ShoppingBag className="w-10 h-10 mx-auto mb-3" /> : <Calendar className="w-10 h-10 mx-auto mb-3" />}
                         <p className="text-sm">{isArtist ? t('shop.artist.showcase.noProducts') : t('shop.artist.showcase.noPlans')}</p>
@@ -249,7 +249,7 @@ export const ShowcaseTab: React.FC<ShowcaseTabProps> = ({ onEditProfile }) => {
                             </Link>
                         ))}
 
-                        {isTherapist && plans.map((plan) => (
+                        {isProvider && plans.map((plan) => (
                             <Link
                                 key={plan.id}
                                 to={`/therapy-plans/${plan.id}`}

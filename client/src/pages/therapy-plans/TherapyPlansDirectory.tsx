@@ -28,7 +28,7 @@ export const TherapyPlansDirectory = () => {
   const [selectedType, setSelectedType] = useState<TherapyPlanType | ''>('');
   const [page, setPage] = useState(1);
 
-  const isTherapist = !!user?.approvedCertificates?.includes('THERAPIST');
+  const isProvider = !!user?.approvedCertificates?.some((cert) => cert === 'THERAPIST' || cert === 'COUNSELOR');
 
   const { data, isLoading } = useQuery({
     queryKey: ['therapy-plans', { type: selectedType, page }],
@@ -66,7 +66,7 @@ export const TherapyPlansDirectory = () => {
             </button>
           ))}
         </div>
-        {isTherapist && (
+        {isProvider && (
           <Button
             size="sm"
             onClick={() => navigate('/therapy-plans/create')}
@@ -95,8 +95,8 @@ export const TherapyPlansDirectory = () => {
               <TherapyPlanCard
                 key={plan.id}
                 plan={plan}
-                perspective={isTherapist && plan.therapist?.userId === user?.id ? 'therapist' : 'public'}
-                editable={isTherapist && plan.therapist?.userId === user?.id}
+                perspective={isProvider && plan.therapist?.userId === user?.id ? 'therapist' : 'public'}
+                editable={isProvider && plan.therapist?.userId === user?.id}
               />
             ))}
           </div>

@@ -32,10 +32,12 @@ const ProtectedRoute = ({
   children,
   roles,
   certificates,
+  anyCertificates,
 }: {
   children: React.ReactNode;
   roles?: string[];
   certificates?: string[];
+  anyCertificates?: string[];
 }) => {
   const { isAuthenticated, user, accessToken } = useAuthStore();
   const location = useLocation();
@@ -53,6 +55,11 @@ const ProtectedRoute = ({
     const approved = user?.approvedCertificates ?? [];
     const hasRequired = certificates.every((c) => approved.includes(c));
     if (!hasRequired) return <Navigate to="/dashboard/member" replace />;
+  }
+  if (anyCertificates && user?.role !== 'ADMIN') {
+    const approved = user?.approvedCertificates ?? [];
+    const hasAnyRequired = anyCertificates.some((c) => approved.includes(c));
+    if (!hasAnyRequired) return <Navigate to="/dashboard/member" replace />;
   }
   return <>{children}</>;
 };
@@ -154,7 +161,7 @@ export default function App() {
           <Route
             path="/therapy-plans/create"
             element={
-              <ProtectedRoute roles={['MEMBER', 'ADMIN']} certificates={['THERAPIST']}>
+              <ProtectedRoute roles={['MEMBER', 'ADMIN']} anyCertificates={['THERAPIST', 'COUNSELOR']}>
                 <EditTherapyPlan />
               </ProtectedRoute>
             }
@@ -162,7 +169,7 @@ export default function App() {
           <Route
             path="/therapy-plans/:id/edit"
             element={
-              <ProtectedRoute roles={['MEMBER', 'ADMIN']} certificates={['THERAPIST']}>
+              <ProtectedRoute roles={['MEMBER', 'ADMIN']} anyCertificates={['THERAPIST', 'COUNSELOR']}>
                 <EditTherapyPlan />
               </ProtectedRoute>
             }

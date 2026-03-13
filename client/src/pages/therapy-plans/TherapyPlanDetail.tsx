@@ -50,7 +50,7 @@ export const TherapyPlanDetail = () => {
   const [signupError, setSignupError] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
-  const hasTherapistCert = !!user?.approvedCertificates?.includes('THERAPIST');
+  const hasProviderCert = !!user?.approvedCertificates?.some((cert) => cert === 'THERAPIST' || cert === 'COUNSELOR');
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ['therapy-plan', id],
@@ -178,9 +178,9 @@ export const TherapyPlanDetail = () => {
     ? plan.images.map((img) => img.url)
     : [posterUrl];
 
-  const isOwner = hasTherapistCert && therapist?.userId === user?.id;
+  const isOwner = hasProviderCert && therapist?.userId === user?.id;
   const isAdmin = user?.role === 'ADMIN';
-  const isClient = user?.role === 'MEMBER' && !hasTherapistCert;
+  const isClient = user?.role === 'MEMBER' && !hasProviderCert;
   const canEdit = isAdmin || (isOwner && (plan.status === 'DRAFT' || plan.status === 'REJECTED'));
   const canSubmit = isOwner && (plan.status === 'DRAFT' || plan.status === 'REJECTED');
   const canArchive = (isOwner || isAdmin) && plan.status === 'PUBLISHED';

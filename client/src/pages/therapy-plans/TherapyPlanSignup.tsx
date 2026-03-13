@@ -29,6 +29,7 @@ export const TherapyPlanSignup = () => {
     const [discountCode, setDiscountCode] = useState('');
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(getDefaultPaymentMethod(i18n.language.startsWith('zh')));
     const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
+    const [signupError, setSignupError] = useState<string | null>(null);
     const isZh = i18n.language.startsWith('zh');
     const locale = isZh ? 'zh-CN' : 'en-US';
 
@@ -63,12 +64,16 @@ export const TherapyPlanSignup = () => {
             paymentProvider: selectedMethod === 'wechat' ? 'WECHAT_PAY' : 'ALIPAY',
         }),
         onSuccess: (data) => {
+            setSignupError(null);
             if (data.payment) {
                 setSignupResult({ participantId: data.participant.id, payment: data.payment });
             } else {
                 // Free plan, direct success
                 navigate('/dashboard/member');
             }
+        },
+        onError: (err: any) => {
+            setSignupError(err?.response?.data?.message ?? t('common.errors.tryAgain'));
         },
     });
 
@@ -314,6 +319,11 @@ export const TherapyPlanSignup = () => {
                                         />
                                     )}
                                     {selectedMethod === 'card' && <StripeUnavailable />}
+                                </div>
+                            )}
+                            {signupError && (
+                                <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                                    {signupError}
                                 </div>
                             )}
                         </CardContent>

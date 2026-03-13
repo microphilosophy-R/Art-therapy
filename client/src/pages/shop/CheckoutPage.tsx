@@ -61,6 +61,13 @@ export const CheckoutPage = () => {
         },
     });
 
+    const shouldRedirectToCart = !isLoadingCart && !createdOrderId && (!cartItems || cartItems.length === 0);
+
+    useEffect(() => {
+        if (!shouldRedirectToCart) return;
+        navigate('/cart', { replace: true });
+    }, [navigate, shouldRedirectToCart]);
+
     if (isLoadingCart) {
         return (
             <div className="flex justify-center flex-col items-center py-32 space-y-4">
@@ -70,8 +77,7 @@ export const CheckoutPage = () => {
         );
     }
 
-    if (!createdOrderId && (!cartItems || cartItems.length === 0)) {
-        navigate('/cart');
+    if (shouldRedirectToCart) {
         return null;
     }
 

@@ -1592,23 +1592,46 @@ export const signUpForPlan = async (req: Request, res: Response) => {
   if (plan.price !== null && Number(plan.price) > 0) {
     const amountCents = Math.round(Number(plan.price) * 100);
     const platformFee = Math.round(amountCents * 0.1);
-    payment = await prisma.planPayment.create({
-      data: {
-        participantId: participant.id,
-        provider: (req.body?.paymentProvider ?? 'ALIPAY') as any,
-        amount: amountCents,
-        currency: 'cny',
-        platformFeeAmount: platformFee,
-        therapistPayoutAmount: amountCents - platformFee,
-        status: 'PENDING',
-      },
+    const existingPayment = await prisma.planPayment.findUnique({
+      where: { participantId: participant.id },
     });
+
+    payment = existingPayment
+      ? await prisma.planPayment.update({
+        where: { id: existingPayment.id },
+        data: {
+          provider: (req.body?.paymentProvider ?? 'ALIPAY') as any,
+          amount: amountCents,
+          currency: 'cny',
+          platformFeeAmount: platformFee,
+          therapistPayoutAmount: amountCents - platformFee,
+          status: existingPayment.status === 'SUCCEEDED' ? 'SUCCEEDED' : 'PENDING',
+          externalOrderId: existingPayment.status === 'SUCCEEDED' ? existingPayment.externalOrderId : null,
+          externalTradeNo: existingPayment.status === 'SUCCEEDED' ? existingPayment.externalTradeNo : null,
+          stripePaymentIntentId: existingPayment.status === 'SUCCEEDED' ? existingPayment.stripePaymentIntentId : null,
+          refundedAt: null,
+          refundAmount: null,
+        },
+      })
+      : await prisma.planPayment.create({
+        data: {
+          participantId: participant.id,
+          provider: (req.body?.paymentProvider ?? 'ALIPAY') as any,
+          amount: amountCents,
+          currency: 'cny',
+          platformFeeAmount: platformFee,
+          therapistPayoutAmount: amountCents - platformFee,
+          status: 'PENDING',
+        },
+      });
   }
 
   const clientName = `${(req as any).userFullName ?? user.id}`;
   const signupOwnerUserId = plan.userProfile?.userId;
   if (!signupOwnerUserId) return res.status(400).json({ message: 'Plan owner not found' });
-  await notifyTherapistOnSignup(signupOwnerUserId, id, plan.title, clientName);
+  void notifyTherapistOnSignup(signupOwnerUserId, id, plan.title, clientName).catch((err) => {
+    logToFile(`[notifyTherapistOnSignup] failed for plan ${id}: ${err?.message ?? err}`);
+  });
 
   res.status(201).json({ participant, payment });
 };
@@ -1661,12 +1684,14 @@ export const cancelSignup = async (req: Request, res: Response) => {
   const clientName = `${(req as any).userFullName ?? user.id}`;
   const cancelOwnerUserId = participant.plan.userProfile?.userId;
   if (!cancelOwnerUserId) return res.status(400).json({ message: 'Plan owner not found' });
-  await notifyTherapistOnSignupCancelled(
+  void notifyTherapistOnSignupCancelled(
     cancelOwnerUserId,
     id,
     participant.plan.title,
     clientName,
-  );
+  ).catch((err) => {
+    logToFile(`[notifyTherapistOnSignupCancelled] failed for plan ${id}: ${err?.message ?? err}`);
+  });
 
   res.status(204).send();
 };
@@ -1679,5 +1704,3 @@ export const getPendingPlans = async (req: Request, res: Response) => {
   });
   res.json({ data: plans });
 };
-
-

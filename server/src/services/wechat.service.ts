@@ -4,9 +4,28 @@ import { sendAppointmentConfirmation } from './email.service';
 import { notifySellerOnOrderPaid } from './order-notification.service';
 
 const PLATFORM_FEE_PERCENT = Number(process.env.STRIPE_PLATFORM_FEE_PERCENT ?? 15);
+const WECHAT_REQUEST_TIMEOUT_MS = Number(process.env.WECHAT_REQUEST_TIMEOUT_MS ?? 15000);
 
 function generateOrderId(): string {
   return `AT${Date.now()}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+}
+
+async function withWechatTimeout<T>(promise: Promise<T>, action: string): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout | null = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(new Error(`WeChat ${action} timed out after ${WECHAT_REQUEST_TIMEOUT_MS}ms`));
+        }, WECHAT_REQUEST_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 }
 
 const ensureWechatEnabled = () => {
@@ -49,15 +68,21 @@ export const createWechatOrder = async (appointmentId: string, userId: string) =
   const notifyUrl = process.env.WECHAT_NOTIFY_URL || 'http://localhost:3001/webhooks/wechat';
   const description = `Art therapy session with ${therapist.user.firstName}`;
 
-  const response = await wechatpay!.v3.pay.transactions.native.post({
-    mchid: process.env.WECHAT_MCH_ID!,
-    appid: process.env.WECHAT_APP_ID!,
-    description,
-    out_trade_no: outTradeNo,
-    notify_url: notifyUrl,
-    amount: { total: totalFen, currency: 'CNY' },
-  });
-  const codeUrl = (response.data as any).code_url as string;
+  const response = await withWechatTimeout(
+    wechatpay!.v3.pay.transactions.native.post({
+      mchid: process.env.WECHAT_MCH_ID!,
+      appid: process.env.WECHAT_APP_ID!,
+      description,
+      out_trade_no: outTradeNo,
+      notify_url: notifyUrl,
+      amount: { total: totalFen, currency: 'CNY' },
+    }),
+    'native order creation'
+  );
+  const codeUrl = (response as any)?.data?.code_url as string | undefined;
+  if (!codeUrl) {
+    throw new Error('WeChat response did not include a QR code URL');
+  }
 
   const payment = await prisma.payment.create({
     data: {
@@ -94,15 +119,21 @@ export const createPlanWechatOrder = async (participantId: string, userId: strin
   const notifyUrl = process.env.WECHAT_NOTIFY_URL || 'http://localhost:3001/webhooks/wechat';
   const description = `Therapy Plan: ${participant.plan.title}`;
 
-  const response = await wechatpay!.v3.pay.transactions.native.post({
-    mchid: process.env.WECHAT_MCH_ID!,
-    appid: process.env.WECHAT_APP_ID!,
-    description,
-    out_trade_no: outTradeNo,
-    notify_url: notifyUrl,
-    amount: { total: totalFen, currency: 'CNY' },
-  });
-  const codeUrl = (response.data as any).code_url as string;
+  const response = await withWechatTimeout(
+    wechatpay!.v3.pay.transactions.native.post({
+      mchid: process.env.WECHAT_MCH_ID!,
+      appid: process.env.WECHAT_APP_ID!,
+      description,
+      out_trade_no: outTradeNo,
+      notify_url: notifyUrl,
+      amount: { total: totalFen, currency: 'CNY' },
+    }),
+    'native order creation'
+  );
+  const codeUrl = (response as any)?.data?.code_url as string | undefined;
+  if (!codeUrl) {
+    throw new Error('WeChat response did not include a QR code URL');
+  }
 
   await prisma.planPayment.update({
     where: { id: participant.payment.id },
@@ -131,15 +162,21 @@ export const createProductWechatOrder = async (orderId: string, userId: string) 
   const notifyUrl = process.env.WECHAT_NOTIFY_URL || 'http://localhost:3001/webhooks/wechat';
   const description = `Art Shopping Order: ${order.id}`;
 
-  const response = await wechatpay!.v3.pay.transactions.native.post({
-    mchid: process.env.WECHAT_MCH_ID!,
-    appid: process.env.WECHAT_APP_ID!,
-    description,
-    out_trade_no: outTradeNo,
-    notify_url: notifyUrl,
-    amount: { total: totalFen, currency: 'CNY' },
-  });
-  const codeUrl = (response.data as any).code_url as string;
+  const response = await withWechatTimeout(
+    wechatpay!.v3.pay.transactions.native.post({
+      mchid: process.env.WECHAT_MCH_ID!,
+      appid: process.env.WECHAT_APP_ID!,
+      description,
+      out_trade_no: outTradeNo,
+      notify_url: notifyUrl,
+      amount: { total: totalFen, currency: 'CNY' },
+    }),
+    'native order creation'
+  );
+  const codeUrl = (response as any)?.data?.code_url as string | undefined;
+  if (!codeUrl) {
+    throw new Error('WeChat response did not include a QR code URL');
+  }
 
   const payment = order.payment
     ? await prisma.productPayment.update({
@@ -279,16 +316,19 @@ export const refundWechatOrder = async (
 
   const outRefundNo = `REFUND_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
-  const result = await wechatpay.v3.post('/v3/refund/domestic/refunds', {
-    out_trade_no: outTradeNo,
-    out_refund_no: outRefundNo,
-    amount: {
-      refund: refundAmount,
-      total: totalAmount,
-      currency: 'CNY'
-    },
-    reason
-  });
+  const result = await withWechatTimeout(
+    wechatpay.v3.post('/v3/refund/domestic/refunds', {
+      out_trade_no: outTradeNo,
+      out_refund_no: outRefundNo,
+      amount: {
+        refund: refundAmount,
+        total: totalAmount,
+        currency: 'CNY'
+      },
+      reason
+    }),
+    'refund request'
+  );
 
   if (result.status === 'SUCCESS' || result.status === 'PROCESSING') {
     return { success: true, refundId: result.refund_id };

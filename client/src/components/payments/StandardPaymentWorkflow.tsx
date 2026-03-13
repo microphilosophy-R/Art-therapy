@@ -66,6 +66,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
     );
     const [isProcessing, setIsProcessing] = useState(false);
     const [orderGenerated, setOrderGenerated] = useState(false);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const [resolvedTarget, setResolvedTarget] = useState<PaymentTarget>({
         appointmentId: data.appointmentId,
         participantId: data.participantId,
@@ -136,6 +137,7 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
             if (paymentMethod === 'card') return;
             if (onComplete) {
                 setIsProcessing(true);
+                setCheckoutError(null);
                 try {
                     const completionResult = await onComplete(paymentMethod);
                     const nextTarget: PaymentTarget = {
@@ -156,8 +158,9 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                     }
                     setResolvedTarget(nextTarget);
                     setOrderGenerated(true);
-                } catch (err) {
+                } catch (err: any) {
                     console.error('Order generation failed', err);
+                    setCheckoutError(err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
                 } finally {
                     setIsProcessing(false);
                 }
@@ -340,6 +343,11 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
 
                             {!orderGenerated ? (
                                 <div className="mt-8">
+                                    {checkoutError && (
+                                        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                                            {checkoutError}
+                                        </div>
+                                    )}
                                     <p className="text-sm font-medium text-stone-700 mb-4">{t('payment.selectMethod')}</p>
                                     <PaymentMethodSelector
                                         alipayEnabled={paymentCapabilities.alipay}

@@ -5,13 +5,15 @@ export interface WechatOrderResponse {
   paymentId: string;
 }
 
+const WECHAT_CREATE_ORDER_TIMEOUT_MS = 20000;
+
 export const createWechatOrder = async (appointmentId: string): Promise<WechatOrderResponse> => {
-  const { data } = await api.post('/wechat/create-order', { appointmentId });
+  const { data } = await api.post('/wechat/create-order', { appointmentId }, { timeout: WECHAT_CREATE_ORDER_TIMEOUT_MS });
   return data;
 };
 
 export const createPlanWechatOrder = async (participantId: string): Promise<WechatOrderResponse> => {
-  const { data } = await api.post('/wechat/create-plan-order', { participantId });
+  const { data } = await api.post('/wechat/create-plan-order', { participantId }, { timeout: WECHAT_CREATE_ORDER_TIMEOUT_MS });
   return data;
 };
 

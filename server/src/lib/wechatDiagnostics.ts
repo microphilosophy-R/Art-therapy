@@ -15,6 +15,7 @@ export interface WechatDiagnostics {
     privateKeyPemMarkersOk: boolean;
     privateKeyParseOk: boolean;
     privateKeyParseError?: string;
+    privateKeyLooksLikeCertificate: boolean;
     platformCertPresent: boolean;
     platformCertPemMarkersOk: boolean;
     platformCertParseOk: boolean;
@@ -37,6 +38,8 @@ export interface WechatConfigInputs {
 
 const normalizePem = (value: string | undefined): string => (value ?? '').replace(/\\n/g, '\n').trim();
 const normalizeSerial = (value: string | undefined): string => (value ?? '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+const privateKeyBeginPattern = /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/;
+const privateKeyEndPattern = /-----END (?:RSA |EC )?PRIVATE KEY-----/;
 
 export const getWechatConfigInputs = (): WechatConfigInputs => ({
   appId: (process.env.WECHAT_APP_ID ?? '').trim(),
@@ -63,10 +66,11 @@ export const getWechatDiagnostics = (): WechatDiagnostics => {
 
   const privateKeyPresent = !!cfg.privateKeyPem;
   const privateKeyPemMarkersOk =
-    cfg.privateKeyPem.includes('-----BEGIN PRIVATE KEY-----') &&
-    cfg.privateKeyPem.includes('-----END PRIVATE KEY-----');
+    privateKeyBeginPattern.test(cfg.privateKeyPem) &&
+    privateKeyEndPattern.test(cfg.privateKeyPem);
   let privateKeyParseOk = false;
   let privateKeyParseError: string | undefined;
+  const privateKeyLooksLikeCertificate = /AwIBAg/.test(cfg.privateKeyPem);
   if (privateKeyPresent) {
     try {
       createPrivateKey(cfg.privateKeyPem);
@@ -114,6 +118,9 @@ export const getWechatDiagnostics = (): WechatDiagnostics => {
   if (!platformSerialFormatOk) issues.push('WECHAT_PLATFORM_SERIAL format looks invalid');
   if (!privateKeyPresent) issues.push('WECHAT_PRIVATE_KEY is missing');
   if (privateKeyPresent && !privateKeyPemMarkersOk) issues.push('WECHAT_PRIVATE_KEY PEM markers are invalid');
+  if (privateKeyLooksLikeCertificate) {
+    issues.push('WECHAT_PRIVATE_KEY content appears to be a certificate, not a private key');
+  }
   if (privateKeyPresent && !privateKeyParseOk) issues.push(`WECHAT_PRIVATE_KEY parse failed: ${privateKeyParseError}`);
   if (!platformCertPresent) issues.push('WECHAT_PLATFORM_CERT is missing');
   if (platformCertPresent && !platformCertPemMarkersOk) issues.push('WECHAT_PLATFORM_CERT PEM markers are invalid');
@@ -149,6 +156,7 @@ export const getWechatDiagnostics = (): WechatDiagnostics => {
       privateKeyPemMarkersOk,
       privateKeyParseOk,
       privateKeyParseError,
+      privateKeyLooksLikeCertificate,
       platformCertPresent,
       platformCertPemMarkersOk,
       platformCertParseOk,

@@ -10,6 +10,7 @@ import {
   submitTherapyPlanForReview,
   archiveTherapyPlan,
   getTherapyPlanIcsUrl,
+  getTherapyPlanSignupStatus,
   signUpForTherapyPlan,
   cancelTherapyPlanSignup,
 } from '../../api/therapyPlans';
@@ -55,6 +56,19 @@ export const TherapyPlanDetail = () => {
     queryKey: ['therapy-plan', id],
     queryFn: () => getTherapyPlan(id!),
     enabled: !!id,
+  });
+
+  const { data: mySignupStatus } = useQuery({
+    queryKey: ['therapy-plan-signup-status', id],
+    enabled: !!id && !!user && user.role === 'MEMBER' && plan?.type !== 'PERSONAL_CONSULT',
+    queryFn: async () => {
+      try {
+        return await getTherapyPlanSignupStatus(id!);
+      } catch (err: any) {
+        if (err?.response?.status === 404) return null;
+        throw err;
+      }
+    },
   });
 
   const submitMutation = useMutation({
@@ -172,7 +186,7 @@ export const TherapyPlanDetail = () => {
   const canArchive = (isOwner || isAdmin) && plan.status === 'PUBLISHED';
 
   const isNonPersonal = plan.type !== 'PERSONAL_CONSULT';
-  const myParticipation = plan.participants?.find((p) => p.userId === user?.id);
+  const myParticipation = mySignupStatus?.participant ?? plan.participants?.find((p) => p.userId === user?.id);
   const isEnrolled = myParticipation?.status === 'SIGNED_UP';
   const isPendingPayment = myParticipation?.status === 'PENDING_PAYMENT';
 

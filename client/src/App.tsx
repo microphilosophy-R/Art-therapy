@@ -26,6 +26,8 @@ import { ProductDetailsPage } from './pages/shop/ProductDetailsPage';
 import { CartPage } from './pages/shop/CartPage';
 import { CheckoutPage } from './pages/shop/CheckoutPage';
 import { MyOrdersPage } from './pages/user/MyOrdersPage';
+import { MessagesPage } from './pages/MessagesPage';
+import { MyPlansPage } from './pages/MyPlansPage';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({
@@ -95,6 +97,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-plans"
+            element={
+              <ProtectedRoute>
+                <MyPlansPage />
               </ProtectedRoute>
             }
           />

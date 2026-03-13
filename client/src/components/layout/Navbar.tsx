@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, LogOut, LayoutDashboard, Bell } from 'lucide-react';
+import { Menu, X, User, LogOut, LayoutDashboard, Bell, Calendar, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../store/authStore';
@@ -131,7 +131,7 @@ export const Navbar = () => {
                   )}
                 </Link>
                 <Link
-                  to={dashboardPath}
+                  to="/messages"
                   className="relative p-2 rounded-lg hover:bg-stone-100 transition-colors"
                   title={t('messages.inbox')}
                 >
@@ -182,6 +182,20 @@ export const Navbar = () => {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                         >
                           <ShoppingCart className="h-4 w-4" /> {t('nav.myOrders')}
+                        </Link>
+                        <Link
+                          to="/my-plans"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                        >
+                          <Calendar className="h-4 w-4" /> {t('nav.myPlans')}
+                        </Link>
+                        <Link
+                          to="/messages"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                        >
+                          <MessageSquare className="h-4 w-4" /> {t('nav.messages')}
                         </Link>
                         <hr className="my-1 border-stone-100" />
                         <button

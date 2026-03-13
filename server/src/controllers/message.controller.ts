@@ -175,25 +175,33 @@ export const sendChatMessage = async (req: Request, res: Response) => {
   ]);
 
   if (!recipient) return res.status(404).json({ message: 'Recipient not found' });
-  if (!sender || sender.role !== 'MEMBER' || recipient.role !== 'MEMBER') {
-    return res.status(403).json({ message: 'Direct chat is only available for MEMBER users.' });
+
+  const isAdminChat = recipient.role === 'ADMIN';
+  const isMemberToMember = sender.role === 'MEMBER' && recipient.role === 'MEMBER';
+
+  if (!isAdminChat && !isMemberToMember) {
+    return res.status(403).json({
+      message: 'Chat is only available between members or with admins.'
+    });
   }
 
   let conversation = await getConversationByUsers(senderId, body.recipientId);
 
   if (!conversation) {
-    const follow = await prisma.userFollow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId: senderId,
-          followingId: body.recipientId,
+    if (recipient.role !== 'ADMIN') {
+      const follow = await prisma.userFollow.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: senderId,
+            followingId: body.recipientId,
+          },
         },
-      },
-      select: { id: true },
-    });
+        select: { id: true },
+      });
 
-    if (!follow) {
-      return res.status(403).json({ message: 'You must follow this user before starting a chat.' });
+      if (!follow) {
+        return res.status(403).json({ message: 'You must follow this user before starting a chat.' });
+      }
     }
 
     conversation = await getOrCreateConversationByUsers(senderId, body.recipientId);

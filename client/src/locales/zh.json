@@ -92,6 +92,8 @@
     "shop": "商店",
     "cart": "购物车",
     "myOrders": "我的订单",
+    "messages": "消息",
+    "myPlans": "我的计划",
     "signIn": "登录",
     "getStarted": "立即开始",
     "dashboard": "控制台",
@@ -107,6 +109,13 @@
       "findTherapist": "寻找治疗师",
       "joinAsTherapist": "以治疗师身份加入",
       "rights": "© {{year}} ArtTherapy. 保留所有权利。"
+    }
+  },
+  "myPlans": {
+    "empty": {
+      "title": "还没有报名的计划",
+      "description": "浏览疗愈计划并加入一个开始",
+      "browse": "浏览疗愈计划"
     }
   },
   "home": {

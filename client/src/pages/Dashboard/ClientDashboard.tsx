@@ -13,7 +13,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Link } from 'react-router-dom';
 import { MessagesTab } from './tabs/MessagesTab';
 
-type Tab = 'upcoming' | 'past' | 'forms' | 'messages';
+type Tab = 'upcoming' | 'past' | 'forms';
 
 export const ClientDashboard = () => {
   const { t } = useTranslation();
@@ -111,7 +111,7 @@ export const ClientDashboard = () => {
         <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
             <div className="flex gap-1 flex-wrap">
-              {(['upcoming', 'past', 'forms', 'messages'] as Tab[]).map((tabKey) => (
+              {(['upcoming', 'past', 'forms'] as Tab[]).map((tabKey) => (
                 <button
                   key={tabKey}
                   onClick={() => setTab(tabKey)}
@@ -125,16 +125,9 @@ export const ClientDashboard = () => {
                     ? t('dashboard.client.forms')
                     : tabKey === 'upcoming'
                     ? t('dashboard.client.upcoming')
-                    : tabKey === 'messages'
-                    ? t('dashboard.client.messages')
                     : t('dashboard.client.past')}
                   {tabKey === 'forms' && pendingForms.length > 0 && (
                     <Badge variant="warning" className="ml-1.5 text-xs">{pendingForms.length}</Badge>
-                  )}
-                  {tabKey === 'messages' && unreadCount > 0 && (
-                    <Badge variant="danger" className="ml-1.5 text-xs">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </Badge>
                   )}
                 </button>
               ))}
@@ -147,9 +140,7 @@ export const ClientDashboard = () => {
           </div>
 
           <div className="p-6">
-            {tab === 'messages' ? (
-              <MessagesTab />
-            ) : tab === 'forms' ? (
+            {tab === 'forms' ? (
               (formsData?.data ?? []).length === 0 ? (
                 <div className="text-center py-12 text-stone-400">
                   <FileText className="h-10 w-10 mx-auto mb-3 opacity-30" />

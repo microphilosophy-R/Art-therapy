@@ -81,8 +81,16 @@ export const MessagesTab = () => {
   const threadMessages = threadData?.data ?? [];
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [threadMessages]);
+    if (threadMessages.length > 0) {
+      endRef.current?.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [selectedConversationId]);
+
+  useEffect(() => {
+    if (threadMessages.length > 0) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [threadMessages.length]);
 
   const sendChatMutation = useMutation({
     mutationFn: ({ recipientId, body }: { recipientId: string; body: string }) =>

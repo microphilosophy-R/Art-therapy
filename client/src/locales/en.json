@@ -93,6 +93,8 @@
     "shop": "Shop",
     "cart": "Shopping Cart",
     "myOrders": "My Orders",
+    "messages": "Messages",
+    "myPlans": "My Plans",
     "signIn": "Sign in",
     "getStarted": "Get started",
     "dashboard": "Dashboard",
@@ -108,6 +110,13 @@
       "findTherapist": "Find a Therapist",
       "joinAsTherapist": "Join as Therapist",
       "rights": "© {{year}} ArtTherapy. All rights reserved."
+    }
+  },
+  "myPlans": {
+    "empty": {
+      "title": "No enrolled plans yet",
+      "description": "Browse therapy plans and join one to get started",
+      "browse": "Browse Therapy Plans"
     }
   },
   "home": {

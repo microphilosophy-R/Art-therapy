@@ -805,6 +805,61 @@ async function main() {
     });
   }
 
+  // Create a client user with purchased plans and products
+  const client = await prisma.user.create({
+    data: {
+      email: 'client@arttherapy.seed',
+      passwordHash,
+      role: Role.MEMBER,
+      firstName: 'Alice',
+      lastName: 'Chen',
+      phone: '+86 13800138000',
+      avatarUrl: avatarUrls[7],
+    },
+  });
+
+  // Get some published plans and products
+  const publishedPlans = await prisma.therapyPlan.findMany({
+    where: { status: { in: [TherapyPlanStatus.PUBLISHED, TherapyPlanStatus.IN_PROGRESS] } },
+    take: 3,
+  });
+
+  const publishedProducts = await prisma.product.findMany({
+    where: { status: ProductStatus.PUBLISHED },
+    take: 2,
+  });
+
+  // Create plan signups
+  for (const plan of publishedPlans) {
+    await prisma.planSignup.create({
+      data: {
+        userId: client.id,
+        planId: plan.id,
+        status: 'SIGNED_UP',
+        paymentStatus: 'PAID',
+        amountPaid: plan.price ?? 0,
+      },
+    });
+  }
+
+  // Create product orders
+  if (publishedProducts.length > 0) {
+    const order = await prisma.order.create({
+      data: {
+        userId: client.id,
+        status: 'COMPLETED',
+        totalAmount: publishedProducts.reduce((sum, p) => sum + p.price, 0),
+        items: {
+          create: publishedProducts.map((product) => ({
+            productId: product.id,
+            quantity: 1,
+            priceAtPurchase: product.price,
+          })),
+        },
+      },
+    });
+  }
+
   const [adminCount, memberCount, profileCount, certCount, planCount, productCount] = await Promise.all([
     prisma.user.count({ where: { role: Role.ADMIN } }),
     prisma.user.count({ where: { role: Role.MEMBER } }),
@@ -823,6 +878,7 @@ async function main() {
   console.log(`[Seed] Products: ${productCount}`);
   console.log('[Seed] Default password for all seeded accounts: password123');
   console.log(`[Seed] Admin login: ${admin.email}`);
+  console.log(`[Seed] Client with purchases: ${client.email}`);
 }
 
 main()

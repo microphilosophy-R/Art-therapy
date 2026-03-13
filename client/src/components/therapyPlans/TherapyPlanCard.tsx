@@ -13,6 +13,7 @@ interface TherapyPlanCardProps {
   plan: TherapyPlan;
   perspective?: 'public' | 'therapist' | 'admin';
   editable?: boolean;
+  variant?: 'default' | 'list';
 }
 
 const planTypeColors: Record<string, string> = {
@@ -30,9 +31,15 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
   ARCHIVED: 'default',
 };
 
-export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false }: TherapyPlanCardProps) => {
+export const TherapyPlanCard = ({
+  plan,
+  perspective = 'public',
+  editable = false,
+  variant = 'default',
+}: TherapyPlanCardProps) => {
   const { t, i18n } = useTranslation();
-  const posterUrl = getPosterUrl(plan);
+  const showPoster = variant === 'default';
+  const posterUrl = showPoster ? getPosterUrl(plan) : null;
   const planTitle = pickLocalizedText(plan.titleI18n, i18n.language, plan.title);
   const planSlogan = pickLocalizedText(plan.sloganI18n, i18n.language, plan.slogan);
   const isPersonal = plan.type === 'PERSONAL_CONSULT';
@@ -70,36 +77,59 @@ export const TherapyPlanCard = ({ plan, perspective = 'public', editable = false
       )}
 
       <Link to={linkTo} className="block h-full">
-        <div className="aspect-poster bg-ivory-300 overflow-hidden relative">
-          <img
-            src={posterUrl}
-            alt={planTitle}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = getFallbackPosterUrl();
-            }}
-          />
-          <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${planTypeColors[plan.type] ?? 'bg-white text-stone-700'}`}
-            >
-              {t(`common.planType.${plan.type}`)}
-            </span>
-            {perspective !== 'public' && (
-              <Badge variant={statusVariant[plan.status] ?? 'default'} className="bg-white/95 border-0">
-                {t(`common.planStatus.${plan.status}`)}
-              </Badge>
-            )}
-            {plan.sessionMedium === 'VIDEO' && (
-              <Badge variant="outline" className="bg-white/95 border-0">
-                <Video className="h-3 w-3 mr-1" />
-                {t('common.medium.VIDEO')}
-              </Badge>
-            )}
+        {showPoster && (
+          <div className="aspect-poster bg-ivory-300 overflow-hidden relative">
+            <img
+              src={posterUrl ?? undefined}
+              alt={planTitle}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = getFallbackPosterUrl();
+              }}
+            />
+            <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${planTypeColors[plan.type] ?? 'bg-white text-stone-700'}`}
+              >
+                {t(`common.planType.${plan.type}`)}
+              </span>
+              {perspective !== 'public' && (
+                <Badge variant={statusVariant[plan.status] ?? 'default'} className="bg-white/95 border-0">
+                  {t(`common.planStatus.${plan.status}`)}
+                </Badge>
+              )}
+              {plan.sessionMedium === 'VIDEO' && (
+                <Badge variant="outline" className="bg-white/95 border-0">
+                  <Video className="h-3 w-3 mr-1" />
+                  {t('common.medium.VIDEO')}
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <CardContent className="p-4 flex flex-col gap-3">
+          {!showPoster && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${planTypeColors[plan.type] ?? 'bg-stone-100 text-stone-700'}`}
+              >
+                {t(`common.planType.${plan.type}`)}
+              </span>
+              {perspective !== 'public' && (
+                <Badge variant={statusVariant[plan.status] ?? 'default'}>
+                  {t(`common.planStatus.${plan.status}`)}
+                </Badge>
+              )}
+              {plan.sessionMedium === 'VIDEO' && (
+                <Badge variant="outline">
+                  <Video className="h-3 w-3 mr-1" />
+                  {t('common.medium.VIDEO')}
+                </Badge>
+              )}
+            </div>
+          )}
+
           <div>
             <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-celadon-600 transition-colors">
               {planTitle}

@@ -6,6 +6,11 @@ import bcrypt from 'bcryptjs';
 import {
   PrismaClient,
   Role,
+  ParticipantStatus,
+  PaymentProvider,
+  PaymentStatus,
+  OrderStatus,
+  AddressTag,
   ProfileStatus,
   CertificateType,
   CertificateStatus,
@@ -831,30 +836,64 @@ async function main() {
 
   // Create plan signups
   for (const plan of publishedPlans) {
-    await prisma.planSignup.create({
+    const amountCents = plan.price ? Math.round(Number(plan.price) * 100) : 0;
+    const platformFee = Math.round(amountCents * 0.1);
+
+    await prisma.therapyPlanParticipant.create({
       data: {
         userId: client.id,
         planId: plan.id,
-        status: 'SIGNED_UP',
-        paymentStatus: 'PAID',
-        amountPaid: plan.price ?? 0,
+        status: ParticipantStatus.SIGNED_UP,
+        payment: amountCents > 0
+          ? {
+            create: {
+              provider: PaymentProvider.ALIPAY,
+              amount: amountCents,
+              currency: 'cny',
+              platformFeeAmount: platformFee,
+              therapistPayoutAmount: amountCents - platformFee,
+              status: PaymentStatus.SUCCEEDED,
+            },
+          }
+          : undefined,
       },
     });
   }
 
   // Create product orders
   if (publishedProducts.length > 0) {
-    const order = await prisma.order.create({
+    const totalAmount = publishedProducts.reduce(
+      (sum, product) => sum + Math.round(Number(product.price) * 100),
+      0,
+    );
+
+    await prisma.order.create({
       data: {
         userId: client.id,
-        status: 'COMPLETED',
-        totalAmount: publishedProducts.reduce((sum, p) => sum + p.price, 0),
+        status: OrderStatus.DELIVERED,
+        totalAmount,
+        province: 'Shanghai',
+        city: 'Shanghai',
+        district: 'Pudong',
+        addressDetail: 'Seed Road 100',
+        recipientName: `${client.firstName} ${client.lastName}`,
+        phone: client.phone ?? '+86 13800138000',
+        postalCode: '200000',
+        addressTag: AddressTag.HOME,
         items: {
           create: publishedProducts.map((product) => ({
             productId: product.id,
             quantity: 1,
-            priceAtPurchase: product.price,
+            price: Math.round(Number(product.price) * 100),
           })),
+        },
+        payment: {
+          create: {
+            provider: PaymentProvider.ALIPAY,
+            amount: totalAmount,
+            currency: 'cny',
+            status: PaymentStatus.SUCCEEDED,
+          },
         },
       },
     });

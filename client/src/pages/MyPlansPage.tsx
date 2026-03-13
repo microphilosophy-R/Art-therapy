@@ -39,7 +39,7 @@ export const MyPlansPage = () => {
         ) : (
           <div className="grid gap-4">
             {plans.map((plan) => (
-              <TherapyPlanCard key={plan.id} plan={plan} />
+              <TherapyPlanCard key={plan.id} plan={plan} variant="list" />
             ))}
           </div>
         )}

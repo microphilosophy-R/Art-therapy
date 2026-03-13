@@ -10,7 +10,7 @@
     "start": "node dist/server.js",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "npx --yes tsx prisma/seed.ts",
     "db:backfill:therapy-plan-review-meta": "tsx prisma/scripts/backfill-therapy-plan-review-meta.ts",
     "db:backfill:product-review-meta": "tsx prisma/scripts/backfill-product-review-meta.ts",
     "db:backfill:personal-consult-window": "tsx prisma/scripts/backfill-personal-consult-window.ts",
@@ -56,6 +56,6 @@
     "typescript": "^5.3.3"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "npx --yes tsx prisma/seed.ts"
   }
 }

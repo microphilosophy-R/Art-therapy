@@ -258,10 +258,17 @@ npm install -D tsx
 
 # 2. Run the seed file directly
 # (This bypasses the missing "prisma.seed" package.json config error)
-npx tsx prisma/seed.ts
+npx --yes tsx prisma/seed.ts
 
 # 3. Clean up the dev dependencies again to save server memory
 npm ci --omit=dev
+```
+
+If you see `spawn tsx ENOENT`, run:
+
+```bash
+npm install -D tsx
+npx --yes tsx prisma/seed.ts
 ```
 
 ---

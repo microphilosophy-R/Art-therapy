@@ -56,6 +56,9 @@ const refreshAccessToken = async (): Promise<string | null> => {
 api.interceptors.request.use(async (config) => {
   const auth = useAuthStore.getState();
   let token = auth.accessToken;
+  if (!token && auth.isAuthenticated) {
+    token = await refreshAccessToken();
+  }
 
   if (token) {
     const expiryMs = getTokenExpiryMs(token);

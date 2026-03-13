@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { createWechatOrder, createPlanWechatOrder } from '../../api/wechat';
 import { getAppointment } from '../../api/appointments';
@@ -16,9 +17,34 @@ interface WechatPaymentFormProps {
   onError?: (msg: string) => void;
 }
 
+const wechatQrCache = new Map<string, string>();
+const wechatPendingTargets = new Set<string>();
+const wechatRequestedTargets = new Set<string>();
+
+const clearTargetState = (targetKey: string) => {
+  wechatQrCache.delete(targetKey);
+  wechatPendingTargets.delete(targetKey);
+  wechatRequestedTargets.delete(targetKey);
+};
+
+const extractWechatQrUrl = (payload: any): string | null => {
+  const qr =
+    payload?.codeUrl ??
+    payload?.code_url ??
+    payload?.qrCode ??
+    payload?.qrcode ??
+    payload?.data?.codeUrl ??
+    payload?.data?.code_url ??
+    payload?.data?.qrCode ??
+    payload?.data?.qrcode;
+  return typeof qr === 'string' && qr.trim() ? qr : null;
+};
+
 export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planId, onSuccess, onError }: WechatPaymentFormProps) => {
   const { t } = useTranslation();
-  const lastTriggeredTargetRef = useRef<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [resolvedCodeUrl, setResolvedCodeUrl] = useState<string | null>(null);
   const targetKey = useMemo(() => {
     if (orderId) return `order:${orderId}`;
     if (participantId) return `participant:${participantId}`;
@@ -35,21 +61,51 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
     },
     onError: (err: any) => {
       const status = err?.response?.status;
+      if (status === 401) {
+        const authErrorMessage = t('auth.loginRequired', 'Your session expired. Please sign in again.');
+        onError?.(authErrorMessage);
+        navigate('/login', { replace: true, state: { from: `${location.pathname}${location.search}` } });
+        return;
+      }
       if (!status || status >= 500) {
         console.error('failed to load the payment', err);
       }
-      onError?.(err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
+      const timeoutMessage = t('payment.wechatTimeout', 'WeChat payment service timed out. Please retry in a moment.');
+      const message = err?.code === 'ECONNABORTED'
+        ? timeoutMessage
+        : (err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
+      onError?.(message);
+    },
+    onSuccess: (data: any) => {
+      const qr = extractWechatQrUrl(data);
+      if (qr && targetKey) {
+        wechatQrCache.set(targetKey, qr);
+        setResolvedCodeUrl(qr);
+      }
     },
   });
 
   useEffect(() => {
     if (!targetKey) return;
-    if (lastTriggeredTargetRef.current === targetKey) return;
-    lastTriggeredTargetRef.current = targetKey;
-    mutation.mutate();
+
+    const cachedQr = wechatQrCache.get(targetKey) ?? null;
+    setResolvedCodeUrl(cachedQr);
+    if (cachedQr) return;
+
+    if (wechatRequestedTargets.has(targetKey)) return;
+    wechatRequestedTargets.add(targetKey);
+
+    if (wechatPendingTargets.has(targetKey)) return;
+    wechatPendingTargets.add(targetKey);
+    mutation.mutate(undefined, {
+      onSettled: () => {
+        wechatPendingTargets.delete(targetKey);
+      },
+    });
   }, [mutation, targetKey]);
 
-  const codeUrl = mutation.data?.codeUrl;
+  const payload = mutation.data as any;
+  const codeUrl = resolvedCodeUrl ?? extractWechatQrUrl(payload);
 
   // Poll status every 3 seconds
   const { data: pollData } = useQuery({
@@ -89,7 +145,7 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
     }
   }, [pollData, participantId, orderId, onSuccess]);
 
-  if (mutation.isPending) {
+  if (mutation.isPending && !codeUrl) {
     return (
       <div className="mt-4 flex flex-col items-center gap-3 py-6">
         <svg className="h-8 w-8 animate-spin text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -102,9 +158,17 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
   }
 
   if (mutation.isError) {
+    const timeoutMessage = t('payment.wechatTimeout', 'WeChat payment service timed out. Please retry in a moment.');
+    const authErrorMessage = t('auth.loginRequired', 'Your session expired. Please sign in again.');
+    const status = (mutation.error as any)?.response?.status;
+    const errorMessage = status === 401
+      ? authErrorMessage
+      : ((mutation.error as any)?.code === 'ECONNABORTED'
+        ? timeoutMessage
+        : ((mutation.error as any)?.response?.data?.message ?? (mutation.error as any)?.message ?? t('common.errors.tryAgain')));
     return (
       <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-4 text-sm text-rose-700">
-        {(mutation.error as any)?.response?.data?.message ?? (mutation.error as any)?.message ?? t('common.errors.tryAgain')}
+        {errorMessage}
       </div>
     );
   }
@@ -117,14 +181,24 @@ export const WechatPaymentForm = ({ appointmentId, participantId, orderId, planI
     );
   }
 
-  if (!codeUrl) {
+  if (mutation.status === 'idle' || !codeUrl) {
     return (
-      <div className="mt-4 flex flex-col items-center gap-3 py-6">
-        <svg className="h-8 w-8 animate-spin text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
-        <p className="text-sm text-stone-500">{t('common.loading')}</p>
+      <div className="mt-4 flex flex-col items-center gap-3 py-6 text-center">
+        <p className="text-sm text-stone-500">{t('payment.wechatQrMissing', 'Unable to generate WeChat QR code. Please try again.')}</p>
+        <button
+          type="button"
+          onClick={() => {
+            if (targetKey) {
+              clearTargetState(targetKey);
+            }
+            setResolvedCodeUrl(null);
+            mutation.reset();
+            mutation.mutate();
+          }}
+          className="inline-flex items-center rounded-md bg-celadon-600 px-4 py-2 text-sm font-medium text-white hover:bg-celadon-700"
+        >
+          {t('common.retry', 'Retry')}
+        </button>
       </div>
     );
   }

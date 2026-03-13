@@ -188,7 +188,7 @@ export const CheckoutPage = () => {
                                     disabled
                                     className="border-2 rounded-lg p-4 flex flex-col items-center justify-center opacity-40 cursor-not-allowed border-gray-200 bg-gray-50"
                                 >
-                                    <img src="/alipay-logo.svg" alt="Alipay" className="w-8 h-8 mb-2 rounded-md object-cover" loading="lazy" />
+                                    <img src="/alipay-logo.svg" alt="Alipay" className="w-8 h-8 mb-2 rounded-md object-contain" loading="lazy" />
                                     <span className="font-semibold text-gray-500">{t('shop.checkout.alipay')}</span>
                                     <span className="text-xs text-gray-400 mt-1">Not available</span>
                                 </button>
@@ -199,15 +199,7 @@ export const CheckoutPage = () => {
                                         }`}
                                     onClick={() => setPaymentMethod('WECHAT_PAY')}
                                 >
-                                    <svg className="w-8 h-8 mb-2" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="48" height="48" rx="10" fill="#07C160" />
-                                        <circle cx="19" cy="22" r="8" fill="white" />
-                                        <circle cx="30" cy="27" r="8" fill="white" />
-                                        <circle cx="16.5" cy="21.5" r="1.2" fill="#07C160" />
-                                        <circle cx="21.5" cy="21.5" r="1.2" fill="#07C160" />
-                                        <circle cx="27.5" cy="26.5" r="1.2" fill="#07C160" />
-                                        <circle cx="32.5" cy="26.5" r="1.2" fill="#07C160" />
-                                    </svg>
+                                    <img src="/wechatpay-logo.svg" alt="WeChat Pay" className="w-8 h-8 mb-2 rounded-md object-contain" loading="lazy" />
                                     <span className="font-semibold">{t('shop.checkout.wechatPay')}</span>
                                 </button>
                             </div>

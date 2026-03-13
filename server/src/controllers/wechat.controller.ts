@@ -25,6 +25,7 @@ export const createProductWechatOrderController = async (req: Request, res: Resp
     const result = await wechatService.createProductWechatOrder(req.body.orderId, req.user!.id);
     res.json(result);
   } catch (err: any) {
+    console.error('[WeChat] Create product order error:', err?.message ?? err);
     res.status(400).json({ message: err.message });
   }
 };

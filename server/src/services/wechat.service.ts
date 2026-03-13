@@ -329,9 +329,10 @@ export const refundWechatOrder = async (
     }),
     'refund request'
   );
+  const resultData = ((result as any)?.data ?? result) as any;
 
-  if (result.status === 'SUCCESS' || result.status === 'PROCESSING') {
-    return { success: true, refundId: result.refund_id };
+  if (resultData?.status === 'SUCCESS' || resultData?.status === 'PROCESSING') {
+    return { success: true, refundId: resultData?.refund_id };
   }
-  return { success: false, error: result.status };
+  return { success: false, error: String(resultData?.status ?? 'UNKNOWN') };
 };

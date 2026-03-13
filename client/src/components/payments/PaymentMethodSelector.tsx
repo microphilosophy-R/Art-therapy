@@ -3,15 +3,12 @@ import { useTranslation } from 'react-i18next';
 
 // Alipay logo
 const AlipayIcon = () => (
-  <img src="/alipay-logo.svg" alt="Alipay" className="h-6 w-6 rounded object-cover" loading="lazy" />
+  <img src="/alipay-logo.svg" alt="Alipay" className="h-6 w-6 rounded object-contain" loading="lazy" />
 );
 
-// WeChat Pay SVG logo
+// WeChat Pay logo
 const WechatIcon = () => (
-  <svg viewBox="0 0 48 48" className="h-6 w-6" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="48" height="48" rx="8" fill="#07C160" />
-    <text x="24" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="sans-serif">微信</text>
-  </svg>
+  <img src="/wechatpay-logo.svg" alt="WeChat Pay" className="h-6 w-6 rounded object-contain" loading="lazy" />
 );
 
 // Card / Stripe icon
@@ -56,14 +53,14 @@ export const PaymentMethodSelector = ({
     {
       id: 'alipay',
       icon: <AlipayIcon />,
-      label: t('payment.alipay', '支付�?Alipay'),
+      label: t('payment.alipay', 'Alipay'),
       enabled: supportsAlipay,
       comingSoon: !supportsAlipay,
     },
     {
       id: 'wechat',
       icon: <WechatIcon />,
-      label: t('payment.wechat', '微信支付 WeChat Pay'),
+      label: t('payment.wechat', 'WeChat Pay'),
       enabled: supportsWechat,
       comingSoon: !supportsWechat,
     },
@@ -71,7 +68,7 @@ export const PaymentMethodSelector = ({
       id: 'card',
       icon: <CardIcon />,
       label: t('payment.card', 'Credit / Debit Card'),
-      enabled: true, // always clickable �?shows "unavailable" message
+      enabled: true, // always clickable; shows "unavailable" message
       unavailable: true,
     },
   ];
@@ -124,4 +121,3 @@ export const PaymentMethodSelector = ({
     </div>
   );
 };
-

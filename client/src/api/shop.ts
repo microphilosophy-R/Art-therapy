@@ -167,7 +167,7 @@ export const createAlipayProductOrder = async (orderId: string) => {
 };
 
 export const createWechatProductOrder = async (orderId: string) => {
-    const { data } = await api.post('/wechat/create-product-order', { orderId });
+    const { data } = await api.post('/wechat/create-product-order', { orderId }, { timeout: 20000 });
     return data; // { codeUrl: string, paymentId: string }
 };
 

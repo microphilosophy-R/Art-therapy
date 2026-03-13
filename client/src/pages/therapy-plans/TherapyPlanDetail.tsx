@@ -48,7 +48,6 @@ export const TherapyPlanDetail = () => {
   const { user } = useAuthStore();
   const [signupError, setSignupError] = useState<string | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('alipay');
   const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
   const hasTherapistCert = !!user?.approvedCertificates?.includes('THERAPIST');
 
@@ -69,7 +68,8 @@ export const TherapyPlanDetail = () => {
   });
 
   const signupMutation = useMutation({
-    mutationFn: () => signUpForTherapyPlan(id!, { paymentProvider: paymentMethod === 'wechat' ? 'WECHAT_PAY' : 'ALIPAY' }),
+    mutationFn: (method?: PaymentMethod) =>
+      signUpForTherapyPlan(id!, { paymentProvider: method === 'wechat' ? 'WECHAT_PAY' : 'ALIPAY' }),
     onSuccess: (data) => {
       setSignupError(null);
       if (data.payment) {
@@ -312,10 +312,11 @@ export const TherapyPlanDetail = () => {
                 therapistName: therapistUser ? `${therapistUser.firstName} ${therapistUser.lastName}` : '',
                 therapistAvatar: therapistUser?.avatarUrl || undefined,
                 participantId: signupResult?.participantId || myParticipation?.id,
+                planId: plan.id,
               }}
               onComplete={async (method: PaymentMethod) => {
                 if (!signupResult?.participantId && !myParticipation?.id) {
-                  const res = await signupMutation.mutateAsync();
+                  const res = await signupMutation.mutateAsync(method);
                   return { participantId: res.participant.id };
                 }
                 return { participantId: signupResult?.participantId || myParticipation?.id! };
@@ -356,7 +357,7 @@ export const TherapyPlanDetail = () => {
                         if (isPayablePlan) {
                           setIsCheckingOut(true);
                         } else {
-                          signupMutation.mutate();
+                          signupMutation.mutate(undefined);
                         }
                       }}
                     >
@@ -369,7 +370,7 @@ export const TherapyPlanDetail = () => {
                         : t('therapyPlans.detail.signUpFree', 'Sign Up for Free')}
                     </Button>
                   )}
-                  {(canCancelSignup || isPendingPayment) && (
+                  {canCancelSignup && (
                     <Button
                       variant="outline"
                       loading={cancelSignupMutation.isPending}

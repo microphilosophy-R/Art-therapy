@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { stripe } from '../lib/stripe';
 import * as stripeService from '../services/stripe.service';
+import { getPrimaryClientUrl } from '../lib/clientOrigins';
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
   try {
@@ -39,13 +40,13 @@ export const startConnectOnboarding = async (req: Request, res: Response) => {
 
 export const connectReturn = async (req: Request, res: Response) => {
   // Stripe redirects here after onboarding. Sync status and redirect to client dashboard.
-  const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';
+  const clientUrl = getPrimaryClientUrl();
   res.redirect(`${clientUrl}/dashboard/member`);
 };
 
 export const connectRefresh = async (req: Request, res: Response) => {
   // Stripe redirects here when onboarding link expires. Re-generate and redirect.
-  const clientUrl = process.env.CLIENT_URL ?? 'http://localhost:5173';
+  const clientUrl = getPrimaryClientUrl();
   res.redirect(`${clientUrl}/dashboard/member?reconnect=1`);
 };
 

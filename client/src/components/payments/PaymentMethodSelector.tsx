@@ -1,12 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-// Alipay SVG logo
+// Alipay logo
 const AlipayIcon = () => (
-  <svg viewBox="0 0 48 48" className="h-6 w-6" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="48" height="48" rx="8" fill="#1677FF" />
-    <text x="24" y="32" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="sans-serif">支付</text>
-  </svg>
+  <img src="/alipay-logo.svg" alt="Alipay" className="h-6 w-6 rounded object-cover" loading="lazy" />
 );
 
 // WeChat Pay SVG logo
@@ -28,7 +25,9 @@ const CardIcon = () => (
 export type PaymentMethod = 'alipay' | 'wechat' | 'card' | null;
 
 interface PaymentMethodSelectorProps {
-  alipayWechatEnabled: boolean;
+  alipayWechatEnabled?: boolean;
+  alipayEnabled?: boolean;
+  wechatEnabled?: boolean;
   selectedMethod: PaymentMethod;
   onSelect: (method: PaymentMethod) => void;
   isZh: boolean;
@@ -36,11 +35,15 @@ interface PaymentMethodSelectorProps {
 
 export const PaymentMethodSelector = ({
   alipayWechatEnabled,
+  alipayEnabled,
+  wechatEnabled,
   selectedMethod,
   onSelect,
   isZh,
 }: PaymentMethodSelectorProps) => {
   const { t } = useTranslation();
+  const supportsAlipay = alipayEnabled ?? alipayWechatEnabled ?? true;
+  const supportsWechat = wechatEnabled ?? alipayWechatEnabled ?? true;
 
   const methods: Array<{
     id: 'alipay' | 'wechat' | 'card';
@@ -53,22 +56,22 @@ export const PaymentMethodSelector = ({
     {
       id: 'alipay',
       icon: <AlipayIcon />,
-      label: t('payment.alipay', '支付宝 Alipay'),
-      enabled: alipayWechatEnabled,
-      comingSoon: !alipayWechatEnabled,
+      label: t('payment.alipay', '支付�?Alipay'),
+      enabled: supportsAlipay,
+      comingSoon: !supportsAlipay,
     },
     {
       id: 'wechat',
       icon: <WechatIcon />,
       label: t('payment.wechat', '微信支付 WeChat Pay'),
-      enabled: alipayWechatEnabled,
-      comingSoon: !alipayWechatEnabled,
+      enabled: supportsWechat,
+      comingSoon: !supportsWechat,
     },
     {
       id: 'card',
       icon: <CardIcon />,
       label: t('payment.card', 'Credit / Debit Card'),
-      enabled: true, // always clickable — shows "unavailable" message
+      enabled: true, // always clickable �?shows "unavailable" message
       unavailable: true,
     },
   ];
@@ -121,3 +124,4 @@ export const PaymentMethodSelector = ({
     </div>
   );
 };
+

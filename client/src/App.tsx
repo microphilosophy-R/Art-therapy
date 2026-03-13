@@ -37,8 +37,8 @@ const ProtectedRoute = ({
   roles?: string[];
   certificates?: string[];
 }) => {
-  const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const { isAuthenticated, user, accessToken } = useAuthStore();
+  if (!isAuthenticated || !user || !accessToken) return <Navigate to="/login" replace />;
   if (roles && user && !roles.includes(user.role)) return <Navigate to="/" replace />;
   if (certificates && user?.role !== 'ADMIN') {
     const approved = user?.approvedCertificates ?? [];
@@ -50,7 +50,7 @@ const ProtectedRoute = ({
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />

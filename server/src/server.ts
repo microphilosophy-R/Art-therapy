@@ -6,6 +6,9 @@ import { verifyProductMediaSchema } from './lib/startupChecks';
 import { startScheduledJobs } from './services/scheduler.service';
 import { createServer } from 'http';
 import { initSocketServer } from './lib/socket';
+import { getClientOrigins } from './lib/clientOrigins';
+import { getWechatDiagnostics } from './lib/wechatDiagnostics';
+import { WECHAT_ENABLED } from './lib/wechat';
 
 // Express 4 async route handlers do not automatically forward rejected promises
 // to the global error handler. In Node.js 15+ an unhandled rejection crashes the
@@ -35,8 +38,17 @@ async function main() {
   // Start cron jobs
   startScheduledJobs();
 
+  const wechatDiagnostics = getWechatDiagnostics();
+  if (WECHAT_ENABLED) {
+    console.log('[WeChat] Provider enabled');
+  } else if (wechatDiagnostics.enabledFlag) {
+    console.warn(`[WeChat] Provider disabled: ${wechatDiagnostics.issues.join(' | ')}`);
+  } else {
+    console.log('[WeChat] Provider disabled by WECHAT_ENABLED flag');
+  }
+
   const httpServer = createServer(app);
-  initSocketServer(httpServer, process.env.CLIENT_URL ?? 'http://localhost:5173');
+  initSocketServer(httpServer, getClientOrigins());
 
   httpServer.listen(PORT, () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);

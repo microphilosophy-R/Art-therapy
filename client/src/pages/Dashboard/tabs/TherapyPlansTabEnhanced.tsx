@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Calendar } from 'lucide-react';
-import { listTherapyPlans, submitTherapyPlanForReview, archiveTherapyPlan, deleteTherapyPlan, cancelTherapyPlan } from '../../../api/therapyPlans';
+import { listTherapyPlans, submitTherapyPlanForReview, archiveTherapyPlan, deleteTherapyPlan, cancelTherapyPlan, cancelTherapyPlanSignup } from '../../../api/therapyPlans';
 import type { TherapyPlan, TherapyPlanStatus } from '../../../types';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
@@ -21,6 +21,8 @@ const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger'
   FINISHED: 'default',
   ARCHIVED: 'default',
 };
+const CANCELLABLE_PLAN_STATUSES = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
+const ACTIVE_ENROLLMENT_STATUSES = ['SIGNED_UP', 'PENDING_PAYMENT'];
 
 export const TherapyPlansTab = () => {
   const { t } = useTranslation();
@@ -53,6 +55,11 @@ export const TherapyPlansTab = () => {
 
   const cancelMutation = useMutation({
     mutationFn: cancelTherapyPlan,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plans'] }),
+  });
+
+  const cancelSignupMutation = useMutation({
+    mutationFn: cancelTherapyPlanSignup,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['therapy-plans'] }),
   });
 
@@ -104,7 +111,15 @@ export const TherapyPlansTab = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {plans.map((plan: TherapyPlan) => (
+          {plans.map((plan: TherapyPlan) => {
+            const myParticipant = roleFilter === 'participant'
+              ? plan.participants?.find((participant) => participant.userId === user?.id)
+              : undefined;
+            const canCancelEnrollment = roleFilter === 'participant'
+              && CANCELLABLE_PLAN_STATUSES.includes(plan.status)
+              && !!myParticipant
+              && ACTIVE_ENROLLMENT_STATUSES.includes(myParticipant.status);
+            return (
             <div key={plan.id} className="border border-stone-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
               <div className="flex gap-4">
                 <div className="w-24 h-16 shrink-0 overflow-hidden rounded bg-stone-100">
@@ -151,6 +166,9 @@ export const TherapyPlansTab = () => {
                         }
                       }}>{t('dashboard.plans.cancel', 'Cancel')}</Button>
                     )}
+                    {canCancelEnrollment && (
+                      <Button size="sm" variant="outline" loading={cancelSignupMutation.isPending} onClick={() => cancelSignupMutation.mutate(plan.id)}>{t('common.cancel', 'Cancel')}</Button>
+                    )}
                   </div>
                   {plan.rejectionReason && (
                     <div className="mt-2 p-2 bg-red-50 text-red-800 text-sm rounded">
@@ -160,7 +178,8 @@ export const TherapyPlansTab = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,17 +1,75 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+const refreshClient = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const getTokenExpiryMs = (token: string): number | null => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
+    if (typeof payload?.exp !== 'number') return null;
+    return payload.exp * 1000;
+  } catch {
+    return null;
+  }
+};
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    try {
+      const { data } = await refreshClient.post('/auth/refresh', {});
+      const auth = useAuthStore.getState();
+      const nextUser = data?.user ?? auth.user;
+      const nextToken = data?.accessToken as string | undefined;
+      if (!nextUser || !nextToken) {
+        auth.clearAuth();
+        return null;
+      }
+      auth.setAuth(nextUser, nextToken);
+      return nextToken;
+    } catch {
+      useAuthStore.getState().clearAuth();
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+};
+
+api.interceptors.request.use(async (config) => {
+  const auth = useAuthStore.getState();
+  let token = auth.accessToken;
+
   if (token) {
+    const expiryMs = getTokenExpiryMs(token);
+    const expiresSoon = expiryMs !== null && expiryMs <= Date.now() + 5000;
+    if (expiresSoon) {
+      token = await refreshAccessToken();
+    }
+  }
+
+  if (token) {
+    config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
@@ -19,29 +77,20 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const requestUrl = String(originalRequest?.url ?? '');
+    const isRefreshRequest = requestUrl.includes('/auth/refresh');
+
+    if (error.response?.status === 401 && !originalRequest?._retry && !isRefreshRequest) {
       originalRequest._retry = true;
-      try {
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL ?? '/api/v1'}/auth/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        const auth = useAuthStore.getState();
-        if (data.user) {
-          auth.setAuth(data.user, data.accessToken);
-        } else if (auth.user) {
-          auth.setAuth(auth.user, data.accessToken);
-        } else {
-          auth.clearAuth();
-          window.location.href = '/';
-          return Promise.reject(error);
-        }
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        originalRequest.headers = originalRequest.headers ?? {};
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
-      } catch {
-        useAuthStore.getState().clearAuth();
-        window.location.href = '/';
+      }
+      useAuthStore.getState().clearAuth();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);

@@ -1,20 +1,28 @@
 import { Wechatpay } from 'wechatpay-axios-plugin';
+import { getWechatConfigInputs, getWechatDiagnostics } from './wechatDiagnostics';
 
-export const WECHAT_ENABLED =
-  process.env.WECHAT_ENABLED === 'true' &&
-  !!process.env.WECHAT_MCH_ID &&
-  !!process.env.WECHAT_CERT_SERIAL &&
-  !!process.env.WECHAT_PRIVATE_KEY &&
-  !!process.env.WECHAT_PLATFORM_SERIAL &&
-  !!process.env.WECHAT_PLATFORM_CERT;
+const diagnostics = getWechatDiagnostics();
+const cfg = getWechatConfigInputs();
+const WECHAT_ENV_ENABLED = diagnostics.initializationPossible;
 
-export const wechatpay = WECHAT_ENABLED
-  ? new Wechatpay({
-      mchid: process.env.WECHAT_MCH_ID!,
-      serial: process.env.WECHAT_CERT_SERIAL!,
-      privateKey: process.env.WECHAT_PRIVATE_KEY!,
+let wechatpayInstance: Wechatpay | null = null;
+if (WECHAT_ENV_ENABLED) {
+  try {
+    wechatpayInstance = new Wechatpay({
+      mchid: cfg.mchId,
+      serial: cfg.certSerial,
+      privateKey: cfg.privateKeyPem,
       certs: {
-        [process.env.WECHAT_PLATFORM_SERIAL!]: process.env.WECHAT_PLATFORM_CERT!,
+        [cfg.platformSerial]: cfg.platformCertPem,
       },
-    })
-  : null;
+    });
+  } catch (error: any) {
+    console.error(`[WeChat] initialization failed: ${error?.message ?? error}`);
+    wechatpayInstance = null;
+  }
+} else if (diagnostics.enabledFlag) {
+  console.warn(`[WeChat] configuration invalid: ${diagnostics.issues.join('; ')}`);
+}
+
+export const WECHAT_ENABLED = !!wechatpayInstance;
+export const wechatpay = wechatpayInstance;

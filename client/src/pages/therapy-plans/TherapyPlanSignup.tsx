@@ -15,6 +15,7 @@ import { StripeUnavailable } from '../../components/payments/StripeUnavailable';
 import { AlipayPaymentForm } from '../../components/payments/AlipayPaymentForm';
 import { WechatPaymentForm } from '../../components/payments/WechatPaymentForm';
 import { PriceDisplay } from '../../components/ui/PriceDisplay';
+import { getDefaultPaymentMethod, paymentCapabilities } from '../../lib/payments';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -26,7 +27,7 @@ export const TherapyPlanSignup = () => {
     const [step, setStep] = useState<Step>(1);
     const [signature, setSignature] = useState('');
     const [discountCode, setDiscountCode] = useState('');
-    const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(i18n.language.startsWith('zh') ? 'alipay' : null);
+    const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(getDefaultPaymentMethod(i18n.language.startsWith('zh')));
     const [signupResult, setSignupResult] = useState<{ participantId: string; payment?: any } | null>(null);
     const isZh = i18n.language.startsWith('zh');
     const locale = isZh ? 'zh-CN' : 'en-US';
@@ -277,17 +278,19 @@ export const TherapyPlanSignup = () => {
                             </div>
 
                             <PaymentMethodSelector
-                                alipayWechatEnabled={true}
+                                alipayEnabled={paymentCapabilities.alipay}
+                                wechatEnabled={paymentCapabilities.wechat}
                                 selectedMethod={selectedMethod}
                                 onSelect={setSelectedMethod}
                                 isZh={i18n.language.startsWith('zh')}
                             />
+                            {selectedMethod === 'card' && <StripeUnavailable />}
 
                             {!signupResult ? (
                                 <div className="flex justify-end mt-6">
                                     <Button
                                         loading={signupMutation.isPending}
-                                        disabled={signupMutation.isPending || !selectedMethod}
+                                        disabled={signupMutation.isPending || !selectedMethod || selectedMethod === 'card'}
                                         onClick={() => signupMutation.mutate()}
                                     >
                                         {t('therapyPlans.signup.step4.confirmAndPay', 'Confirm and Pay')}
@@ -305,6 +308,7 @@ export const TherapyPlanSignup = () => {
                                     {selectedMethod === 'wechat' && (
                                         <WechatPaymentForm
                                             participantId={signupResult.participantId}
+                                            planId={id}
                                             onSuccess={handlePaymentSuccess}
                                             onError={handlePaymentError}
                                         />

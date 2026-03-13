@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation } from '@tanstack/react-query';
 import { createAlipayOrder, createPlanAlipayOrder } from '../../api/alipay';
@@ -14,6 +14,13 @@ interface AlipayPaymentFormProps {
 
 export const AlipayPaymentForm = ({ appointmentId, participantId, orderId, onSuccess, onError }: AlipayPaymentFormProps) => {
   const { t } = useTranslation();
+  const lastTriggeredTargetRef = useRef<string | null>(null);
+  const targetKey = useMemo(() => {
+    if (orderId) return `order:${orderId}`;
+    if (participantId) return `participant:${participantId}`;
+    if (appointmentId) return `appointment:${appointmentId}`;
+    return null;
+  }, [appointmentId, orderId, participantId]);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -26,22 +33,21 @@ export const AlipayPaymentForm = ({ appointmentId, participantId, orderId, onSuc
       window.location.href = payUrl;
     },
     onError: (err: any) => {
-      onError?.(err.message ?? t('common.errors.tryAgain'));
+      onError?.(err?.response?.data?.message ?? err?.message ?? t('common.errors.tryAgain'));
     },
   });
 
-  // Auto-trigger order creation on mount only if we have a valid ID
   useEffect(() => {
-    if (appointmentId || participantId || orderId) {
-      mutation.mutate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!targetKey) return;
+    if (lastTriggeredTargetRef.current === targetKey) return;
+    lastTriggeredTargetRef.current = targetKey;
+    mutation.mutate();
+  }, [mutation, targetKey]);
 
   if (mutation.isError) {
     return (
       <div className="mt-4 rounded-lg bg-rose-50 border border-rose-200 p-4 text-sm text-rose-700">
-        {(mutation.error as any)?.message ?? t('common.errors.tryAgain')}
+        {(mutation.error as any)?.response?.data?.message ?? (mutation.error as any)?.message ?? t('common.errors.tryAgain')}
       </div>
     );
   }

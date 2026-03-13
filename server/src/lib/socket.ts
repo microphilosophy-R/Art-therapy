@@ -16,7 +16,7 @@ const extractToken = (authHeader?: string, handshakeToken?: string): string | nu
   return authHeader.slice(7);
 };
 
-export const initSocketServer = (httpServer: HttpServer, clientUrl: string) => {
+export const initSocketServer = (httpServer: HttpServer, clientUrl: string | string[]) => {
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: clientUrl,

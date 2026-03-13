@@ -35,7 +35,8 @@ export const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const canFetchUnread = isAuthenticated && !!user?.id && !!accessToken;
+  const isSessionReady = isAuthenticated && !!user && !!accessToken;
+  const canFetchUnread = isSessionReady && !!user?.id;
   const canFetchCart = canFetchUnread && user?.role === 'MEMBER';
 
   const { data: unreadData } = useQuery({
@@ -115,7 +116,7 @@ export const Navbar = () => {
 
             <LanguageSwitcher />
 
-            {isAuthenticated && user ? (
+            {isSessionReady ? (
               <>
                 <Link
                   to="/cart"
@@ -249,7 +250,7 @@ export const Navbar = () => {
             <div className="px-1">
               <LanguageSwitcher />
             </div>
-            {isAuthenticated && user ? (
+            {isSessionReady ? (
               <>
                 <Link
                   to={dashboardPath}

@@ -17,9 +17,18 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/Card
 import { PaymentMethodSelector, type PaymentMethod } from './PaymentMethodSelector';
 import { AlipayPaymentForm } from './AlipayPaymentForm';
 import { WechatPaymentForm } from './WechatPaymentForm';
+import { StripeUnavailable } from './StripeUnavailable';
 import { PriceDisplay } from '../ui/PriceDisplay';
+import { getDefaultPaymentMethod, paymentCapabilities } from '../../lib/payments';
 
 export type PaymentWorkflowStep = 'TERMS' | 'TIME' | 'INFO' | 'PAYMENT' | 'RESULT';
+
+type PaymentTarget = {
+    appointmentId?: string;
+    participantId?: string;
+    orderId?: string;
+    planId?: string;
+};
 
 interface StandardPaymentWorkflowProps {
     type: 'PERSONAL_CONSULT' | 'GROUP_CONSULT' | 'ART_SALON' | 'WELLNESS_RETREAT';
@@ -33,9 +42,11 @@ interface StandardPaymentWorkflowProps {
         therapistAvatar?: string;
         appointmentId?: string; // For personal consults
         participantId?: string; // For group plans
+        orderId?: string; // For product orders
+        planId?: string; // For plan signup status polling
     };
     onTimeStep?: () => React.ReactNode; // Custom time selection for personal consult
-    onComplete?: (method: PaymentMethod) => Promise<any>; // Function to generate order
+    onComplete?: (method: PaymentMethod) => Promise<PaymentTarget | { id?: string } | any>; // Function to generate order
     onCancel?: () => void;
 }
 
@@ -51,10 +62,16 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
     const [step, setStep] = useState<PaymentWorkflowStep>('TERMS');
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-        i18n.language.startsWith('zh') ? 'alipay' : 'alipay'
+        getDefaultPaymentMethod(i18n.language.startsWith('zh'))
     );
     const [isProcessing, setIsProcessing] = useState(false);
     const [orderGenerated, setOrderGenerated] = useState(false);
+    const [resolvedTarget, setResolvedTarget] = useState<PaymentTarget>({
+        appointmentId: data.appointmentId,
+        participantId: data.participantId,
+        orderId: data.orderId,
+        planId: data.planId,
+    });
 
     const isZh = i18n.language.startsWith('zh');
     const locale = isZh ? 'zh-CN' : 'en-US';
@@ -80,6 +97,24 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
     };
 
     const isPersonal = type === 'PERSONAL_CONSULT';
+    const paymentTarget = orderGenerated
+        ? resolvedTarget
+        : {
+            appointmentId: data.appointmentId,
+            participantId: data.participantId,
+            orderId: data.orderId,
+            planId: data.planId,
+        };
+
+    useEffect(() => {
+        if (orderGenerated) return;
+        setResolvedTarget({
+            appointmentId: data.appointmentId,
+            participantId: data.participantId,
+            orderId: data.orderId,
+            planId: data.planId,
+        });
+    }, [data.appointmentId, data.orderId, data.participantId, data.planId, orderGenerated]);
 
     // Decide steps based on type
     const steps: PaymentWorkflowStep[] = ['TERMS', 'TIME', 'INFO', 'PAYMENT'];
@@ -98,10 +133,28 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
         } else if (step === 'INFO') {
             setStep('PAYMENT');
         } else if (step === 'PAYMENT') {
+            if (paymentMethod === 'card') return;
             if (onComplete) {
                 setIsProcessing(true);
                 try {
-                    await onComplete(paymentMethod);
+                    const completionResult = await onComplete(paymentMethod);
+                    const nextTarget: PaymentTarget = {
+                        appointmentId: completionResult?.appointmentId ?? data.appointmentId,
+                        participantId: completionResult?.participantId ?? data.participantId,
+                        orderId: completionResult?.orderId ?? data.orderId,
+                        planId: completionResult?.planId ?? data.planId,
+                    };
+                    if (!nextTarget.appointmentId && !nextTarget.participantId && !nextTarget.orderId && typeof completionResult?.id === 'string') {
+                        if (type === 'PERSONAL_CONSULT') {
+                            nextTarget.appointmentId = completionResult.id;
+                        } else {
+                            nextTarget.participantId = completionResult.id;
+                        }
+                    }
+                    if (!nextTarget.appointmentId && !nextTarget.participantId && !nextTarget.orderId) {
+                        throw new Error('Missing payment target after checkout completion');
+                    }
+                    setResolvedTarget(nextTarget);
                     setOrderGenerated(true);
                 } catch (err) {
                     console.error('Order generation failed', err);
@@ -289,17 +342,19 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                 <div className="mt-8">
                                     <p className="text-sm font-medium text-stone-700 mb-4">{t('payment.selectMethod')}</p>
                                     <PaymentMethodSelector
-                                        alipayWechatEnabled={true}
+                                        alipayEnabled={paymentCapabilities.alipay}
+                                        wechatEnabled={paymentCapabilities.wechat}
                                         selectedMethod={paymentMethod}
                                         onSelect={setPaymentMethod}
                                         isZh={i18n.language.startsWith('zh')}
                                     />
+                                    {paymentMethod === 'card' && <StripeUnavailable />}
                                     <div className="mt-6">
                                         <Button
                                             className="w-full h-12 text-lg"
                                             onClick={handleNext}
                                             loading={isProcessing}
-                                            disabled={!paymentMethod}
+                                            disabled={!paymentMethod || paymentMethod === 'card'}
                                         >
                                             {t('payment.confirmAndPay', 'Confirm Payment')}
                                         </Button>
@@ -309,16 +364,19 @@ export const StandardPaymentWorkflow: React.FC<StandardPaymentWorkflowProps> = (
                                 <div className="mt-8 border-t border-stone-100 pt-6">
                                     {paymentMethod === 'alipay' && (
                                         <AlipayPaymentForm
-                                            appointmentId={data.appointmentId}
-                                            participantId={data.participantId}
+                                            appointmentId={paymentTarget.appointmentId}
+                                            participantId={paymentTarget.participantId}
+                                            orderId={paymentTarget.orderId}
                                             onSuccess={() => navigate('/dashboard')}
                                             onError={() => setOrderGenerated(false)}
                                         />
                                     )}
                                     {paymentMethod === 'wechat' && (
                                         <WechatPaymentForm
-                                            appointmentId={data.appointmentId}
-                                            participantId={data.participantId}
+                                            appointmentId={paymentTarget.appointmentId}
+                                            participantId={paymentTarget.participantId}
+                                            orderId={paymentTarget.orderId}
+                                            planId={paymentTarget.planId}
                                             onSuccess={() => navigate('/dashboard')}
                                             onError={() => setOrderGenerated(false)}
                                         />

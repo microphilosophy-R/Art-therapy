@@ -34,6 +34,9 @@ import { translateRouter } from './routes/translate.routes';
 import userProfileRouter from './routes/userProfile.routes';
 import { rateLimiter } from './middleware/rateLimiter';
 import { followRouter } from './routes/follow.routes';
+import { getClientOrigins } from './lib/clientOrigins';
+import { getWechatDiagnostics } from './lib/wechatDiagnostics';
+import { WECHAT_ENABLED } from './lib/wechat';
 
 const app = express();
 
@@ -41,9 +44,17 @@ const app = express();
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // CORS — allow client origin
+const allowedOrigins = new Set(getClientOrigins());
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL ?? 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   })
 );
@@ -120,6 +131,17 @@ app.use('/api/v1', api);
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+app.get('/health/wechat', (_req, res) => {
+  const diagnostics = getWechatDiagnostics();
+  res.json({
+    providerEnabled: WECHAT_ENABLED,
+    enabledFlag: diagnostics.enabledFlag,
+    hasRequiredEnv: diagnostics.hasRequiredEnv,
+    initializationPossible: diagnostics.initializationPossible,
+    checks: diagnostics.checks,
+    issues: diagnostics.issues,
+  });
+});
 
 // 404 handler
 app.use((_req, res) => res.status(404).json({ message: 'Route not found' }));

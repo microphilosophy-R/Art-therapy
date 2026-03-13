@@ -20,6 +20,7 @@ export const useExchangeRate = (from: string, to: string) => {
     queryKey: ['exchangeRate', from, to],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/v1/fx?from=${from}&to=${to}&money=1`);
+      if (!res.ok) return null;
       const json: ExchangeRateResponse = await res.json();
       if (json.code !== 200) return null;
       return Number(json.rate);

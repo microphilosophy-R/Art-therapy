@@ -54,6 +54,13 @@ const toLocalizedOptional = (
   return { zh, en };
 };
 
+const THERAPY_PLAN_PARTICIPANT_USER_SELECT = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
+} as const;
+
 const THERAPIST_PLAN_INCLUDE = {
   userProfile: {
     include: {
@@ -73,12 +80,7 @@ const THERAPIST_PLAN_INCLUDE = {
     orderBy: { enrolledAt: Prisma.SortOrder.asc },
     include: {
       user: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-        },
+        select: THERAPY_PLAN_PARTICIPANT_USER_SELECT,
       },
     },
   },
@@ -103,6 +105,7 @@ const PUBLIC_RELEASE_STATUSES = [
   'FINISHED',
   'IN_GALLERY',
 ] as const;
+const ACTIVE_PARTICIPANT_STATUSES = ['SIGNED_UP', 'PENDING_PAYMENT'] as const;
 const PUBLIC_RELEASE_STATUS_SET = new Set<string>(PUBLIC_RELEASE_STATUSES);
 
 const isPlanPubliclyReleased = (plan: {
@@ -240,7 +243,14 @@ export const listPlans = async (req: Request, res: Response) => {
     if (!user) {
       return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
     }
-    andConditions.push({ participants: { some: { userId: user.id } } });
+    andConditions.push({
+      participants: {
+        some: {
+          userId: user.id,
+          status: { in: [...ACTIVE_PARTICIPANT_STATUSES] as any },
+        },
+      },
+    });
     if (query.status) andConditions.push({ status: query.status as any });
   } else if (isAdmin) {
     if (query.status) andConditions.push({ status: query.status as any });
@@ -287,6 +297,25 @@ export const listPlans = async (req: Request, res: Response) => {
     query.sortBy
       ? [{ [query.sortBy]: (query.order ?? 'desc') as Prisma.SortOrder }]
       : [{ publishedAt: 'desc' as Prisma.SortOrder }, { createdAt: 'desc' as Prisma.SortOrder }];
+  const include: Prisma.TherapyPlanInclude =
+    query.role === 'participant' && user
+      ? {
+        ...THERAPIST_PLAN_INCLUDE,
+        participants: {
+          where: {
+            userId: user.id,
+            status: { in: [...ACTIVE_PARTICIPANT_STATUSES] as any },
+          },
+          take: 1,
+          orderBy: { enrolledAt: Prisma.SortOrder.desc },
+          include: {
+            user: {
+              select: THERAPY_PLAN_PARTICIPANT_USER_SELECT,
+            },
+          },
+        },
+      }
+      : THERAPIST_PLAN_INCLUDE;
 
   const [plans, total] = await Promise.all([
     prisma.therapyPlan.findMany({
@@ -294,7 +323,7 @@ export const listPlans = async (req: Request, res: Response) => {
       skip,
       take: limit,
       orderBy: orderBy as Prisma.TherapyPlanOrderByWithRelationInput[],
-      include: THERAPIST_PLAN_INCLUDE,
+      include,
     }),
     prisma.therapyPlan.count({ where }),
   ]);
@@ -1609,7 +1638,7 @@ export const cancelSignup = async (req: Request, res: Response) => {
       plan: { include: { userProfile: { include: { user: { select: { id: true } } } } } },
     },
   });
-  if (!participant || participant.status !== ('SIGNED_UP' as any)) {
+  if (!participant || !['SIGNED_UP', 'PENDING_PAYMENT'].includes(participant.status as any)) {
     return res.status(404).json({ message: 'Sign-up not found' });
   }
   const cancellableStatuses = ['PUBLISHED', 'SIGN_UP_CLOSED', 'IN_PROGRESS'];
@@ -1650,7 +1679,5 @@ export const getPendingPlans = async (req: Request, res: Response) => {
   });
   res.json({ data: plans });
 };
-
-
 
 

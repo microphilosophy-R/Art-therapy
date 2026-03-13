@@ -11,6 +11,25 @@ const REFRESH_SECRET = () => process.env.JWT_REFRESH_SECRET!;
 const ACCESS_TTL = () => process.env.JWT_ACCESS_EXPIRES_IN ?? '15m';
 const REFRESH_TTL_DAYS = 7;
 
+const hasJwtConfig = () => Boolean(process.env.JWT_ACCESS_SECRET && process.env.JWT_REFRESH_SECRET);
+
+const getApprovedCertificatesByUserId = async (userId: string): Promise<string[]> => {
+  try {
+    const certificates = await prisma.userCertificate.findMany({
+      where: {
+        profile: { userId },
+        status: 'APPROVED',
+      },
+      select: { type: true },
+    });
+    return certificates.map((cert) => cert.type);
+  } catch (error) {
+    // Keep login resilient even if profile/certificate tables are temporarily inconsistent.
+    console.error('[Auth] Failed to load approved certificates during login:', error);
+    return [];
+  }
+};
+
 const toAuthUser = (user: any, approvedCertificates: string[] = []) => ({
   id: user.id,
   email: user.email,
@@ -41,6 +60,10 @@ const signRefresh = (userId: string) =>
   jwt.sign({ sub: userId, jti: uuidv4() }, REFRESH_SECRET(), { expiresIn: `${REFRESH_TTL_DAYS}d` });
 
 export const register = async (req: Request, res: Response) => {
+  if (!hasJwtConfig()) {
+    return res.status(500).json({ message: 'Server auth configuration error: missing JWT secrets' });
+  }
+
   const body = req.body as RegisterInput;
   const existing = await prisma.user.findUnique({ where: { email: body.email } });
   if (existing) return res.status(409).json({ message: 'Email already registered' });
@@ -77,16 +100,23 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
+    if (!hasJwtConfig()) {
+      return res.status(500).json({ message: 'Server auth configuration error: missing JWT secrets' });
+    }
+
     const { email, password } = req.body as LoginInput;
     const user = await prisma.user.findUnique({
       where: { email },
-      include: {
-        userProfile: {
-          include: {
-            certificates: true
-          }
-        }
-      }
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
     });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
@@ -98,12 +128,7 @@ export const login = async (req: Request, res: Response) => {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
 
-    let approvedCertificates: string[] | undefined;
-    if (user.userProfile) {
-      approvedCertificates = user.userProfile.certificates
-        .filter((cert: any) => cert.status === 'APPROVED')
-        .map((cert: any) => cert.type);
-    }
+    const approvedCertificates = await getApprovedCertificatesByUserId(user.id);
 
     const accessToken = signAccess({ ...user, approvedCertificates });
     const refreshToken = signRefresh(user.id);
@@ -117,7 +142,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       accessToken,
-      user: toAuthUser(user, approvedCertificates ?? []),
+      user: toAuthUser(user, approvedCertificates),
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -126,6 +151,10 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const refresh = async (req: Request, res: Response) => {
+  if (!hasJwtConfig()) {
+    return res.status(500).json({ message: 'Server auth configuration error: missing JWT secrets' });
+  }
+
   const token = req.cookies?.refreshToken;
   if (!token) return res.status(401).json({ message: 'No refresh token' });
 
@@ -141,17 +170,12 @@ export const refresh = async (req: Request, res: Response) => {
     });
     if (!user) return res.status(401).json({ message: 'User not found' });
 
-    let approvedCertificates: string[] | undefined;
-    if (user.userProfile) {
-      approvedCertificates = user.userProfile.certificates
-        .filter((cert: any) => cert.status === 'APPROVED')
-        .map((cert: any) => cert.type);
-    }
+    const approvedCertificates = await getApprovedCertificatesByUserId(user.id);
 
     const accessToken = signAccess({ ...user, approvedCertificates });
     res.json({
       accessToken,
-      user: toAuthUser(user, approvedCertificates ?? []),
+      user: toAuthUser(user, approvedCertificates),
     });
   } catch {
     res.status(401).json({ message: 'Invalid refresh token' });

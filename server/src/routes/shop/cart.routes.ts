@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate';
 import { validate } from '../../middleware/validate';
-import { CartController } from '../../controllers/shop/cart.controller';
+import { CartController } from '../../controllers/shop';
 
 const router = Router();
 
@@ -14,3 +14,4 @@ router.delete('/:id', CartController.removeFromCart);
 router.delete('/', CartController.clearCart);
 
 export { router as cartRouter };
+

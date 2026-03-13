@@ -94,7 +94,6 @@ export const approveRefund = async (req: Request, res: Response) => {
     refundResult = await refundAlipayOrder(
       order.payment.externalOrderId!,
       refundAmount,
-      refundAmount,
       order.payment.refundReason || 'Customer requested refund'
     );
   } else if (order.payment.provider === 'WECHAT_PAY') {
@@ -199,4 +198,3 @@ export const RefundController = {
   approveRefund,
   rejectRefund,
 };
-

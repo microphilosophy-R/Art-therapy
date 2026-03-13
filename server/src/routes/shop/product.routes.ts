@@ -5,7 +5,7 @@ import { requireCertificate } from '../../middleware/requireCertificate';
 import { validate } from '../../middleware/validate';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { optionalAuthenticate } from '../../middleware/optionalAuthenticate';
-import { ProductController } from '../../controllers/shop/product.controller';
+import { ProductController } from '../../controllers/shop';
 import { createProductSchema, updateProductSchema } from '../../schemas/product.schemas';
 
 const router = Router();
@@ -25,3 +25,4 @@ router.delete('/:id', asyncHandler(ProductController.deleteProduct));
 router.post('/:id/submit', asyncHandler(ProductController.submitProductForReview));
 
 export { router as productRouter };
+

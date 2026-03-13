@@ -204,6 +204,8 @@ npx prisma migrate deploy
 npm run build
 ```
 
+The backend build is a bundled artifact: `dist/server.js`. The build script cleans `dist/` first; do not expect `dist/controllers/` files.
+
 Start the application using PM2. *(Note we use port 3001 as defined in the server's `.env`)*:
 
 ```bash
@@ -516,6 +518,8 @@ npm run build
 pm2 restart art-therapy-api
 ```
 
+Runtime target remains `dist/server.js` (single bundle).
+
 ### Step 3: Update the Frontend (React App)
 ```bash
 cd ~/art-therapy/client
@@ -561,6 +565,7 @@ cd /home/admin/art-therapy/server
 npm ci --omit=dev
 npx prisma generate
 npx prisma migrate deploy
+# Produces clean bundled output at dist/server.js
 npm run build
 pm2 restart art-therapy-api
 echo "✅ Backend updated!"
@@ -628,6 +633,7 @@ Notes:
 
 - Do not skip `prisma migrate deploy`.
 - Do not restart API before migrations finish.
+- Backend runtime artifact is `dist/server.js`; `dist/controllers` is not used.
 - This release contains SQL backfill from legacy fields to i18n JSON fields.
 
 ### 3) Frontend deploy

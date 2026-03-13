@@ -3,7 +3,7 @@ import { authenticate } from '../../middleware/authenticate';
 import { authorize } from '../../middleware/authorize';
 import { requireCertificate } from '../../middleware/requireCertificate';
 import { validate } from '../../middleware/validate';
-import { OrderController } from '../../controllers/shop/order.controller';
+import { OrderController } from '../../controllers/shop';
 
 const router = Router();
 
@@ -20,3 +20,4 @@ router.get('/seller/orders', authorize('MEMBER', 'ADMIN'), requireCertificate('A
 router.post('/seller/orders/:id/fulfill', authorize('MEMBER', 'ADMIN'), requireCertificate('ARTIFICER'), validate(OrderController.fulfillOrderSchema), OrderController.fulfillOrder);
 
 export { router as orderRouter };
+

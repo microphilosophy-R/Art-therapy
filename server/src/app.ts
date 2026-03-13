@@ -10,30 +10,32 @@ import fs from 'fs';
 import { stripeWebhookRouter } from './webhooks/stripe.webhook';
 import { alipayWebhookRouter } from './webhooks/alipay.webhook';
 import { wechatWebhookRouter } from './webhooks/wechat.webhook';
-import { authRouter } from './routes/auth.routes';
-import { appointmentRouter } from './routes/appointment.routes';
-import { paymentRouter } from './routes/payment.routes';
-import { alipayRouter } from './routes/alipay.routes';
-import { wechatRouter } from './routes/wechat.routes';
-import { adminRouter } from './routes/admin.routes';
-import { profileRouter } from './routes/profile.routes';
-import { formRouter } from './routes/form.routes';
-import { therapyPlanRouter } from './routes/therapyPlan.routes';
-import { therapyPlanTemplateRouter } from './routes/therapyPlanTemplate.routes';
-import { messageRouter } from './routes/message.routes';
-import { therapistRouter } from './routes/therapist.routes';
-import { uploadRouter } from './routes/upload.routes';
-import { productRouter } from './routes/shop/product.routes';
-import { cartRouter } from './routes/shop/cart.routes';
-import { orderRouter } from './routes/shop/order.routes';
-import { refundRouter } from './routes/shop/refund.routes';
-import { memberRouter } from './routes/member.routes';
-import { statsRouter } from './routes/stats.routes';
-import { calendarRouter } from './routes/calendar.routes';
-import { translateRouter } from './routes/translate.routes';
-import userProfileRouter from './routes/userProfile.routes';
+import {
+  adminRouter,
+  alipayRouter,
+  appointmentRouter,
+  authRouter,
+  calendarRouter,
+  cartRouter,
+  followRouter,
+  formRouter,
+  memberRouter,
+  messageRouter,
+  orderRouter,
+  paymentRouter,
+  productRouter,
+  profileRouter,
+  refundRouter,
+  statsRouter,
+  therapistRouter,
+  therapyPlanRouter,
+  therapyPlanTemplateRouter,
+  translateRouter,
+  uploadRouter,
+  userProfileRouter,
+  wechatRouter,
+} from './routes';
 import { rateLimiter } from './middleware/rateLimiter';
-import { followRouter } from './routes/follow.routes';
 import { getClientOrigins } from './lib/clientOrigins';
 import { getWechatDiagnostics } from './lib/wechatDiagnostics';
 import { WECHAT_ENABLED } from './lib/wechat';

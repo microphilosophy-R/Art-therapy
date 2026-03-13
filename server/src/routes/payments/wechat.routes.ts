@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/authenticate';
+import { wechatController } from '../../controllers';
+
+export const wechatRouter = Router();
+
+wechatRouter.use(authenticate);
+wechatRouter.post('/create-order', wechatController.createWechatOrderController);
+wechatRouter.post('/create-plan-order', wechatController.createPlanWechatOrderController);
+wechatRouter.post('/create-product-order', wechatController.createProductWechatOrderController);
+

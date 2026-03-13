@@ -3,7 +3,7 @@ import { authenticate } from '../../middleware/authenticate';
 import { authorize } from '../../middleware/authorize';
 import { requireCertificate } from '../../middleware/requireCertificate';
 import { validate } from '../../middleware/validate';
-import { RefundController } from '../../controllers/shop/refund.controller';
+import { RefundController } from '../../controllers/shop';
 
 const router = Router();
 
@@ -30,3 +30,4 @@ router.post(
 );
 
 export { router as refundRouter };
+

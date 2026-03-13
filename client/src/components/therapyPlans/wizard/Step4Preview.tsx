@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import type { TherapyPlanFormValues } from '../../../pages/therapy-plans/TherapyPlanForm';
+import type { TherapyPlanFormValues } from '@/pages/therapy-plans';
 import { getDefaultPosterUrl } from '../../../utils/defaultPosters';
 
 interface Step4Props {
@@ -248,4 +248,3 @@ export const Step4Preview = ({
     </div>
   );
 };
-

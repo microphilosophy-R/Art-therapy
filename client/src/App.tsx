@@ -1,33 +1,35 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/layout/Layout';
-import { Home } from './pages/Home';
-import { TherapistDirectory } from './pages/TherapistDirectory';
-import { TherapistProfile } from './pages/TherapistProfile';
-import { BookAppointment } from './pages/BookAppointment';
-import { BookingConfirmation } from './pages/booking/BookingConfirmation';
-import { Login } from './pages/auth/Login';
-import { Register } from './pages/auth/Register';
-import { AdminDashboard } from './pages/Dashboard/AdminDashboard';
-import { MemberDashboard } from './pages/Dashboard/MemberDashboard';
-import { UserProfile } from './pages/UserProfile';
-import { PrivacyTerms } from './pages/PrivacyTerms';
-import { ComposeForm } from './pages/forms/ComposeForm';
-import { FillForm } from './pages/forms/FillForm';
-import { FormDetail } from './pages/forms/FormDetail';
-import { TherapyPlansDirectory } from '@/pages/therapy-plans/TherapyPlansDirectory';
-import { TherapyPlanDetail } from '@/pages/therapy-plans/TherapyPlanDetail';
-import { TherapyPlanSignup } from '@/pages/therapy-plans/TherapyPlanSignup';
-import { EditTherapyPlan } from '@/pages/therapy-plans/EditTherapyPlan';
-import { ProductWizard } from '@/pages/Dashboard/ProductWizard';
-import { Gallery } from './pages/Gallery';
-import { ShopPage } from './pages/shop/ShopPage';
-import { ProductDetailsPage } from './pages/shop/ProductDetailsPage';
-import { CartPage } from './pages/shop/CartPage';
-import { CheckoutPage } from './pages/shop/CheckoutPage';
-import { MyOrdersPage } from './pages/user/MyOrdersPage';
-import { MessagesPage } from './pages/MessagesPage';
-import { MyPlansPage } from './pages/MyPlansPage';
+import {
+  Home,
+  TherapistDirectory,
+  TherapistProfile,
+  BookAppointment,
+  BookingConfirmation,
+  Login,
+  Register,
+  AdminDashboard,
+  MemberDashboard,
+  UserProfile,
+  PrivacyTerms,
+  ComposeForm,
+  FillForm,
+  FormDetail,
+  TherapyPlansDirectory,
+  TherapyPlanDetail,
+  TherapyPlanSignup,
+  EditTherapyPlan,
+  ProductWizard,
+  Gallery,
+  ShopPage,
+  ProductDetailsPage,
+  CartPage,
+  CheckoutPage,
+  MyOrdersPage,
+  MessagesPage,
+  MyPlansPage,
+} from '@/pages';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({
